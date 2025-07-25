@@ -9,10 +9,8 @@
             <span class="text-sm text-gray-500">OTC Trading Platform</span>
           </div>
           <div class="flex items-center gap-4">
-            <!-- Wallet connection status placeholder -->
-            <div class="text-sm text-gray-500">
-              Connect Wallet
-            </div>
+            <!-- Wallet Connection Component -->
+            <WalletConnect ref="walletConnect" />
           </div>
         </div>
       </div>
@@ -232,6 +230,20 @@ definePageMeta({
   layout: 'default'
 })
 
+// Wallet integration
+const { isConnected, account, balance } = useWallet()
+const { 
+  getTokenBalance, 
+  getCIRXBalance, 
+  getLiquidQuote, 
+  getOTCQuote,
+  executeLiquidSwap,
+  executeOTCSwap 
+} = useContracts()
+
+// Component refs
+const walletConnect = ref(null)
+
 // Reactive state
 const activeTab = ref('liquid')
 const inputAmount = ref('')
@@ -241,7 +253,7 @@ const loading = ref(false)
 const loadingText = ref('')
 const error = ref('')
 
-// Mock balances - replace with actual Web3 integration
+// Real balances from wallet/contracts
 const inputBalance = ref('0.0')
 const cirxBalance = ref('0.0')
 const quote = ref(null)
@@ -326,6 +338,37 @@ const calculateQuote = (amount, token, isOTC = false) => {
   }
 }
 
+// Update balances when wallet connects
+const updateBalances = async () => {
+  if (!account.value) {
+    inputBalance.value = '0.0'
+    cirxBalance.value = '0.0'
+    return
+  }
+
+  try {
+    // Update input token balance
+    if (inputToken.value === 'ETH') {
+      inputBalance.value = balance.value?.toFixed(4) || '0.0'
+    } else {
+      inputBalance.value = await getTokenBalance(inputToken.value)
+    }
+
+    // Update CIRX balance
+    cirxBalance.value = await getCIRXBalance()
+  } catch (err) {
+    console.error('Failed to update balances:', err)
+  }
+}
+
+// Get effective user address (connected wallet or manual input)
+const getEffectiveAddress = () => {
+  if (isConnected.value && account.value) {
+    return account.value
+  }
+  return walletConnect.value?.manualAddress || null
+}
+
 // Methods
 const handleSwap = async () => {
   if (!canPurchase.value) return
@@ -334,26 +377,39 @@ const handleSwap = async () => {
     loading.value = true
     error.value = ''
     
+    const effectiveAddress = getEffectiveAddress()
+    if (!effectiveAddress && !isConnected.value) {
+      error.value = 'Please connect wallet or enter a wallet address'
+      return
+    }
+
+    if (!isConnected.value) {
+      error.value = 'Wallet connection required for transactions'
+      return
+    }
+
+    const minCirxOut = (parseFloat(cirxAmount.value) * 0.99).toFixed(18) // 1% slippage tolerance
+    
     if (activeTab.value === 'liquid') {
       loadingText.value = 'Executing liquid purchase...'
-      // TODO: Call SimpleOTCSwap.swapLiquid()
+      await executeLiquidSwap(inputToken.value, inputAmount.value, minCirxOut)
     } else {
       loadingText.value = 'Creating vesting position...'
-      // TODO: Call SimpleOTCSwap.swapOTC()
+      await executeOTCSwap(inputToken.value, inputAmount.value, minCirxOut)
     }
-    
-    // Mock transaction delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
     
     // Reset form on success
     inputAmount.value = ''
     cirxAmount.value = ''
     quote.value = null
     
+    // Update balances
+    await updateBalances()
+    
     // TODO: Show success notification
-    // TODO: Update balances
     
   } catch (err) {
+    console.error('Transaction failed:', err)
     error.value = err.message || 'Transaction failed. Please try again.'
   } finally {
     loading.value = false
@@ -362,20 +418,56 @@ const handleSwap = async () => {
 }
 
 // Watch for amount and tab changes to update quote
-watch([inputAmount, inputToken, activeTab], () => {
+watch([inputAmount, inputToken, activeTab], async () => {
   if (!inputAmount.value || parseFloat(inputAmount.value) <= 0) {
     cirxAmount.value = ''
     quote.value = null
     return
   }
   
-  const isOTC = activeTab.value === 'otc'
-  const newQuote = calculateQuote(inputAmount.value, inputToken.value, isOTC)
-  
-  if (newQuote) {
-    quote.value = newQuote
-    cirxAmount.value = newQuote.cirxAmount
+  try {
+    const isOTC = activeTab.value === 'otc'
+    
+    // Try to get real quote from contracts first, fallback to mock
+    let newQuote
+    try {
+      if (isOTC) {
+        const contractQuote = await getOTCQuote(inputToken.value, inputAmount.value)
+        newQuote = {
+          rate: tokenPrices[inputToken.value]?.toFixed(2) || '0',
+          fee: contractQuote.fee,
+          discount: parseFloat(contractQuote.discount),
+          cirxAmount: contractQuote.cirxAmount,
+          usdValue: (parseFloat(inputAmount.value) * tokenPrices[inputToken.value]).toFixed(2)
+        }
+      } else {
+        const contractQuote = await getLiquidQuote(inputToken.value, inputAmount.value)
+        newQuote = {
+          rate: tokenPrices[inputToken.value]?.toFixed(2) || '0',
+          fee: contractQuote.fee,
+          discount: 0,
+          cirxAmount: contractQuote.cirxAmount,
+          usdValue: (parseFloat(inputAmount.value) * tokenPrices[inputToken.value]).toFixed(2)
+        }
+      }
+    } catch (err) {
+      // Fallback to mock calculation
+      console.log('Using mock quote calculation')
+      newQuote = calculateQuote(inputAmount.value, inputToken.value, isOTC)
+    }
+    
+    if (newQuote) {
+      quote.value = newQuote
+      cirxAmount.value = newQuote.cirxAmount
+    }
+  } catch (err) {
+    console.error('Failed to get quote:', err)
   }
+}, { immediate: true })
+
+// Watch for wallet connection changes to update balances
+watch([isConnected, account, inputToken], async () => {
+  await updateBalances()
 }, { immediate: true })
 
 // Head configuration
