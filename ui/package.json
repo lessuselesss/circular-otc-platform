@@ -1,0 +1,22 @@
+{
+  "name": "uniswapv3clone-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^3.2.0",
+    "nuxt": "^3.17.6",
+    "vue": "latest"
+  },
+  "devDependencies": {
+    "@nuxt/devtools": "latest",
+    "wrangler": "^3.110.2"
+  }
+}

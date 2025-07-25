@@ -1,0 +1,33 @@
+# Auto Plan Mode Configuration
+# This file enables safe AI-assisted development
+
+## Planning Phase
+When asked to implement features or make changes:
+1. ALWAYS create a detailed plan before coding
+2. Break down complex tasks into smaller steps
+3. Identify potential risks and dependencies
+4. Get user approval before proceeding
+
+## Implementation Phase
+- Make incremental changes
+- Test after each step
+- Document decisions and trade-offs
+- Stop and re-plan if blocked
+
+## Safety Measures
+- Never make breaking changes without approval
+- Always backup before major refactoring
+- Use feature flags for experimental code
+- Maintain backward compatibility when possible
+
+## Smart Contract Specific
+- Always run `forge test` after contract changes
+- Use `forge snapshot` to monitor gas usage
+- Deploy to testnet before mainnet
+- Verify contract security before deployment
+
+## Frontend Specific
+- Test UI changes in development mode
+- Ensure responsive design works
+- Validate Web3 integrations
+- Check Cloudflare Pages compatibility
