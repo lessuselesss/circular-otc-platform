@@ -12,18 +12,19 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  */
 contract CIRXToken is ERC20, ERC20Permit, Ownable {
     /// @dev Maximum supply of CIRX tokens (1 billion tokens)
-    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10**18;
-    
+    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10 ** 18;
+
     /// @dev Mapping to track addresses that can mint tokens (for OTC contracts)
     mapping(address => bool) public minters;
-    
+
     event MinterAdded(address indexed minter);
     event MinterRemoved(address indexed minter);
 
-    constructor(
-        address initialOwner,
-        uint256 initialSupply
-    ) ERC20("Circular", "CIRX") ERC20Permit("Circular") Ownable(initialOwner) {
+    constructor(address initialOwner, uint256 initialSupply)
+        ERC20("Circular", "CIRX")
+        ERC20Permit("Circular")
+        Ownable(initialOwner)
+    {
         require(initialSupply <= MAX_SUPPLY, "Initial supply exceeds max supply");
         if (initialSupply > 0) {
             _mintWithCap(initialOwner, initialSupply);
