@@ -14,9 +14,9 @@
             <NuxtLink to="/pool" class="nav-link">
               Pool
             </NuxtLink>
-            <UButton variant="outline" size="sm">
+            <button class="connect-wallet-btn">
               Connect Wallet
-            </UButton>
+            </button>
           </div>
         </nav>
       </div>
@@ -40,10 +40,33 @@
 
 <style scoped>
 .nav-link {
-  @apply text-gray-600 hover:text-gray-900 font-medium transition-colors;
+  color: #6b7280;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav-link:hover {
+  color: #111827;
 }
 
 .nav-link.router-link-active {
-  @apply text-blue-600;
+  color: #2563eb;
+}
+
+.connect-wallet-btn {
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.connect-wallet-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
 }
 </style>

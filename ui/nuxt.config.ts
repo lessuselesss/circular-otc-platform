@@ -3,16 +3,16 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   
-  // Configure for Cloudflare Pages deployment
+  // Configure for static generation
   nitro: {
-    preset: 'cloudflare-pages',
-    experimental: {
-      wasm: true
-    }
+    preset: 'static'
   },
+  
+  // Enable static generation
+  ssr: false,
 
   modules: [
-    '@nuxt/ui'
+    // '@nuxt/ui' // Temporarily disabled for build
   ],
 
   // CSS configuration
