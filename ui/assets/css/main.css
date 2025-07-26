@@ -1,4 +1,39 @@
-/* Main CSS file for the UniswapV3 Clone */
+/* Circular Labs Branded CSS - OTC Trading Platform */
+
+/* Import Circular Labs brand fonts */
+@import url('https://fonts.googleapis.com/css2?family=Michroma:wght@400&display=swap');
+
+/* CSS Custom Properties - Circular Labs Brand Colors */
+:root {
+  /* Primary Brand Colors */
+  --circular-primary: rgb(9, 190, 139);      /* Main brand green */
+  --circular-primary-hover: rgb(7, 171, 125); /* Darker hover state */
+  --circular-primary-light: rgba(9, 190, 139, 0.1); /* Light background */
+  
+  /* Dark Theme Colors */
+  --circular-bg-primary: rgb(29, 29, 29);    /* Main background */
+  --circular-bg-secondary: rgb(49, 49, 49);  /* Card backgrounds */
+  --circular-gray: rgb(68, 68, 69);          /* Secondary elements */
+  
+  /* Text Colors */
+  --circular-text-primary: rgb(255, 255, 255);
+  --circular-text-secondary: rgb(156, 163, 175);
+  --circular-text-muted: rgb(107, 114, 128);
+  
+  /* Accent Colors */
+  --circular-purple: rgb(147, 51, 234);      /* OTC theme */
+  --circular-purple-light: rgba(147, 51, 234, 0.1);
+  
+  /* Status Colors */
+  --circular-success: rgb(34, 197, 94);
+  --circular-warning: rgb(251, 191, 36);
+  --circular-error: rgb(239, 68, 68);
+  
+  /* Border & Shadow */
+  --circular-border: rgba(255, 255, 255, 0.1);
+  --circular-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --circular-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
 
 /* Reset and base styles */
 * {
@@ -7,157 +42,286 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Helvetica', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
-  color: #333;
-  background-color: #f8fafc;
+  color: var(--circular-text-primary);
+  background: var(--circular-bg-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
-/* Container styles */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Michroma', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.025em;
 }
 
-/* Header styles */
-.header {
-  background: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 1rem 0;
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+::-webkit-scrollbar-track {
+  background: var(--circular-bg-primary);
 }
 
-.logo {
+::-webkit-scrollbar-thumb {
+  background: var(--circular-gray);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--circular-primary);
+}
+
+/* Circular brand animations */
+@keyframes circularglow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(9, 190, 139, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(9, 190, 139, 0.5);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Header enhancement */
+.circular-header {
+  background: rgba(29, 29, 29, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--circular-border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+/* Brand logo styling */
+.circular-logo {
+  font-family: 'Michroma', sans-serif;
+  color: var(--circular-primary);
   font-size: 1.5rem;
-  font-weight: bold;
-  color: #2563eb;
+  font-weight: 400;
   text-decoration: none;
+  transition: all 0.3s ease;
 }
 
-/* Main content styles */
-.main-content {
-  min-height: calc(100vh - 200px);
-  padding: 2rem 0;
+.circular-logo:hover {
+  color: var(--circular-primary-hover);
+  text-shadow: 0 0 10px rgba(9, 190, 139, 0.5);
 }
 
-/* Swap interface styles */
-.swap-container {
-  max-width: 480px;
-  margin: 2rem auto;
-  background: white;
+/* Main trading interface */
+.circular-trading-panel {
+  background: linear-gradient(135deg, var(--circular-bg-secondary), rgba(49, 49, 49, 0.8));
+  border: 1px solid var(--circular-border);
   border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--circular-shadow-lg);
+  transition: all 0.3s ease;
+  animation: slideInUp 0.6s ease-out;
 }
 
-.swap-header {
-  text-align: center;
-  margin-bottom: 1.5rem;
+.circular-trading-panel:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+  border-color: rgba(9, 190, 139, 0.3);
 }
 
-.swap-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-/* Token input styles */
-.token-input {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.token-input input {
+/* Tab styling */
+.circular-tab {
+  position: relative;
   background: transparent;
   border: none;
-  outline: none;
-  font-size: 1.5rem;
-  width: 100%;
-  color: #1f2937;
-}
-
-.token-input input::placeholder {
-  color: #9ca3af;
-}
-
-.token-select {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 0.5rem 0.75rem;
+  padding: 12px 20px;
+  font-family: 'Michroma', sans-serif;
+  font-size: 0.875rem;
+  color: var(--circular-text-secondary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  border-bottom: 2px solid transparent;
 }
 
-.token-select:hover {
-  background: #f3f4f6;
+.circular-tab:hover {
+  color: var(--circular-text-primary);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-/* Swap button */
-.swap-button {
-  background: #3b82f6;
-  color: white;
+.circular-tab.active {
+  color: var(--circular-primary);
+  border-bottom-color: var(--circular-primary);
+  background: var(--circular-primary-light);
+}
+
+.circular-tab.otc-active {
+  color: var(--circular-purple);
+  border-bottom-color: var(--circular-purple);
+  background: var(--circular-purple-light);
+}
+
+/* Input styling */
+.circular-input {
+  background: rgba(29, 29, 29, 0.8);
+  border: 1px solid var(--circular-border);
+  border-radius: 12px;
+  color: var(--circular-text-primary);
+  font-size: 1.25rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.circular-input:focus {
+  border-color: var(--circular-primary);
+  box-shadow: 0 0 0 3px rgba(9, 190, 139, 0.1);
+  outline: none;
+}
+
+.circular-input::placeholder {
+  color: var(--circular-text-muted);
+}
+
+/* Token selector */
+.circular-token-select {
+  background: rgba(29, 29, 29, 0.9);
+  border: 1px solid var(--circular-border);
+  border-radius: 8px;
+  color: var(--circular-text-primary);
+  font-family: 'Michroma', sans-serif;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+}
+
+.circular-token-select:focus {
+  border-color: var(--circular-primary);
+  box-shadow: 0 0 0 2px rgba(9, 190, 139, 0.1);
+}
+
+/* Buttons */
+.circular-btn {
+  background: linear-gradient(135deg, var(--circular-primary), var(--circular-primary-hover));
   border: none;
   border-radius: 12px;
-  padding: 1rem;
-  width: 100%;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-top: 1rem;
-}
-
-.swap-button:hover {
-  background: #2563eb;
-}
-
-.swap-button:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
-}
-
-/* Footer styles */
-.footer {
-  background: #1f2937;
   color: white;
-  text-align: center;
-  padding: 2rem 0;
-  margin-top: auto;
+  font-family: 'Michroma', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  padding: 16px 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-  .container {
-    padding: 0 0.5rem;
-  }
-  
-  .swap-container {
-    margin: 1rem;
-    padding: 1rem;
-  }
+.circular-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(9, 190, 139, 0.3);
+}
+
+.circular-btn:active {
+  transform: translateY(0);
+}
+
+.circular-btn:disabled {
+  background: var(--circular-gray);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.circular-btn-otc {
+  background: linear-gradient(135deg, var(--circular-purple), #8b35c7);
+}
+
+.circular-btn-otc:hover {
+  box-shadow: 0 10px 20px rgba(147, 51, 234, 0.3);
+}
+
+/* Quote panel */
+.circular-quote-panel {
+  background: rgba(29, 29, 29, 0.6);
+  border: 1px solid var(--circular-border);
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+}
+
+.circular-discount-tiers {
+  background: var(--circular-purple-light);
+  border: 1px solid rgba(147, 51, 234, 0.3);
+  border-radius: 12px;
+}
+
+/* Chart panel */
+.circular-chart-panel {
+  background: linear-gradient(135deg, var(--circular-bg-secondary), rgba(49, 49, 49, 0.8));
+  border: 1px solid var(--circular-border);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  animation: slideInUp 0.8s ease-out;
+}
+
+/* Activity items */
+.circular-activity-item {
+  border-bottom: 1px solid var(--circular-border);
+  transition: all 0.2s ease;
+}
+
+.circular-activity-item:hover {
+  background: rgba(9, 190, 139, 0.05);
+  border-color: var(--circular-primary);
+}
+
+/* Wallet connection */
+.circular-wallet-connected {
+  background: rgba(9, 190, 139, 0.1);
+  border: 1px solid var(--circular-primary);
+  border-radius: 8px;
+  animation: circularglow 3s ease-in-out infinite;
+}
+
+.circular-network-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--circular-success);
+  animation: pulse 2s infinite;
+}
+
+.circular-network-indicator.error {
+  background: var(--circular-error);
 }
 
 /* Loading states */
-.loading-spinner {
+.circular-loading {
   display: inline-block;
   width: 20px;
   height: 20px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #3498db;
+  border: 2px solid rgba(9, 190, 139, 0.3);
+  border-top: 2px solid var(--circular-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -167,23 +331,86 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-/* Utility classes */
-.text-center { text-align: center; }
-.text-left { text-align: left; }
-.text-right { text-align: right; }
+/* Error states */
+.circular-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: rgb(252, 165, 165);
+  border-radius: 12px;
+}
 
-.mt-1 { margin-top: 0.25rem; }
-.mt-2 { margin-top: 0.5rem; }
-.mt-4 { margin-top: 1rem; }
-.mb-1 { margin-bottom: 0.25rem; }
-.mb-2 { margin-bottom: 0.5rem; }
-.mb-4 { margin-bottom: 1rem; }
+/* Success states */
+.circular-success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: rgb(134, 239, 172);
+  border-radius: 12px;
+}
 
-.p-2 { padding: 0.5rem; }
-.p-4 { padding: 1rem; }
+/* Badge styling */
+.circular-badge {
+  background: var(--circular-primary);
+  color: var(--circular-bg-primary);
+  font-family: 'Michroma', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 12px;
+  padding: 4px 8px;
+}
 
-.rounded { border-radius: 0.375rem; }
-.rounded-lg { border-radius: 0.5rem; }
+.circular-badge-otc {
+  background: var(--circular-purple);
+}
 
-.shadow { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
-.shadow-lg { box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); }
+/* Responsive design */
+@media (max-width: 1024px) {
+  .circular-trading-panel {
+    margin: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .circular-logo {
+    font-size: 1.25rem;
+  }
+  
+  .circular-tab {
+    font-size: 0.75rem;
+    padding: 10px 16px;
+  }
+  
+  .circular-input {
+    font-size: 1rem;
+  }
+  
+  .circular-btn {
+    font-size: 0.75rem;
+    padding: 14px 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .circular-trading-panel {
+    border-radius: 12px;
+  }
+  
+  .circular-chart-panel {
+    margin-top: 1rem;
+  }
+}
+
+/* Dark mode utility classes */
+.dark {
+  color-scheme: dark;
+}
+
+/* Print styles */
+@media print {
+  .circular-trading-panel,
+  .circular-chart-panel {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}

@@ -12,7 +12,7 @@ export default defineNuxtConfig({
   ssr: false,
 
   modules: [
-    // '@nuxt/ui' // Temporarily disabled for build
+    '@nuxt/ui'
   ],
 
   // CSS configuration
@@ -21,11 +21,11 @@ export default defineNuxtConfig({
   // App configuration
   app: {
     head: {
-      title: 'UniswapV3 Clone',
+      title: 'Circular CIRX OTC Platform',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'A decentralized exchange built with Nuxt.js and Solidity' }
+        { name: 'description', content: 'Circular CIRX OTC Trading Platform - Buy CIRX tokens with instant delivery or OTC discounts up to 12%' }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }

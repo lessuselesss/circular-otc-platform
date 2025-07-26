@@ -6,32 +6,34 @@
       <div class="flex items-center gap-2">
         <div 
           :class="[
-            'w-2 h-2 rounded-full',
-            isCorrectNetwork ? 'bg-green-500' : 'bg-red-500'
+            'circular-network-indicator',
+            !isCorrectNetwork ? 'error' : ''
           ]"
         ></div>
-        <span class="text-sm text-gray-600">
+        <span class="text-sm" style="color: var(--circular-text-secondary);">
           {{ getNetworkName(chainId) }}
         </span>
       </div>
 
       <!-- Balance -->
-      <div class="text-sm text-gray-600">
+      <div class="text-sm" style="color: var(--circular-text-secondary);">
         {{ balance }} ETH
       </div>
 
       <!-- Account -->
-      <div class="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
-        <div class="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
-        <span class="font-mono text-sm">{{ formatAddress(account) }}</span>
+      <div class="circular-wallet-connected flex items-center gap-2 px-3 py-2">
+        <div class="w-6 h-6 rounded-full" style="background: linear-gradient(135deg, var(--circular-primary), var(--circular-purple));"></div>
+        <span class="font-mono text-sm" style="color: var(--circular-text-primary);">{{ formatAddress(account) }}</span>
         <button 
           @click="copyAddress"
-          class="text-gray-400 hover:text-gray-600 transition-colors"
+          class="transition-colors"
+          style="color: var(--circular-text-secondary);"
           title="Copy address"
         >
           <Icon 
             :name="copied ? 'heroicons:check' : 'heroicons:clipboard-document'" 
             class="w-4 h-4" 
+            :style="copied ? 'color: var(--circular-primary);' : ''"
           />
         </button>
       </div>
@@ -39,7 +41,8 @@
       <!-- Disconnect Button -->
       <button
         @click="disconnect"
-        class="text-sm text-red-600 hover:text-red-700 transition-colors"
+        class="text-sm transition-colors"
+        style="color: var(--circular-error);"
         title="Disconnect wallet"
       >
         <Icon name="heroicons:power" class="w-4 h-4" />
@@ -54,13 +57,14 @@
           v-model="manualAddress"
           type="text"
           placeholder="Paste wallet address (optional)"
-          class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          style="width: 280px"
+          class="circular-input px-3 py-2 text-sm"
+          style="width: 280px; font-size: 0.875rem;"
         />
         <button
           v-if="manualAddress"
           @click="clearManualAddress"
-          class="text-gray-400 hover:text-gray-600 transition-colors"
+          class="transition-colors"
+          style="color: var(--circular-text-secondary);"
           title="Clear address"
         >
           <Icon name="heroicons:x-mark" class="w-4 h-4" />
@@ -71,9 +75,9 @@
       <button
         @click="connectMetaMask"
         :disabled="connecting"
-        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+        class="circular-btn flex items-center gap-2 px-4 py-2"
       >
-        <div v-if="connecting" class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+        <div v-if="connecting" class="circular-loading"></div>
         <Icon v-else name="simple-icons:metamask" class="w-4 h-4" />
         <span>{{ connecting ? 'Connecting...' : 'Connect MetaMask' }}</span>
       </button>
@@ -83,15 +87,16 @@
     <button
       v-if="isConnected && !isCorrectNetwork"
       @click="switchToMainnet"
-      class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+      class="circular-btn px-3 py-1 text-sm"
+      style="background: var(--circular-warning); font-size: 0.75rem;"
     >
       Switch Network
     </button>
   </div>
 
   <!-- Error Message -->
-  <div v-if="error" class="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-    <p class="text-red-700 text-sm">{{ error }}</p>
+  <div v-if="error" class="circular-error mt-2 p-2">
+    <p class="text-sm">{{ error }}</p>
   </div>
 </template>
 
