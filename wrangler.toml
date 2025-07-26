@@ -1,0 +1,6 @@
+name = "circular-cirx-otc-platform"
+compatibility_date = "2024-07-01"
+pages_build_output_dir = "ui/.output/public"
+
+[build]
+command = "cd ui && npm ci && npm run generate"

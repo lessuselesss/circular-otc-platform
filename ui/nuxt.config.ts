@@ -12,7 +12,7 @@ export default defineNuxtConfig({
   ssr: false,
 
   modules: [
-    '@nuxt/ui'
+    // '@nuxt/ui' // Temporarily disabled for build
   ],
 
   // CSS configuration
