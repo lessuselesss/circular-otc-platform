@@ -4,19 +4,19 @@
     <header class="circular-header">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
-          <div class="flex items-center gap-4">
-            <h1 class="circular-logo">Circular CIRX</h1>
-            <span class="text-sm" style="color: var(--circular-text-secondary);">OTC Trading Platform</span>
+          <div class="flex items-center gap-2 sm:gap-4">
+            <h1 class="circular-logo text-lg sm:text-xl">Circular CIRX</h1>
+            <span class="text-xs sm:text-sm hidden sm:block" style="color: var(--circular-text-secondary);">OTC Trading Platform</span>
           </div>
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 sm:gap-4">
             <!-- Connected Wallet Display -->
-            <div v-if="isConnected && account" class="flex items-center gap-3">
-              <div class="text-sm" style="color: var(--circular-text-secondary);">
+            <div v-if="isConnected && account" class="flex items-center gap-1 sm:gap-3">
+              <div class="text-xs sm:text-sm hidden sm:block" style="color: var(--circular-text-secondary);">
                 {{ balance?.toFixed(4) || '0.0000' }} ETH
               </div>
-              <div class="circular-wallet-connected flex items-center gap-2 px-3 py-2">
-                <div class="w-6 h-6 rounded-full" style="background: linear-gradient(135deg, var(--circular-primary), var(--circular-purple));"></div>
-                <span class="font-mono text-sm" style="color: var(--circular-text-primary);">{{ formatAddress(account) }}</span>
+              <div class="circular-wallet-connected flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2">
+                <div class="w-4 h-4 sm:w-6 sm:h-6 rounded-full" style="background: linear-gradient(135deg, var(--circular-primary), var(--circular-purple));"></div>
+                <span class="font-mono text-xs sm:text-sm" style="color: var(--circular-text-primary);">{{ formatAddress(account) }}</span>
               </div>
             </div>
           </div>
@@ -24,10 +24,11 @@
       </div>
     </header>
 
-    <!-- Main Content: Centered Trading Interface -->
-    <div class="min-h-screen flex items-start justify-center pt-8 pb-16 px-4">
-      <div class="w-full max-w-md">
-        <div class="circular-trading-panel p-6">
+    <!-- Main Content: Floating Centered Trading Interface -->
+    <div class="min-h-[calc(100vh-5rem)] flex items-center justify-center p-4 md:p-6">
+      <div class="w-full max-w-md sm:max-w-lg">
+        <!-- Floating Trading Card -->
+        <div class="circular-trading-panel p-6 sm:p-8 shadow-2xl mx-auto" style="transform: translateY(-1rem);">
             <!-- Tab Headers -->
             <div class="flex mb-6" style="border-bottom: 1px solid var(--circular-border);">
               <button

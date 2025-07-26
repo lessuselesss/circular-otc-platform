@@ -135,20 +135,39 @@ h1, h2, h3, h4, h5, h6 {
   text-shadow: 0 0 10px rgba(9, 190, 139, 0.5);
 }
 
-/* Main trading interface */
+/* Main trading interface - Uniswap-style floating panel */
 .circular-trading-panel {
-  background: linear-gradient(135deg, var(--circular-bg-secondary), rgba(49, 49, 49, 0.8));
+  background: linear-gradient(135deg, var(--circular-bg-secondary), rgba(49, 49, 49, 0.95));
   border: 1px solid var(--circular-border);
-  border-radius: 16px;
-  backdrop-filter: blur(10px);
-  box-shadow: var(--circular-shadow-lg);
-  transition: all 0.3s ease;
-  animation: slideInUp 0.6s ease-out;
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.circular-trading-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(9, 190, 139, 0.3), transparent);
 }
 
 .circular-trading-panel:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
-  border-color: rgba(9, 190, 139, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 
+    0 35px 60px -12px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(9, 190, 139, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-color: rgba(9, 190, 139, 0.2);
 }
 
 /* Tab styling */
@@ -364,10 +383,11 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--circular-purple);
 }
 
-/* Responsive design */
+/* Responsive design for floating centered layout */
 @media (max-width: 1024px) {
   .circular-trading-panel {
-    margin: 1rem;
+    max-width: 90vw;
+    margin: 0 auto;
   }
 }
 
@@ -378,26 +398,56 @@ h1, h2, h3, h4, h5, h6 {
   
   .circular-tab {
     font-size: 0.75rem;
-    padding: 10px 16px;
+    padding: 10px 12px;
+  }
+  
+  .circular-tab .ml-8 {
+    margin-left: 1rem;
   }
   
   .circular-input {
     font-size: 1rem;
+    padding: 1rem;
   }
   
   .circular-btn {
-    font-size: 0.75rem;
-    padding: 14px 20px;
+    font-size: 0.875rem;
+    padding: 16px 24px;
+  }
+  
+  .circular-trading-panel {
+    max-width: 95vw;
+    margin: 0 auto;
+    padding: 1.5rem !important;
+    border-radius: 16px;
+    transform: none !important;
+  }
+  
+  .circular-trading-panel:hover {
+    transform: translateY(-2px);
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 480px) {
   .circular-trading-panel {
+    max-width: 98vw;
+    padding: 1.25rem !important;
     border-radius: 12px;
   }
   
-  .circular-chart-panel {
-    margin-top: 1rem;
+  .circular-tab {
+    font-size: 0.7rem;
+    padding: 8px 10px;
+  }
+  
+  .circular-input {
+    font-size: 0.95rem;
+    padding: 0.875rem;
+  }
+  
+  .circular-btn {
+    font-size: 0.8rem;
+    padding: 14px 20px;
   }
 }
 
