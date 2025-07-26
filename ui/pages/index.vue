@@ -39,7 +39,7 @@
             Buy CIRX tokens with instant delivery or OTC discounts up to 12%
           </p>
           <p class="text-lg mb-12 max-w-3xl mx-auto" style="color: var(--circular-text-secondary);">
-            Professional over-the-counter trading platform powered by UniswapV4 with 6-month linear vesting for discounted purchases.
+            Professional over-the-counter trading platform powered by UniswapV4 with 6-month linear vesting for discounted purchases and competitive pricing.
           </p>
           
           <div class="flex flex-col sm:flex-row justify-center gap-4">
