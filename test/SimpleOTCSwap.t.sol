@@ -188,7 +188,7 @@ contract SimpleOTCSwapTest is Test {
 
     function testLiquidSwap() public {
         uint256 swapAmount = 1000 * 10 ** 6; // 1000 USDC (6 decimals)
-        
+
         vm.startPrank(user);
         usdc.approve(address(otcSwap), swapAmount);
 
@@ -216,7 +216,7 @@ contract SimpleOTCSwapTest is Test {
 
     function testLiquidSwapWithSlippageProtection() public {
         uint256 swapAmount = 1000 * 10 ** 6;
-        
+
         vm.startPrank(user);
         usdc.approve(address(otcSwap), swapAmount);
 
@@ -244,7 +244,7 @@ contract SimpleOTCSwapTest is Test {
 
     function testOTCSwap() public {
         uint256 swapAmount = 10000 * 10 ** 6; // 10K USDC (should get 8% discount)
-        
+
         vm.startPrank(user);
         usdc.approve(address(otcSwap), swapAmount);
 
@@ -277,7 +277,7 @@ contract SimpleOTCSwapTest is Test {
         // Test $1K purchase (5% discount)
         _testOTCSwapWithDiscount(1000 * 10 ** 6, 500);
 
-        // Test $10K purchase (8% discount) 
+        // Test $10K purchase (8% discount)
         _testOTCSwapWithDiscount(10000 * 10 ** 6, 800);
 
         // Test $50K purchase (12% discount)
@@ -302,7 +302,7 @@ contract SimpleOTCSwapTest is Test {
         (uint256 cirxAmount, uint256 fee) = otcSwap.getLiquidQuote(address(usdc), inputAmount);
 
         // Expected: 1000 USDC * $1 = $1000 worth
-        // Fee: 1000 * 0.3% = 3 USDC  
+        // Fee: 1000 * 0.3% = 3 USDC
         // After fee: 997 USDC = 997 CIRX (assuming $1 CIRX)
         uint256 expectedFee = (inputAmount * 30) / 10000; // 0.3%
         uint256 amountAfterFee = inputAmount - expectedFee;
@@ -322,7 +322,7 @@ contract SimpleOTCSwapTest is Test {
         uint256 expectedFee = (inputAmount * 15) / 10000; // 0.15%
         uint256 amountAfterFee = inputAmount - expectedFee;
         // Convert to 18 decimals: (amountAfterFee * 10^12 * $1) / 10^18 = amountAfterFee * 10^12
-        uint256 usdValueAfterFee = amountAfterFee * 10 ** 12; // Convert 6 decimals to 18 decimals  
+        uint256 usdValueAfterFee = amountAfterFee * 10 ** 12; // Convert 6 decimals to 18 decimals
         uint256 expectedCirx = usdValueAfterFee + (usdValueAfterFee * 800) / 10000; // 8% bonus
 
         assertEq(fee, expectedFee);
@@ -432,7 +432,7 @@ contract SimpleOTCSwapTest is Test {
 
         // Check balances
         assertEq(cirxToken.balanceOf(user), cirxAmount1);
-        
+
         // User2 should have vesting position
         (uint256 totalAmount,,,, bool isActive) = vestingContract.getVestingInfo(user2);
         assertEq(totalAmount, cirxAmount2);

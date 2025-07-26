@@ -237,7 +237,7 @@ contract VestingContractTest is Test {
         assertEq(cirxToken.balanceOf(user), initialBalance + claimableAmount);
 
         // Check position was updated
-        (, , uint256 claimedAmount, uint256 newClaimableAmount, bool isActive) = vestingContract.getVestingInfo(user);
+        (,, uint256 claimedAmount, uint256 newClaimableAmount, bool isActive) = vestingContract.getVestingInfo(user);
         assertEq(claimedAmount, claimableAmount);
         assertEq(newClaimableAmount, 0); // Should be 0 after claiming
         assertTrue(isActive); // Still active since not fully claimed
@@ -258,7 +258,7 @@ contract VestingContractTest is Test {
         assertEq(cirxToken.balanceOf(user), initialBalance + VEST_AMOUNT);
 
         // Check position was deactivated
-        (, , uint256 claimedAmount, uint256 claimableAmount, bool isActive) = vestingContract.getVestingInfo(user);
+        (,, uint256 claimedAmount, uint256 claimableAmount, bool isActive) = vestingContract.getVestingInfo(user);
         assertEq(claimedAmount, VEST_AMOUNT);
         assertEq(claimableAmount, 0);
         assertFalse(isActive); // Should be deactivated
@@ -296,9 +296,9 @@ contract VestingContractTest is Test {
 
         // Check total claimed equals vest amount
         assertEq(cirxToken.balanceOf(user), VEST_AMOUNT);
-        
+
         // Check position is deactivated
-        (, , , , bool isActive) = vestingContract.getVestingInfo(user);
+        (,,,, bool isActive) = vestingContract.getVestingInfo(user);
         assertFalse(isActive);
     }
 
@@ -309,7 +309,7 @@ contract VestingContractTest is Test {
     function testEmergencyRecoverNonCIRXTokens() public {
         // Deploy a different token
         CIRXToken differentToken = new CIRXToken(owner, 1000 * 10 ** 18);
-        
+
         // Send some to vesting contract
         vm.prank(owner);
         differentToken.transfer(address(vestingContract), 100 * 10 ** 18);
@@ -334,7 +334,7 @@ contract VestingContractTest is Test {
 
     function testEmergencyRecoverExcessCIRXTokens() public {
         _createVestingPosition(user, VEST_AMOUNT);
-        
+
         // Send extra CIRX to contract
         uint256 extraAmount = 1000 * 10 ** 18;
         vm.prank(owner);

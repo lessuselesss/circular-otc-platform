@@ -186,7 +186,7 @@ contract SimpleOTCSwap is Ownable, ReentrancyGuard {
         require(supportedTokens[inputToken], "Token not supported");
         require(inputAmount > 0, "Input amount must be greater than zero");
 
-        // Calculate USD value (before fees for discount calculation) 
+        // Calculate USD value (before fees for discount calculation)
         uint256 totalUsdValue = _calculateUsdValue(inputToken, inputAmount);
 
         // Calculate discount based on total purchase amount
@@ -283,14 +283,14 @@ contract SimpleOTCSwap is Ownable, ReentrancyGuard {
 
     /**
      * @dev Calculate USD value from token amount accounting for decimals
-     * @param token Token address  
+     * @param token Token address
      * @param amount Token amount
      * @return usdValue USD value with 18 decimals
      */
     function _calculateUsdValue(address token, uint256 amount) internal view returns (uint256 usdValue) {
         uint256 tokenDecimals = IERC20Metadata(token).decimals();
         uint256 price = tokenPrices[token]; // Price has 18 decimals
-        
+
         // Normalize amount to 18 decimals, then multiply by price
         if (tokenDecimals <= 18) {
             usdValue = (amount * 10 ** (18 - tokenDecimals) * price) / 10 ** 18;
