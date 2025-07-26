@@ -4,7 +4,8 @@
   "description": "Circular CIRX OTC Trading Platform",
   "private": true,
   "scripts": {
-    "build": "cd ui && npm ci && npm run generate",
+    "install": "cd ui && npm install",
+    "build": "cd ui && npm run generate",
     "dev": "cd ui && npm run dev",
     "preview": "cd ui && npm run preview"
   },
