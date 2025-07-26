@@ -24,155 +24,258 @@
       </div>
     </header>
 
-    <!-- Main Content: Floating Centered Trading Interface -->
-    <div class="min-h-[calc(100vh-5rem)] flex items-center justify-center p-4 md:p-6">
-      <div class="w-full max-w-md sm:max-w-lg">
-        <!-- Floating Trading Card -->
-        <div class="circular-trading-panel p-6 sm:p-8 shadow-2xl mx-auto" style="transform: translateY(-1rem);">
-            <!-- Tab Headers -->
-            <div class="flex mb-6" style="border-bottom: 1px solid var(--circular-border);">
-              <button
-                @click="activeTab = 'liquid'"
-                :class="[
-                  'circular-tab',
-                  activeTab === 'liquid' ? 'active' : ''
-                ]"
-              >
-                Buy Liquid
-                <span class="ml-2 circular-badge">
-                  Immediate
-                </span>
-              </button>
-              <button
-                @click="activeTab = 'otc'"
-                :class="[
-                  'circular-tab ml-8',
-                  activeTab === 'otc' ? 'otc-active' : ''
-                ]"
-              >
-                Buy OTC
-                <span class="ml-2 circular-badge circular-badge-otc">
-                  5-12% Discount
-                </span>
-              </button>
-            </div>
-
-            <!-- Tab Content -->
-            <form @submit.prevent="handleSwap">
-              <!-- Input Token Selection -->
-              <div class="mb-6">
-                <div class="flex justify-between items-center mb-2">
-                  <label class="text-sm font-medium" style="color: var(--circular-text-primary);">Pay with</label>
-                  <span v-if="inputBalance" class="text-sm" style="color: var(--circular-text-secondary);">
-                    Balance: {{ inputBalance }}
+    <!-- Main Content: DEX-style Layout -->
+    <div class="min-h-[calc(100vh-5rem)] p-4 md:p-6 lg:p-8">
+      <div class="max-w-7xl mx-auto">
+        <!-- Desktop: Side-by-side layout, Mobile: Stacked -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 items-start">
+          <!-- Trading Panel (Left side on desktop) -->
+          <div class="lg:col-span-2">
+            <div class="circular-trading-panel p-6 sm:p-8 shadow-2xl">
+              <!-- Tab Headers -->
+              <div class="flex mb-8" style="border-bottom: 1px solid var(--circular-border);">
+                <button
+                  @click="activeTab = 'liquid'"
+                  :class="[
+                    'circular-tab flex-1',
+                    activeTab === 'liquid' ? 'active' : ''
+                  ]"
+                >
+                  <span>Buy Liquid</span>
+                  <span class="ml-2 circular-badge">
+                    Immediate
                   </span>
-                </div>
-                <div class="relative">
-                  <input
-                    v-model="inputAmount"
-                    type="number"
-                    step="any"
-                    placeholder="0.0"
-                    class="circular-input w-full pl-4 pr-32 py-4"
-                    :disabled="loading"
-                  />
-                  <div class="absolute inset-y-0 right-0 flex items-center">
-                    <select
-                      v-model="inputToken"
-                      class="circular-token-select h-full py-0 pl-3 pr-8 border-0 bg-transparent font-medium rounded-r-xl"
+                </button>
+                <button
+                  @click="activeTab = 'otc'"
+                  :class="[
+                    'circular-tab flex-1 ml-2',
+                    activeTab === 'otc' ? 'otc-active' : ''
+                  ]"
+                >
+                  <span>Buy OTC</span>
+                  <span class="ml-2 circular-badge circular-badge-otc">
+                    5-12% Discount
+                  </span>
+                </button>
+              </div>
+
+              <!-- Tab Content -->
+              <form @submit.prevent="handleSwap" class="space-y-6">
+                <!-- Input Token Selection -->
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center">
+                    <label class="text-sm font-medium" style="color: var(--circular-text-primary);">Pay with</label>
+                    <span v-if="inputBalance" class="text-sm cursor-pointer hover:text-white transition-colors" style="color: var(--circular-text-secondary);" @click="setMaxAmount">
+                      Balance: {{ inputBalance }}
+                    </span>
+                  </div>
+                  <div class="circular-input-container">
+                    <input
+                      v-model="inputAmount"
+                      type="number"
+                      step="any"
+                      placeholder="0.0"
+                      class="circular-input w-full pl-6 pr-32 py-5 text-2xl font-semibold"
                       :disabled="loading"
-                    >
-                      <option value="ETH">ETH</option>
-                      <option value="USDC">USDC</option>
-                      <option value="USDT">USDT</option>
-                    </select>
+                    />
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <select
+                        v-model="inputToken"
+                        class="circular-token-select h-10 py-0 pl-3 pr-8 border-0 bg-transparent font-medium rounded-lg"
+                        :disabled="loading"
+                      >
+                        <option value="ETH">ETH</option>
+                        <option value="USDC">USDC</option>
+                        <option value="USDT">USDT</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Arrow Icon -->
-              <div class="flex justify-center mb-6">
-                <div class="rounded-full p-2" style="background: var(--circular-bg-secondary);">
-                  <div class="w-5 h-5 flex items-center justify-center text-lg" style="color: var(--circular-primary);">↓</div>
+                <!-- Swap Arrow -->
+                <div class="flex justify-center my-4">
+                  <button
+                    type="button"
+                    class="circular-swap-arrow"
+                    @click="reverseSwap"
+                    :disabled="loading"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
                 </div>
-              </div>
 
-              <!-- CIRX Output -->
+                <!-- CIRX Output -->
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center">
+                    <label class="text-sm font-medium" style="color: var(--circular-text-primary);">Receive</label>
+                    <span v-if="cirxBalance" class="text-sm" style="color: var(--circular-text-secondary);">
+                      Balance: {{ cirxBalance }} CIRX
+                    </span>
+                  </div>
+                  <div class="circular-input-container">
+                    <input
+                      v-model="cirxAmount"
+                      type="number"
+                      step="any"
+                      placeholder="0.0"
+                      class="circular-input w-full pl-6 pr-20 py-5 text-2xl font-semibold opacity-75"
+                      readonly
+                    />
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-6">
+                      <span class="font-semibold text-lg" style="color: var(--circular-primary);">CIRX</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Purchase Details -->
+                <div v-if="quote" class="circular-quote-panel p-4 space-y-3">
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm" style="color: var(--circular-text-secondary);">Exchange Rate</span>
+                    <span class="text-sm font-medium" style="color: var(--circular-text-primary);">1 {{ inputToken }} = ${{ quote.rate }}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm" style="color: var(--circular-text-secondary);">Fee</span>
+                    <span class="text-sm font-medium" style="color: var(--circular-text-primary);">{{ quote.fee }}%</span>
+                  </div>
+                  <div v-if="activeTab === 'otc' && quote.discount > 0" class="flex justify-between items-center">
+                    <span class="text-sm" style="color: var(--circular-text-secondary);">OTC Discount</span>
+                    <span class="text-sm font-medium" style="color: var(--circular-primary);">{{ quote.discount }}%</span>
+                  </div>
+                  <div v-if="activeTab === 'otc'" class="flex justify-between items-center">
+                    <span class="text-sm" style="color: var(--circular-text-secondary);">Vesting Period</span>
+                    <span class="text-sm font-medium" style="color: var(--circular-text-primary);">6 months (linear)</span>
+                  </div>
+                </div>
+
+                <!-- OTC Discount Tiers (only show on OTC tab) -->
+                <div v-if="activeTab === 'otc'" class="circular-discount-tiers p-4">
+                  <h4 class="text-sm font-medium mb-3" style="color: var(--circular-purple);">OTC Discount Tiers</h4>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                      <span style="color: var(--circular-text-secondary);">$1,000 - $10,000</span>
+                      <span class="font-medium" style="color: var(--circular-purple);">5% discount</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span style="color: var(--circular-text-secondary);">$10,000 - $50,000</span>
+                      <span class="font-medium" style="color: var(--circular-purple);">8% discount</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span style="color: var(--circular-text-secondary);">$50,000+</span>
+                      <span class="font-medium" style="color: var(--circular-purple);">12% discount</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Smart Action Button -->
+                <SwapActionButton
+                  :input-amount="inputAmount"
+                  :active-tab="activeTab"
+                  :loading="loading"
+                  :loading-text="loadingText"
+                  :can-purchase="canPurchase"
+                  @execute-swap="handleSwap"
+                  ref="swapActionButton"
+                />
+              </form>
+            </div>
+          </div>
+
+          <!-- Info Panel (Right side on desktop) -->
+          <div class="lg:col-span-3">
+            <div class="circular-chart-panel p-6 h-full">
+              <!-- CIRX Token Info -->
               <div class="mb-6">
-                <div class="flex justify-between items-center mb-2">
-                  <label class="text-sm font-medium" style="color: var(--circular-text-primary);">Receive</label>
-                  <span v-if="cirxBalance" class="text-sm" style="color: var(--circular-text-secondary);">
-                    Balance: {{ cirxBalance }} CIRX
-                  </span>
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, var(--circular-primary), var(--circular-purple));">
+                    <span class="text-white font-bold text-lg">C</span>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold" style="color: var(--circular-text-primary);">Circular CIRX</h3>
+                    <p class="text-sm" style="color: var(--circular-text-secondary);">Circular Protocol Utility Token</p>
+                  </div>
                 </div>
-                <div class="relative">
-                  <input
-                    v-model="cirxAmount"
-                    type="number"
-                    step="any"
-                    placeholder="0.0"
-                    class="circular-input w-full pl-4 pr-20 py-4 opacity-75"
-                    readonly
-                  />
-                  <div class="absolute inset-y-0 right-0 flex items-center pr-4">
-                    <span class="font-medium" style="color: var(--circular-primary);">CIRX</span>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                  <div class="circular-stat-card p-4">
+                    <div class="text-sm" style="color: var(--circular-text-secondary);">Current Price</div>
+                    <div class="text-2xl font-bold" style="color: var(--circular-primary);">$1.00</div>
+                    <div class="text-sm" style="color: var(--circular-success);">+2.5% (24h)</div>
+                  </div>
+                  <div class="circular-stat-card p-4">
+                    <div class="text-sm" style="color: var(--circular-text-secondary);">Market Cap</div>
+                    <div class="text-2xl font-bold" style="color: var(--circular-text-primary);">$50M</div>
+                    <div class="text-sm" style="color: var(--circular-text-secondary);">Circulating</div>
                   </div>
                 </div>
               </div>
 
-              <!-- Purchase Details -->
-              <div v-if="quote" class="circular-quote-panel p-4 mb-6">
-                <div class="flex justify-between items-center mb-2">
-                  <span class="text-sm" style="color: var(--circular-text-secondary);">Exchange Rate</span>
-                  <span class="text-sm font-medium" style="color: var(--circular-text-primary);">1 {{ inputToken }} = ${{ quote.rate }}</span>
-                </div>
-                <div class="flex justify-between items-center mb-2">
-                  <span class="text-sm" style="color: var(--circular-text-secondary);">Fee</span>
-                  <span class="text-sm font-medium" style="color: var(--circular-text-primary);">{{ quote.fee }}%</span>
-                </div>
-                <div v-if="activeTab === 'otc' && quote.discount > 0" class="flex justify-between items-center mb-2">
-                  <span class="text-sm" style="color: var(--circular-text-secondary);">OTC Discount</span>
-                  <span class="text-sm font-medium" style="color: var(--circular-primary);">{{ quote.discount }}%</span>
-                </div>
-                <div v-if="activeTab === 'otc'" class="flex justify-between items-center">
-                  <span class="text-sm" style="color: var(--circular-text-secondary);">Vesting Period</span>
-                  <span class="text-sm font-medium" style="color: var(--circular-text-primary);">6 months (linear)</span>
+              <!-- Trading Activity -->
+              <div>
+                <h4 class="text-lg font-semibold mb-4" style="color: var(--circular-text-primary);">Recent Activity</h4>
+                <div class="space-y-3">
+                  <div class="circular-activity-item p-3 rounded-lg">
+                    <div class="flex justify-between items-center">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
+                          <span class="text-white text-xs">B</span>
+                        </div>
+                        <div>
+                          <div class="text-sm font-medium" style="color: var(--circular-text-primary);">Buy 1,000 CIRX</div>
+                          <div class="text-xs" style="color: var(--circular-text-secondary);">2 min ago</div>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <div class="text-sm font-medium" style="color: var(--circular-success);">$1,000</div>
+                        <div class="text-xs" style="color: var(--circular-text-secondary);">ETH</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="circular-activity-item p-3 rounded-lg">
+                    <div class="flex justify-between items-center">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center">
+                          <span class="text-white text-xs">O</span>
+                        </div>
+                        <div>
+                          <div class="text-sm font-medium" style="color: var(--circular-text-primary);">OTC Purchase</div>
+                          <div class="text-xs" style="color: var(--circular-text-secondary);">5 min ago</div>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <div class="text-sm font-medium" style="color: var(--circular-purple);">$5,000</div>
+                        <div class="text-xs" style="color: var(--circular-text-secondary);">8% discount</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="circular-activity-item p-3 rounded-lg">
+                    <div class="flex justify-between items-center">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                          <span class="text-white text-xs">B</span>
+                        </div>
+                        <div>
+                          <div class="text-sm font-medium" style="color: var(--circular-text-primary);">Buy 500 CIRX</div>
+                          <div class="text-xs" style="color: var(--circular-text-secondary);">12 min ago</div>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <div class="text-sm font-medium" style="color: var(--circular-success);">$500</div>
+                        <div class="text-xs" style="color: var(--circular-text-secondary);">USDC</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              <!-- OTC Discount Tiers (only show on OTC tab) -->
-              <div v-if="activeTab === 'otc'" class="circular-discount-tiers p-4 mb-6">
-                <h4 class="text-sm font-medium mb-3" style="color: var(--circular-purple);">OTC Discount Tiers</h4>
-                <div class="space-y-2 text-sm">
-                  <div class="flex justify-between">
-                    <span style="color: var(--circular-text-secondary);">$1,000 - $10,000</span>
-                    <span class="font-medium" style="color: var(--circular-purple);">5% discount</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span style="color: var(--circular-text-secondary);">$10,000 - $50,000</span>
-                    <span class="font-medium" style="color: var(--circular-purple);">8% discount</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span style="color: var(--circular-text-secondary);">$50,000+</span>
-                    <span class="font-medium" style="color: var(--circular-purple);">12% discount</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Smart Action Button -->
-              <SwapActionButton
-                :input-amount="inputAmount"
-                :active-tab="activeTab"
-                :loading="loading"
-                :loading-text="loadingText"
-                :can-purchase="canPurchase"
-                @execute-swap="handleSwap"
-                ref="swapActionButton"
-              />
-            </form>
+            </div>
           </div>
         </div>
       </div>
+    </div>
   </div>
 </template>
 
@@ -311,6 +414,19 @@ const getEffectiveAddress = () => {
     return account.value
   }
   return swapActionButton.value?.manualAddress || null
+}
+
+// New methods for enhanced functionality
+const setMaxAmount = () => {
+  if (inputBalance.value && inputBalance.value !== '0.0') {
+    inputAmount.value = parseFloat(inputBalance.value).toString()
+  }
+}
+
+const reverseSwap = () => {
+  // For now, this doesn't do anything since we only swap to CIRX
+  // Could be used for future bidirectional swaps
+  console.log('Reverse swap not supported yet')
 }
 
 // Methods
