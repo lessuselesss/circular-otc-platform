@@ -46,18 +46,4 @@ export default defineNuxtConfig({
     }
   },
 
-  // Build configuration  
-  build: {
-    transpile: ['@wagmi/vue', '@tanstack/vue-query']
-  },
-
-  // Vite configuration for wallet integrations
-  vite: {
-    define: {
-      global: 'globalThis',
-    },
-    optimizeDeps: {
-      include: ['@wagmi/vue', '@wagmi/core', '@wagmi/connectors', 'viem']
-    }
-  }
 })

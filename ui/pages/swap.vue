@@ -9,16 +9,10 @@
             <span class="text-xs sm:text-sm hidden sm:block text-gray-400">OTC Trading Platform</span>
           </div>
           <div class="flex items-center gap-2 sm:gap-4">
-            <!-- Connected Wallet Display -->
-            <div v-if="isConnected && account" class="flex items-center gap-1 sm:gap-3">
-              <div class="text-xs sm:text-sm hidden sm:block text-gray-400">
-                {{ balance?.toFixed(4) || '0.0000' }} ETH
-              </div>
-              <div class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 bg-circular-primary/10 border border-circular-primary rounded-lg">
-                <div class="w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-gradient-to-r from-circular-primary to-circular-purple"></div>
-                <span class="font-mono text-xs sm:text-sm text-white">{{ formatAddress(account) }}</span>
-              </div>
-            </div>
+            <!-- Wallet connection placeholder -->
+            <button class="px-4 py-2 bg-circular-primary text-gray-900 rounded-lg font-medium hover:bg-circular-primary-hover transition-colors">
+              Connect Wallet
+            </button>
           </div>
         </div>
       </div>
@@ -170,16 +164,23 @@
               </div>
             </div>
 
-            <!-- Smart Action Button -->
-            <SwapActionButton
-              :input-amount="inputAmount"
-              :active-tab="activeTab"
-              :loading="loading"
-              :loading-text="loadingText"
-              :can-purchase="canPurchase"
-              @execute-swap="handleSwap"
-              ref="swapActionButton"
-            />
+            <!-- Action Button -->
+            <button
+              type="submit"
+              :disabled="!canPurchase || loading"
+              :class="[
+                'w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300',
+                activeTab === 'liquid' 
+                  ? 'bg-circular-primary text-gray-900 hover:bg-circular-primary-hover' 
+                  : 'bg-circular-purple text-white hover:bg-purple-700',
+                (!canPurchase || loading) && 'opacity-50 cursor-not-allowed'
+              ]"
+            >
+              <span v-if="loading">{{ loadingText || 'Processing...' }}</span>
+              <span v-else-if="!inputAmount">Enter an amount</span>
+              <span v-else-if="activeTab === 'liquid'">Buy Liquid CIRX</span>
+              <span v-else>Buy OTC CIRX</span>
+            </button>
           </form>
         </div>
       </div>
@@ -194,20 +195,6 @@ definePageMeta({
   layout: 'default'
 })
 
-// Wallet integration
-const { isConnected, account, balance, formatAddress } = useWallet()
-const { 
-  getTokenBalance, 
-  getCIRXBalance, 
-  getLiquidQuote, 
-  getOTCQuote,
-  executeLiquidSwap,
-  executeOTCSwap 
-} = useContracts()
-
-// Component refs
-const swapActionButton = ref(null)
-
 // Reactive state
 const activeTab = ref('liquid')
 const inputAmount = ref('')
@@ -215,27 +202,26 @@ const cirxAmount = ref('')
 const inputToken = ref('ETH')
 const loading = ref(false)
 const loadingText = ref('')
-const error = ref('')
 
-// Real balances from wallet/contracts
+// Mock balances for display
 const inputBalance = ref('0.0')
 const cirxBalance = ref('0.0')
 const quote = ref(null)
 
-// Token prices (mock data - should come from price oracle)
+// Token prices (mock data)
 const tokenPrices = {
   ETH: 2500,   // $2500 per ETH
   USDC: 1,     // $1 per USDC  
   USDT: 1      // $1 per USDT
 }
 
-// Fee structure from PRP
+// Fee structure
 const fees = {
   liquid: 0.3,  // 0.3% for liquid swaps
   otc: 0.15     // 0.15% for OTC swaps
 }
 
-// Discount tiers from PRP
+// Discount tiers
 const discountTiers = [
   { minAmount: 50000, discount: 12 },  // $50K+: 12%
   { minAmount: 10000, discount: 8 },   // $10K+: 8%  
@@ -248,8 +234,6 @@ const canPurchase = computed(() => {
          parseFloat(inputAmount.value) > 0 && 
          !loading.value
 })
-
-// Computed properties for swap logic
 
 // Calculate discount based on USD amount
 const calculateDiscount = (usdAmount) => {
@@ -293,149 +277,50 @@ const calculateQuote = (amount, token, isOTC = false) => {
   }
 }
 
-// Update balances when wallet connects
-const updateBalances = async () => {
-  if (!account.value) {
-    inputBalance.value = '0.0'
-    cirxBalance.value = '0.0'
-    return
-  }
-
-  try {
-    // Update input token balance
-    if (inputToken.value === 'ETH') {
-      inputBalance.value = balance.value?.toFixed(4) || '0.0'
-    } else {
-      inputBalance.value = await getTokenBalance(inputToken.value)
-    }
-
-    // Update CIRX balance
-    cirxBalance.value = await getCIRXBalance()
-  } catch (err) {
-    console.error('Failed to update balances:', err)
-  }
-}
-
-// Get effective user address (connected wallet or manual input)
-const getEffectiveAddress = () => {
-  if (isConnected.value && account.value) {
-    return account.value
-  }
-  return swapActionButton.value?.manualAddress || null
-}
-
-// New methods for enhanced functionality
+// Methods
 const setMaxAmount = () => {
-  if (inputBalance.value && inputBalance.value !== '0.0') {
-    inputAmount.value = parseFloat(inputBalance.value).toString()
-  }
+  // Mock max amount
+  inputAmount.value = '1.0'
 }
 
 const reverseSwap = () => {
-  // For now, this doesn't do anything since we only swap to CIRX
-  // Could be used for future bidirectional swaps
   console.log('Reverse swap not supported yet')
 }
 
-// Methods
 const handleSwap = async () => {
   if (!canPurchase.value) return
   
-  try {
-    loading.value = true
-    error.value = ''
-    
-    const effectiveAddress = getEffectiveAddress()
-    if (!effectiveAddress && !isConnected.value) {
-      error.value = 'Please connect wallet or enter a wallet address'
-      return
-    }
-
-    if (!isConnected.value) {
-      error.value = 'Wallet connection required for transactions'
-      return
-    }
-
-    const minCirxOut = (parseFloat(cirxAmount.value) * 0.99).toFixed(18) // 1% slippage tolerance
-    
-    if (activeTab.value === 'liquid') {
-      loadingText.value = 'Executing liquid purchase...'
-      await executeLiquidSwap(inputToken.value, inputAmount.value, minCirxOut)
-    } else {
-      loadingText.value = 'Creating vesting position...'
-      await executeOTCSwap(inputToken.value, inputAmount.value, minCirxOut)
-    }
-    
-    // Reset form on success
-    inputAmount.value = ''
-    cirxAmount.value = ''
-    quote.value = null
-    
-    // Update balances
-    await updateBalances()
-    
-    // TODO: Show success notification
-    
-  } catch (err) {
-    console.error('Transaction failed:', err)
-    error.value = err.message || 'Transaction failed. Please try again.'
-  } finally {
-    loading.value = false
-    loadingText.value = ''
-  }
+  loading.value = true
+  loadingText.value = activeTab.value === 'liquid' ? 'Executing liquid purchase...' : 'Creating vesting position...'
+  
+  // Mock transaction delay
+  await new Promise(resolve => setTimeout(resolve, 2000))
+  
+  // Reset form
+  inputAmount.value = ''
+  cirxAmount.value = ''
+  quote.value = null
+  loading.value = false
+  loadingText.value = ''
+  
+  alert('Transaction completed! (This is a demo)')
 }
 
 // Watch for amount and tab changes to update quote
-watch([inputAmount, inputToken, activeTab], async () => {
+watch([inputAmount, inputToken, activeTab], () => {
   if (!inputAmount.value || parseFloat(inputAmount.value) <= 0) {
     cirxAmount.value = ''
     quote.value = null
     return
   }
   
-  try {
-    const isOTC = activeTab.value === 'otc'
-    
-    // Try to get real quote from contracts first, fallback to mock
-    let newQuote
-    try {
-      if (isOTC) {
-        const contractQuote = await getOTCQuote(inputToken.value, inputAmount.value)
-        newQuote = {
-          rate: tokenPrices[inputToken.value]?.toFixed(2) || '0',
-          fee: contractQuote.fee,
-          discount: parseFloat(contractQuote.discount),
-          cirxAmount: contractQuote.cirxAmount,
-          usdValue: (parseFloat(inputAmount.value) * tokenPrices[inputToken.value]).toFixed(2)
-        }
-      } else {
-        const contractQuote = await getLiquidQuote(inputToken.value, inputAmount.value)
-        newQuote = {
-          rate: tokenPrices[inputToken.value]?.toFixed(2) || '0',
-          fee: contractQuote.fee,
-          discount: 0,
-          cirxAmount: contractQuote.cirxAmount,
-          usdValue: (parseFloat(inputAmount.value) * tokenPrices[inputToken.value]).toFixed(2)
-        }
-      }
-    } catch (err) {
-      // Fallback to mock calculation
-      console.log('Using mock quote calculation')
-      newQuote = calculateQuote(inputAmount.value, inputToken.value, isOTC)
-    }
-    
-    if (newQuote) {
-      quote.value = newQuote
-      cirxAmount.value = newQuote.cirxAmount
-    }
-  } catch (err) {
-    console.error('Failed to get quote:', err)
+  const isOTC = activeTab.value === 'otc'
+  const newQuote = calculateQuote(inputAmount.value, inputToken.value, isOTC)
+  
+  if (newQuote) {
+    quote.value = newQuote
+    cirxAmount.value = newQuote.cirxAmount
   }
-}, { immediate: true })
-
-// Watch for wallet connection changes to update balances
-watch([isConnected, account, inputToken], async () => {
-  await updateBalances()
 }, { immediate: true })
 
 // Head configuration
@@ -444,7 +329,7 @@ useHead({
   meta: [
     { 
       name: 'description', 
-      content: 'Buy CIRX tokens with liquid delivery or OTC discounts up to 12%. Powered by UniswapV4 with 6-month linear vesting for OTC purchases.' 
+      content: 'Buy CIRX tokens with liquid delivery or OTC discounts up to 12%. Demo interface with Tailwind CSS styling.' 
     }
   ]
 })
