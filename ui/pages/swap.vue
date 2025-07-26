@@ -16,13 +16,10 @@
       </div>
     </header>
 
-    <!-- Main Content: Trading Panel (60%) + Chart Panel (40%) -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        
-        <!-- Trading Panel (60%) -->
-        <div class="lg:col-span-3">
-          <div class="circular-trading-panel p-6">
+    <!-- Main Content: Centered Trading Interface -->
+    <div class="min-h-screen flex items-start justify-center pt-8 pb-16 px-4">
+      <div class="w-full max-w-md">
+        <div class="circular-trading-panel p-6">
             <!-- Tab Headers -->
             <div class="flex mb-6" style="border-bottom: 1px solid var(--circular-border);">
               <button
@@ -87,7 +84,7 @@
               <!-- Arrow Icon -->
               <div class="flex justify-center mb-6">
                 <div class="rounded-full p-2" style="background: var(--circular-bg-secondary);">
-                  <Icon name="heroicons:arrow-down" class="w-5 h-5" style="color: var(--circular-primary);" />
+                  <div class="w-5 h-5 flex items-center justify-center text-lg" style="color: var(--circular-primary);">↓</div>
                 </div>
               </div>
 
@@ -178,42 +175,7 @@
             </div>
           </div>
         </div>
-
-        <!-- Chart Panel (40%) -->
-        <div class="lg:col-span-2">
-          <div class="circular-chart-panel p-6">
-            <h3 class="text-lg font-semibold mb-4" style="color: var(--circular-text-primary);">CIRX Price Chart</h3>
-            
-            <!-- Placeholder Chart -->
-            <div class="aspect-square rounded-lg flex items-center justify-center mb-6" style="background: var(--circular-bg-primary);">
-              <div class="text-center">
-                <Icon name="heroicons:chart-bar" class="w-12 h-12 mx-auto mb-2" style="color: var(--circular-gray);" />
-                <p class="text-sm" style="color: var(--circular-text-secondary);">Price chart coming soon</p>
-              </div>
-            </div>
-
-            <!-- Recent Activity -->
-            <div>
-              <h4 class="text-sm font-medium mb-3" style="color: var(--circular-text-primary);">Recent Activity</h4>
-              <div class="space-y-2">
-                <div class="circular-activity-item flex justify-between items-center py-2">
-                  <div class="text-sm" style="color: var(--circular-text-secondary);">Liquid Purchase</div>
-                  <div class="text-sm font-medium" style="color: var(--circular-primary);">1,000 CIRX</div>
-                </div>
-                <div class="circular-activity-item flex justify-between items-center py-2">
-                  <div class="text-sm" style="color: var(--circular-text-secondary);">OTC Purchase</div>
-                  <div class="text-sm font-medium" style="color: var(--circular-purple);">5,000 CIRX</div>
-                </div>
-                <div class="flex justify-between items-center py-2">
-                  <div class="text-sm" style="color: var(--circular-text-secondary);">Vesting Claim</div>
-                  <div class="text-sm font-medium" style="color: var(--circular-text-primary);">250 CIRX</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
   </div>
 </template>
 

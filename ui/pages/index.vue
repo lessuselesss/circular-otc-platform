@@ -28,110 +28,110 @@
       </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Hero Section -->
-      <div class="text-center py-20">
-        <div class="animate-fade-in">
-          <h1 class="text-5xl md:text-6xl font-bold mb-6" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">
+      <div class="text-center py-16">
+        <div class="animate-fade-in max-w-4xl mx-auto">
+          <h1 class="text-4xl md:text-5xl font-bold mb-6" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">
             CIRX OTC Trading
           </h1>
-          <p class="text-xl md:text-2xl mb-4" style="color: var(--circular-primary);">
+          <p class="text-lg md:text-xl mb-4" style="color: var(--circular-primary);">
             Buy CIRX tokens with instant delivery or OTC discounts up to 12%
           </p>
-          <p class="text-lg mb-12 max-w-3xl mx-auto" style="color: var(--circular-text-secondary);">
-            Professional over-the-counter trading platform powered by UniswapV4 with 6-month linear vesting for discounted purchases and competitive pricing.
+          <p class="text-base mb-10 max-w-2xl mx-auto" style="color: var(--circular-text-secondary);">
+            Professional over-the-counter trading platform powered by UniswapV4 with 6-month linear vesting for discounted purchases.
           </p>
           
-          <div class="flex flex-col sm:flex-row justify-center gap-4">
+          <div class="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
             <NuxtLink 
               to="/swap" 
-              class="circular-btn px-8 py-4 text-lg inline-block"
+              class="circular-btn px-6 py-3 text-base inline-block"
             >
               Start Trading
             </NuxtLink>
             <a 
               href="https://circularlabs.io" 
               target="_blank"
-              class="circular-btn px-8 py-4 text-lg inline-block"
+              class="circular-btn px-6 py-3 text-base inline-block"
               style="background: linear-gradient(135deg, var(--circular-purple), #8b35c7);"
             >
-              Learn About Circular
+              Learn More
             </a>
           </div>
         </div>
       </div>
 
       <!-- Feature Cards -->
-      <div class="grid md:grid-cols-3 gap-8 py-16">
-        <div class="circular-trading-panel p-8 text-center">
-          <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style="background: var(--circular-primary-light);">
-            <div class="text-2xl font-bold" style="color: var(--circular-primary);">⚡</div>
+      <div class="grid md:grid-cols-3 gap-6 py-12 max-w-4xl mx-auto">
+        <div class="circular-trading-panel p-6 text-center">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style="background: var(--circular-primary-light);">
+            <div class="text-xl font-bold" style="color: var(--circular-primary);">⚡</div>
           </div>
-          <h3 class="text-xl font-semibold mb-4" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">Instant Delivery</h3>
-          <p style="color: var(--circular-text-secondary);">
-            Buy CIRX tokens with immediate delivery at market rates through our liquid trading interface.
+          <h3 class="text-lg font-semibold mb-3" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">Instant Delivery</h3>
+          <p class="text-sm" style="color: var(--circular-text-secondary);">
+            Buy CIRX tokens with immediate delivery at market rates.
           </p>
         </div>
 
-        <div class="circular-trading-panel p-8 text-center">
-          <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style="background: var(--circular-purple-light);">
-            <div class="text-2xl font-bold" style="color: var(--circular-purple);">%</div>
+        <div class="circular-trading-panel p-6 text-center">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style="background: var(--circular-purple-light);">
+            <div class="text-xl font-bold" style="color: var(--circular-purple);">%</div>
           </div>
-          <h3 class="text-xl font-semibold mb-4" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">OTC Discounts</h3>
-          <p style="color: var(--circular-text-secondary);">
-            Get 5-12% discounts on CIRX purchases with 6-month linear vesting. Larger purchases get better rates.
+          <h3 class="text-lg font-semibold mb-3" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">OTC Discounts</h3>
+          <p class="text-sm" style="color: var(--circular-text-secondary);">
+            Get 5-12% discounts with 6-month linear vesting.
           </p>
         </div>
 
-        <div class="circular-trading-panel p-8 text-center">
-          <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style="background: rgba(34, 197, 94, 0.1);">
-            <div class="text-2xl font-bold" style="color: var(--circular-success);">✓</div>
+        <div class="circular-trading-panel p-6 text-center">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style="background: rgba(34, 197, 94, 0.1);">
+            <div class="text-xl font-bold" style="color: var(--circular-success);">✓</div>
           </div>
-          <h3 class="text-xl font-semibold mb-4" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">UniswapV4 Powered</h3>
-          <p style="color: var(--circular-text-secondary);">
-            Built on UniswapV4 infrastructure with 30% gas savings and battle-tested security.
+          <h3 class="text-lg font-semibold mb-3" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">UniswapV4 Powered</h3>
+          <p class="text-sm" style="color: var(--circular-text-secondary);">
+            Built on UniswapV4 with 30% gas savings.
           </p>
         </div>
       </div>
 
       <!-- OTC Discount Tiers -->
-      <div class="circular-discount-tiers p-8 mb-16">
-        <h2 class="text-3xl font-bold text-center mb-8" style="color: var(--circular-purple); font-family: 'Michroma', sans-serif;">
+      <div class="circular-discount-tiers p-6 mb-12 max-w-2xl mx-auto">
+        <h2 class="text-2xl font-bold text-center mb-6" style="color: var(--circular-purple); font-family: 'Michroma', sans-serif;">
           OTC Discount Tiers
         </h2>
-        <div class="grid md:grid-cols-3 gap-8">
+        <div class="grid grid-cols-3 gap-6">
           <div class="text-center">
-            <div class="text-4xl font-bold mb-2" style="color: var(--circular-purple);">5%</div>
-            <div class="text-lg font-medium mb-2" style="color: var(--circular-text-primary);">$1,000 - $10,000</div>
-            <div class="text-sm" style="color: var(--circular-text-secondary);">Entry level discount</div>
+            <div class="text-3xl font-bold mb-2" style="color: var(--circular-purple);">5%</div>
+            <div class="text-sm font-medium mb-1" style="color: var(--circular-text-primary);">$1K - $10K</div>
+            <div class="text-xs" style="color: var(--circular-text-secondary);">Entry level</div>
           </div>
           <div class="text-center">
-            <div class="text-4xl font-bold mb-2" style="color: var(--circular-purple);">8%</div>
-            <div class="text-lg font-medium mb-2" style="color: var(--circular-text-primary);">$10,000 - $50,000</div>
-            <div class="text-sm" style="color: var(--circular-text-secondary);">Preferred rate</div>
+            <div class="text-3xl font-bold mb-2" style="color: var(--circular-purple);">8%</div>
+            <div class="text-sm font-medium mb-1" style="color: var(--circular-text-primary);">$10K - $50K</div>
+            <div class="text-xs" style="color: var(--circular-text-secondary);">Preferred</div>
           </div>
           <div class="text-center">
-            <div class="text-4xl font-bold mb-2" style="color: var(--circular-purple);">12%</div>
-            <div class="text-lg font-medium mb-2" style="color: var(--circular-text-primary);">$50,000+</div>
-            <div class="text-sm" style="color: var(--circular-text-secondary);">Maximum discount</div>
+            <div class="text-3xl font-bold mb-2" style="color: var(--circular-purple);">12%</div>
+            <div class="text-sm font-medium mb-1" style="color: var(--circular-text-primary);">$50K+</div>
+            <div class="text-xs" style="color: var(--circular-text-secondary);">Maximum</div>
           </div>
         </div>
       </div>
 
       <!-- Call to Action -->
-      <div class="text-center pb-20">
-        <div class="circular-trading-panel p-12 max-w-4xl mx-auto">
-          <h2 class="text-3xl md:text-4xl font-bold mb-6" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">
-            Ready to Trade CIRX?
+      <div class="text-center pb-16">
+        <div class="circular-trading-panel p-8 max-w-lg mx-auto">
+          <h2 class="text-2xl font-bold mb-4" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">
+            Ready to Trade?
           </h2>
-          <p class="text-lg mb-8" style="color: var(--circular-text-secondary);">
-            Connect your wallet or paste your address to start trading with instant delivery or discounted OTC purchases.
+          <p class="text-sm mb-6" style="color: var(--circular-text-secondary);">
+            Connect your wallet to start trading CIRX tokens.
           </p>
           <NuxtLink 
             to="/swap" 
-            class="circular-btn px-12 py-4 text-lg inline-block"
+            class="circular-btn px-8 py-3 text-base inline-block"
           >
-            Launch Trading Platform
+            Launch Platform
           </NuxtLink>
         </div>
       </div>
