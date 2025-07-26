@@ -175,17 +175,13 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   background: transparent;
   border: none;
-  padding: 16px 24px;
+  padding: 12px 20px;
   font-family: 'Michroma', sans-serif;
   font-size: 0.875rem;
   color: var(--circular-text-secondary);
   cursor: pointer;
   transition: all 0.3s ease;
   border-bottom: 2px solid transparent;
-  border-radius: 12px 12px 0 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .circular-tab:hover {
@@ -387,14 +383,7 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--circular-purple);
 }
 
-/* Responsive design for floating centered layout */
-@media (max-width: 1024px) {
-  .circular-trading-panel {
-    max-width: 90vw;
-    margin: 0 auto;
-  }
-}
-
+/* Responsive design for centered trading card */
 @media (max-width: 768px) {
   .circular-logo {
     font-size: 1.25rem;
@@ -402,15 +391,11 @@ h1, h2, h3, h4, h5, h6 {
   
   .circular-tab {
     font-size: 0.75rem;
-    padding: 10px 12px;
-  }
-  
-  .circular-tab .ml-8 {
-    margin-left: 1rem;
+    padding: 10px 16px;
   }
   
   .circular-input {
-    font-size: 1rem;
+    font-size: 1.125rem;
     padding: 1rem;
   }
   
@@ -420,32 +405,26 @@ h1, h2, h3, h4, h5, h6 {
   }
   
   .circular-trading-panel {
-    max-width: 95vw;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
     padding: 1.5rem !important;
     border-radius: 16px;
-    transform: none !important;
-  }
-  
-  .circular-trading-panel:hover {
-    transform: translateY(-2px);
   }
 }
 
 @media (max-width: 480px) {
   .circular-trading-panel {
-    max-width: 98vw;
     padding: 1.25rem !important;
     border-radius: 12px;
   }
   
   .circular-tab {
     font-size: 0.7rem;
-    padding: 8px 10px;
+    padding: 8px 12px;
   }
   
   .circular-input {
-    font-size: 0.95rem;
+    font-size: 1rem;
     padding: 0.875rem;
   }
   
