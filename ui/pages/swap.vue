@@ -9,8 +9,16 @@
             <span class="text-sm" style="color: var(--circular-text-secondary);">OTC Trading Platform</span>
           </div>
           <div class="flex items-center gap-4">
-            <!-- Wallet Connection Component -->
-            <WalletConnect ref="walletConnect" />
+            <!-- Connected Wallet Display -->
+            <div v-if="isConnected && account" class="flex items-center gap-3">
+              <div class="text-sm" style="color: var(--circular-text-secondary);">
+                {{ balance?.toFixed(4) || '0.0000' }} ETH
+              </div>
+              <div class="circular-wallet-connected flex items-center gap-2 px-3 py-2">
+                <div class="w-6 h-6 rounded-full" style="background: linear-gradient(135deg, var(--circular-primary), var(--circular-purple));"></div>
+                <span class="font-mono text-sm" style="color: var(--circular-text-primary);">{{ formatAddress(account) }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -150,29 +158,17 @@
                 </div>
               </div>
 
-              <!-- Purchase Button -->
-              <button
-                type="submit"
-                :disabled="!canPurchase || loading"
-                :class="[
-                  'circular-btn w-full py-4 px-6',
-                  activeTab === 'otc' ? 'circular-btn-otc' : ''
-                ]"
-              >
-                <span v-if="loading" class="flex items-center justify-center gap-2">
-                  <div class="circular-loading"></div>
-                  {{ loadingText }}
-                </span>
-                <span v-else>
-                  {{ purchaseButtonText }}
-                </span>
-              </button>
+              <!-- Smart Action Button -->
+              <SwapActionButton
+                :input-amount="inputAmount"
+                :active-tab="activeTab"
+                :loading="loading"
+                :loading-text="loadingText"
+                :can-purchase="canPurchase"
+                @execute-swap="handleSwap"
+                ref="swapActionButton"
+              />
             </form>
-
-            <!-- Error Message -->
-            <div v-if="error" class="circular-error mt-4 p-3">
-              <p class="text-sm">{{ error }}</p>
-            </div>
           </div>
         </div>
       </div>
@@ -187,7 +183,7 @@ definePageMeta({
 })
 
 // Wallet integration
-const { isConnected, account, balance } = useWallet()
+const { isConnected, account, balance, formatAddress } = useWallet()
 const { 
   getTokenBalance, 
   getCIRXBalance, 
@@ -198,7 +194,7 @@ const {
 } = useContracts()
 
 // Component refs
-const walletConnect = ref(null)
+const swapActionButton = ref(null)
 
 // Reactive state
 const activeTab = ref('liquid')
@@ -241,16 +237,7 @@ const canPurchase = computed(() => {
          !loading.value
 })
 
-const purchaseButtonText = computed(() => {
-  if (!inputAmount.value) return 'Enter an amount'
-  if (parseFloat(inputAmount.value) <= 0) return 'Enter a valid amount'
-  
-  if (activeTab.value === 'liquid') {
-    return `Buy CIRX (Immediate)`
-  } else {
-    return `Buy CIRX (6-month vesting)`
-  }
-})
+// Computed properties for swap logic
 
 // Calculate discount based on USD amount
 const calculateDiscount = (usdAmount) => {
@@ -322,7 +309,7 @@ const getEffectiveAddress = () => {
   if (isConnected.value && account.value) {
     return account.value
   }
-  return walletConnect.value?.manualAddress || null
+  return swapActionButton.value?.manualAddress || null
 }
 
 // Methods
