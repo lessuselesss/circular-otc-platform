@@ -25,33 +25,37 @@
     </header>
 
     <!-- Main Content: Properly Centered Trading Card -->
-    <div class="min-h-[calc(100vh-5rem)] flex items-center justify-center p-4">
-      <div class="w-full max-w-md">
+    <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8">
+      <div class="w-full max-w-lg mx-auto">
         <!-- Centered Trading Card -->
-        <div class="circular-trading-panel p-6 sm:p-8 shadow-2xl">
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm" style="background: linear-gradient(135deg, rgb(49, 49, 49), rgba(49, 49, 49, 0.95));">
           <!-- Tab Headers -->
-          <div class="flex mb-6" style="border-bottom: 1px solid var(--circular-border);">
+          <div class="flex mb-6 border-b border-gray-600">
             <button
               @click="activeTab = 'liquid'"
               :class="[
-                'circular-tab',
-                activeTab === 'liquid' ? 'active' : ''
+                'px-6 py-3 text-sm font-medium transition-all duration-300 border-b-2',
+                activeTab === 'liquid' 
+                  ? 'text-emerald-400 border-emerald-400 bg-emerald-400/10' 
+                  : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
               ]"
             >
               Buy Liquid
-              <span class="ml-2 circular-badge">
+              <span class="ml-2 px-2 py-1 text-xs bg-emerald-500 text-gray-900 rounded-full font-semibold">
                 Immediate
               </span>
             </button>
             <button
               @click="activeTab = 'otc'"
               :class="[
-                'circular-tab ml-4',
-                activeTab === 'otc' ? 'otc-active' : ''
+                'px-6 py-3 text-sm font-medium transition-all duration-300 border-b-2 ml-4',
+                activeTab === 'otc' 
+                  ? 'text-purple-400 border-purple-400 bg-purple-400/10' 
+                  : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
               ]"
             >
               Buy OTC
-              <span class="ml-2 circular-badge circular-badge-otc">
+              <span class="ml-2 px-2 py-1 text-xs bg-purple-500 text-white rounded-full font-semibold">
                 5-12% Discount
               </span>
             </button>
@@ -62,8 +66,8 @@
             <!-- Input Token Selection -->
             <div class="mb-6">
               <div class="flex justify-between items-center mb-3">
-                <label class="text-sm font-medium" style="color: var(--circular-text-primary);">Pay with</label>
-                <span v-if="inputBalance" class="text-sm cursor-pointer hover:text-white transition-colors" style="color: var(--circular-text-secondary);" @click="setMaxAmount">
+                <label class="text-sm font-medium text-white">Pay with</label>
+                <span v-if="inputBalance" class="text-sm cursor-pointer hover:text-white transition-colors text-gray-400" @click="setMaxAmount">
                   Balance: {{ inputBalance }}
                 </span>
               </div>
@@ -73,18 +77,18 @@
                   type="number"
                   step="any"
                   placeholder="0.0"
-                  class="circular-input w-full pl-4 pr-32 py-4 text-xl font-semibold"
+                  class="w-full pl-4 pr-32 py-4 text-xl font-semibold bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors"
                   :disabled="loading"
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center">
                   <select
                     v-model="inputToken"
-                    class="circular-token-select h-full py-0 pl-3 pr-8 border-0 bg-transparent font-medium rounded-r-xl"
+                    class="h-full py-0 pl-3 pr-8 border-0 bg-transparent font-medium text-white rounded-r-xl focus:outline-none"
                     :disabled="loading"
                   >
-                    <option value="ETH">ETH</option>
-                    <option value="USDC">USDC</option>
-                    <option value="USDT">USDT</option>
+                    <option value="ETH" class="bg-gray-900">ETH</option>
+                    <option value="USDC" class="bg-gray-900">USDC</option>
+                    <option value="USDT" class="bg-gray-900">USDT</option>
                   </select>
                 </div>
               </div>
@@ -94,7 +98,7 @@
             <div class="flex justify-center mb-6">
               <button
                 type="button"
-                class="circular-swap-arrow"
+                class="p-3 bg-gray-700 border border-gray-600 rounded-xl text-emerald-400 hover:bg-gray-600 hover:border-emerald-400 transition-all duration-300"
                 @click="reverseSwap"
                 :disabled="loading"
               >
@@ -107,8 +111,8 @@
             <!-- CIRX Output -->
             <div class="mb-6">
               <div class="flex justify-between items-center mb-3">
-                <label class="text-sm font-medium" style="color: var(--circular-text-primary);">Receive</label>
-                <span v-if="cirxBalance" class="text-sm" style="color: var(--circular-text-secondary);">
+                <label class="text-sm font-medium text-white">Receive</label>
+                <span v-if="cirxBalance" class="text-sm text-gray-400">
                   Balance: {{ cirxBalance }} CIRX
                 </span>
               </div>
@@ -118,50 +122,50 @@
                   type="number"
                   step="any"
                   placeholder="0.0"
-                  class="circular-input w-full pl-4 pr-20 py-4 text-xl font-semibold opacity-75"
+                  class="w-full pl-4 pr-20 py-4 text-xl font-semibold bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 opacity-75"
                   readonly
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
-                  <span class="font-semibold" style="color: var(--circular-primary);">CIRX</span>
+                  <span class="font-semibold text-emerald-400">CIRX</span>
                 </div>
               </div>
             </div>
 
             <!-- Purchase Details -->
-            <div v-if="quote" class="circular-quote-panel p-4 mb-6">
+            <div v-if="quote" class="bg-gray-900 border border-gray-600 rounded-xl p-4 mb-6">
               <div class="flex justify-between items-center mb-2">
-                <span class="text-sm" style="color: var(--circular-text-secondary);">Exchange Rate</span>
-                <span class="text-sm font-medium" style="color: var(--circular-text-primary);">1 {{ inputToken }} = ${{ quote.rate }}</span>
+                <span class="text-sm text-gray-400">Exchange Rate</span>
+                <span class="text-sm font-medium text-white">1 {{ inputToken }} = ${{ quote.rate }}</span>
               </div>
               <div class="flex justify-between items-center mb-2">
-                <span class="text-sm" style="color: var(--circular-text-secondary);">Fee</span>
-                <span class="text-sm font-medium" style="color: var(--circular-text-primary);">{{ quote.fee }}%</span>
+                <span class="text-sm text-gray-400">Fee</span>
+                <span class="text-sm font-medium text-white">{{ quote.fee }}%</span>
               </div>
               <div v-if="activeTab === 'otc' && quote.discount > 0" class="flex justify-between items-center mb-2">
-                <span class="text-sm" style="color: var(--circular-text-secondary);">OTC Discount</span>
-                <span class="text-sm font-medium" style="color: var(--circular-primary);">{{ quote.discount }}%</span>
+                <span class="text-sm text-gray-400">OTC Discount</span>
+                <span class="text-sm font-medium text-emerald-400">{{ quote.discount }}%</span>
               </div>
               <div v-if="activeTab === 'otc'" class="flex justify-between items-center">
-                <span class="text-sm" style="color: var(--circular-text-secondary);">Vesting Period</span>
-                <span class="text-sm font-medium" style="color: var(--circular-text-primary);">6 months (linear)</span>
+                <span class="text-sm text-gray-400">Vesting Period</span>
+                <span class="text-sm font-medium text-white">6 months (linear)</span>
               </div>
             </div>
 
             <!-- OTC Discount Tiers (only show on OTC tab) -->
-            <div v-if="activeTab === 'otc'" class="circular-discount-tiers p-4 mb-6">
-              <h4 class="text-sm font-medium mb-3" style="color: var(--circular-purple);">OTC Discount Tiers</h4>
+            <div v-if="activeTab === 'otc'" class="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-6">
+              <h4 class="text-sm font-medium mb-3 text-purple-400">OTC Discount Tiers</h4>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span style="color: var(--circular-text-secondary);">$1,000 - $10,000</span>
-                  <span class="font-medium" style="color: var(--circular-purple);">5% discount</span>
+                  <span class="text-gray-400">$1,000 - $10,000</span>
+                  <span class="font-medium text-purple-400">5% discount</span>
                 </div>
                 <div class="flex justify-between">
-                  <span style="color: var(--circular-text-secondary);">$10,000 - $50,000</span>
-                  <span class="font-medium" style="color: var(--circular-purple);">8% discount</span>
+                  <span class="text-gray-400">$10,000 - $50,000</span>
+                  <span class="font-medium text-purple-400">8% discount</span>
                 </div>
                 <div class="flex justify-between">
-                  <span style="color: var(--circular-text-secondary);">$50,000+</span>
-                  <span class="font-medium" style="color: var(--circular-purple);">12% discount</span>
+                  <span class="text-gray-400">$50,000+</span>
+                  <span class="font-medium text-purple-400">12% discount</span>
                 </div>
               </div>
             </div>
