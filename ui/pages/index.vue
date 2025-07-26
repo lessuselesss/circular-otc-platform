@@ -65,7 +65,7 @@
       <div class="grid md:grid-cols-3 gap-8 py-16">
         <div class="circular-trading-panel p-8 text-center">
           <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style="background: var(--circular-primary-light);">
-            <Icon name="heroicons:bolt" class="w-8 h-8" style="color: var(--circular-primary);" />
+            <div class="text-2xl font-bold" style="color: var(--circular-primary);">⚡</div>
           </div>
           <h3 class="text-xl font-semibold mb-4" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">Instant Delivery</h3>
           <p style="color: var(--circular-text-secondary);">
@@ -75,7 +75,7 @@
 
         <div class="circular-trading-panel p-8 text-center">
           <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style="background: var(--circular-purple-light);">
-            <Icon name="heroicons:percent-badge" class="w-8 h-8" style="color: var(--circular-purple);" />
+            <div class="text-2xl font-bold" style="color: var(--circular-purple);">%</div>
           </div>
           <h3 class="text-xl font-semibold mb-4" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">OTC Discounts</h3>
           <p style="color: var(--circular-text-secondary);">
@@ -85,7 +85,7 @@
 
         <div class="circular-trading-panel p-8 text-center">
           <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style="background: rgba(34, 197, 94, 0.1);">
-            <Icon name="heroicons:shield-check" class="w-8 h-8" style="color: var(--circular-success);" />
+            <div class="text-2xl font-bold" style="color: var(--circular-success);">✓</div>
           </div>
           <h3 class="text-xl font-semibold mb-4" style="color: var(--circular-text-primary); font-family: 'Michroma', sans-serif;">UniswapV4 Powered</h3>
           <p style="color: var(--circular-text-secondary);">
