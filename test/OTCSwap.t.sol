@@ -145,7 +145,7 @@ contract OTCSwapTest is Test {
         vm.stopPrank();
     }
 
-    function testDiscountTiers() public {
+    function testDiscountTiers() public view {
         // Test different discount tiers
         assertEq(otcSwap.calculateDiscount(500 * 10 ** 18), 0); // Below $1K: 0%
         assertEq(otcSwap.calculateDiscount(1000 * 10 ** 18), 500); // $1K: 5%

@@ -6,6 +6,7 @@ import "v4-core/types/PoolKey.sol";
 import "v4-core/types/Currency.sol";
 import "v4-core/types/PoolId.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -163,7 +164,7 @@ contract SimpleOTCSwap is Ownable, ReentrancyGuard {
         uint256 amountAfterFee = inputAmount - fee;
 
         // Simple 1:1 USD conversion for now (would use V4 pool pricing in production)
-        uint256 usdValue = (amountAfterFee * tokenPrices[inputToken]) / 10 ** 18;
+        uint256 usdValue = _calculateUsdValue(inputToken, amountAfterFee);
 
         // Assume CIRX is $1 for simplicity
         cirxAmount = usdValue;
@@ -185,8 +186,8 @@ contract SimpleOTCSwap is Ownable, ReentrancyGuard {
         require(supportedTokens[inputToken], "Token not supported");
         require(inputAmount > 0, "Input amount must be greater than zero");
 
-        // Calculate USD value (before fees for discount calculation)
-        uint256 totalUsdValue = (inputAmount * tokenPrices[inputToken]) / 10 ** 18;
+        // Calculate USD value (before fees for discount calculation) 
+        uint256 totalUsdValue = _calculateUsdValue(inputToken, inputAmount);
 
         // Calculate discount based on total purchase amount
         discountBps = calculateDiscount(totalUsdValue);
@@ -194,7 +195,7 @@ contract SimpleOTCSwap is Ownable, ReentrancyGuard {
         // Calculate fee
         fee = (inputAmount * otcFee) / 10000;
         uint256 amountAfterFee = inputAmount - fee;
-        uint256 usdValue = (amountAfterFee * tokenPrices[inputToken]) / 10 ** 18;
+        uint256 usdValue = _calculateUsdValue(inputToken, amountAfterFee);
 
         // Apply discount to get more CIRX tokens
         cirxAmount = usdValue + (usdValue * discountBps) / 10000;
@@ -278,5 +279,23 @@ contract SimpleOTCSwap is Ownable, ReentrancyGuard {
 
         liquidFee = newLiquidFee;
         otcFee = newOtcFee;
+    }
+
+    /**
+     * @dev Calculate USD value from token amount accounting for decimals
+     * @param token Token address  
+     * @param amount Token amount
+     * @return usdValue USD value with 18 decimals
+     */
+    function _calculateUsdValue(address token, uint256 amount) internal view returns (uint256 usdValue) {
+        uint256 tokenDecimals = IERC20Metadata(token).decimals();
+        uint256 price = tokenPrices[token]; // Price has 18 decimals
+        
+        // Normalize amount to 18 decimals, then multiply by price
+        if (tokenDecimals <= 18) {
+            usdValue = (amount * 10 ** (18 - tokenDecimals) * price) / 10 ** 18;
+        } else {
+            usdValue = (amount * price) / (10 ** tokenDecimals);
+        }
     }
 }
