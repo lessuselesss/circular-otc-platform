@@ -1,22 +1,22 @@
 <template>
-  <div class="min-h-screen" style="background: var(--circular-bg-primary);">
+  <div class="min-h-screen bg-circular-bg-primary">
     <!-- Header -->
-    <header class="circular-header">
+    <header class="bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <div class="flex items-center gap-2 sm:gap-4">
-            <h1 class="circular-logo text-lg sm:text-xl">Circular CIRX</h1>
-            <span class="text-xs sm:text-sm hidden sm:block" style="color: var(--circular-text-secondary);">OTC Trading Platform</span>
+            <h1 class="font-michroma text-lg sm:text-xl text-circular-primary">Circular CIRX</h1>
+            <span class="text-xs sm:text-sm hidden sm:block text-gray-400">OTC Trading Platform</span>
           </div>
           <div class="flex items-center gap-2 sm:gap-4">
             <!-- Connected Wallet Display -->
             <div v-if="isConnected && account" class="flex items-center gap-1 sm:gap-3">
-              <div class="text-xs sm:text-sm hidden sm:block" style="color: var(--circular-text-secondary);">
+              <div class="text-xs sm:text-sm hidden sm:block text-gray-400">
                 {{ balance?.toFixed(4) || '0.0000' }} ETH
               </div>
-              <div class="circular-wallet-connected flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2">
-                <div class="w-4 h-4 sm:w-6 sm:h-6 rounded-full" style="background: linear-gradient(135deg, var(--circular-primary), var(--circular-purple));"></div>
-                <span class="font-mono text-xs sm:text-sm" style="color: var(--circular-text-primary);">{{ formatAddress(account) }}</span>
+              <div class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 bg-circular-primary/10 border border-circular-primary rounded-lg">
+                <div class="w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-gradient-to-r from-circular-primary to-circular-purple"></div>
+                <span class="font-mono text-xs sm:text-sm text-white">{{ formatAddress(account) }}</span>
               </div>
             </div>
           </div>
@@ -28,34 +28,34 @@
     <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8">
       <div class="w-full max-w-lg mx-auto">
         <!-- Centered Trading Card -->
-        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm" style="background: linear-gradient(135deg, rgb(49, 49, 49), rgba(49, 49, 49, 0.95));">
+        <div class="bg-gradient-to-br from-circular-bg-secondary to-circular-bg-secondary/95 border border-gray-700 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm">
           <!-- Tab Headers -->
           <div class="flex mb-6 border-b border-gray-600">
             <button
               @click="activeTab = 'liquid'"
               :class="[
-                'px-6 py-3 text-sm font-medium transition-all duration-300 border-b-2',
+                'px-6 py-3 text-sm font-medium font-michroma transition-all duration-300 border-b-2',
                 activeTab === 'liquid' 
-                  ? 'text-emerald-400 border-emerald-400 bg-emerald-400/10' 
+                  ? 'text-circular-primary border-circular-primary bg-circular-primary/10' 
                   : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
               ]"
             >
               Buy Liquid
-              <span class="ml-2 px-2 py-1 text-xs bg-emerald-500 text-gray-900 rounded-full font-semibold">
+              <span class="ml-2 px-2 py-1 text-xs bg-circular-primary text-gray-900 rounded-full font-semibold">
                 Immediate
               </span>
             </button>
             <button
               @click="activeTab = 'otc'"
               :class="[
-                'px-6 py-3 text-sm font-medium transition-all duration-300 border-b-2 ml-4',
+                'px-6 py-3 text-sm font-medium font-michroma transition-all duration-300 border-b-2 ml-4',
                 activeTab === 'otc' 
-                  ? 'text-purple-400 border-purple-400 bg-purple-400/10' 
+                  ? 'text-circular-purple border-circular-purple bg-circular-purple/10' 
                   : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
               ]"
             >
               Buy OTC
-              <span class="ml-2 px-2 py-1 text-xs bg-purple-500 text-white rounded-full font-semibold">
+              <span class="ml-2 px-2 py-1 text-xs bg-circular-purple text-white rounded-full font-semibold">
                 5-12% Discount
               </span>
             </button>
@@ -77,7 +77,7 @@
                   type="number"
                   step="any"
                   placeholder="0.0"
-                  class="w-full pl-4 pr-32 py-4 text-xl font-semibold bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors"
+                  class="w-full pl-4 pr-32 py-4 text-xl font-semibold bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:border-circular-primary focus:ring-1 focus:ring-circular-primary transition-colors"
                   :disabled="loading"
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center">
@@ -98,7 +98,7 @@
             <div class="flex justify-center mb-6">
               <button
                 type="button"
-                class="p-3 bg-gray-700 border border-gray-600 rounded-xl text-emerald-400 hover:bg-gray-600 hover:border-emerald-400 transition-all duration-300"
+                class="p-3 bg-gray-700 border border-gray-600 rounded-xl text-circular-primary hover:bg-gray-600 hover:border-circular-primary transition-all duration-300"
                 @click="reverseSwap"
                 :disabled="loading"
               >
@@ -126,7 +126,7 @@
                   readonly
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
-                  <span class="font-semibold text-emerald-400">CIRX</span>
+                  <span class="font-semibold text-circular-primary">CIRX</span>
                 </div>
               </div>
             </div>
@@ -143,7 +143,7 @@
               </div>
               <div v-if="activeTab === 'otc' && quote.discount > 0" class="flex justify-between items-center mb-2">
                 <span class="text-sm text-gray-400">OTC Discount</span>
-                <span class="text-sm font-medium text-emerald-400">{{ quote.discount }}%</span>
+                <span class="text-sm font-medium text-circular-primary">{{ quote.discount }}%</span>
               </div>
               <div v-if="activeTab === 'otc'" class="flex justify-between items-center">
                 <span class="text-sm text-gray-400">Vesting Period</span>

@@ -12,6 +12,7 @@ export default defineNuxtConfig({
   ssr: true,
 
   modules: [
+    '@nuxtjs/tailwindcss'
     // '@nuxt/ui' // Temporarily disabled - causing build issues
   ],
 
@@ -38,7 +39,25 @@ export default defineNuxtConfig({
     // Private keys (only available on server-side)
     // Public keys (exposed to client-side)
     public: {
-      // Add your public environment variables here
+      walletConnectProjectId: process.env.WALLETCONNECT_PROJECT_ID || 'your-project-id-here',
+      appName: 'Circular CIRX OTC Platform',
+      appDescription: 'Circular CIRX OTC Trading Platform - Buy CIRX tokens with instant delivery or OTC discounts up to 12%',
+      appUrl: process.env.APP_URL || 'https://circular.io',
+    }
+  },
+
+  // Build configuration  
+  build: {
+    transpile: ['@wagmi/vue', '@tanstack/vue-query']
+  },
+
+  // Vite configuration for wallet integrations
+  vite: {
+    define: {
+      global: 'globalThis',
+    },
+    optimizeDeps: {
+      include: ['@wagmi/vue', '@wagmi/core', '@wagmi/connectors', 'viem']
     }
   }
 })
