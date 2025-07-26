@@ -8,8 +8,8 @@ export default defineNuxtConfig({
     preset: 'static'
   },
   
-  // Enable static generation
-  ssr: false,
+  // Enable static generation with prerendering
+  ssr: true,
 
   modules: [
     // '@nuxt/ui' // Temporarily disabled for build
