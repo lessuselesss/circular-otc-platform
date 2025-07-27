@@ -23,9 +23,26 @@
       </div>
     </header>
 
-    <!-- Main Content: Properly Centered Trading Card -->
+    <!-- Main Content: Trading Interface with Optional Chart -->
     <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8">
-      <div class="w-full max-w-lg mx-auto">
+      <div :class="[
+        'w-full mx-auto transition-all duration-500',
+        showChart ? 'max-w-6xl' : 'max-w-lg'
+      ]">
+        <div :class="[
+          'flex gap-6 items-start',
+          showChart ? 'flex-col lg:flex-row' : 'justify-center'
+        ]">
+          <!-- Chart Panel (expandable) -->
+          <div v-if="showChart" class="flex-1 max-w-lg">
+            <CirxPriceChart @close="showChart = false" />
+          </div>
+          
+          <!-- Trading Card -->
+          <div :class="[
+            'transition-all duration-500',
+            showChart ? 'w-full max-w-lg' : 'w-full max-w-lg'
+          ]">
         <!-- Centered Trading Card -->
         <div class="bg-gradient-to-br from-circular-bg-secondary to-circular-bg-secondary/95 border border-gray-700 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm">
           <!-- Tab Headers -->
@@ -195,6 +212,21 @@
               <span v-else>Buy OTC CIRX (6mo vest)</span>
             </button>
           </form>
+          
+          <!-- Chart Expand Button -->
+          <div v-if="!showChart" class="mt-4 text-center">
+            <button
+              @click="showChart = true"
+              class="inline-flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white transition-colors text-sm font-medium hover:bg-gray-800/50 rounded-lg"
+            >
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 3v18h18V3H3zm16 16H5V5h14v14zM7 12l2 2 2-2v4l2-2 2 2V8l-2 2-2-2v4l-2 2z"/>
+              </svg>
+              Expand Chart
+            </button>
+          </div>
+        </div>
+          </div>
         </div>
       </div>
     </div>
@@ -226,6 +258,7 @@ const inputToken = ref('ETH')
 const loading = ref(false)
 const loadingText = ref('')
 const quote = ref(null)
+const showChart = ref(false)
 
 // Use wallet balances when connected, otherwise show placeholders
 const inputBalance = computed(() => {
