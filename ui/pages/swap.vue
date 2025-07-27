@@ -27,21 +27,21 @@
     <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8">
       <div :class="[
         'w-full mx-auto transition-all duration-500',
-        showChart ? 'max-w-6xl' : 'max-w-lg'
+        showChart ? 'max-w-7xl' : 'max-w-lg'
       ]">
         <div :class="[
           'flex gap-6 items-start',
           showChart ? 'flex-col lg:flex-row' : 'justify-center'
         ]">
-          <!-- Chart Panel (expandable) -->
-          <div v-if="showChart" class="flex-1 max-w-lg">
+          <!-- Chart Panel (expandable) - Takes 2/3 of width -->
+          <div v-if="showChart" class="w-full lg:w-2/3">
             <CirxPriceChart @close="showChart = false" />
           </div>
           
-          <!-- Trading Card -->
+          <!-- Trading Card - Takes 1/3 of width when chart is shown -->
           <div :class="[
             'transition-all duration-500',
-            showChart ? 'w-full max-w-lg' : 'w-full max-w-lg'
+            showChart ? 'w-full lg:w-1/3 lg:min-w-[400px]' : 'w-full max-w-lg'
           ]">
         <!-- Centered Trading Card -->
         <div class="bg-gradient-to-br from-circular-bg-secondary to-circular-bg-secondary/95 border border-gray-700 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm">
@@ -157,7 +157,7 @@
             <!-- Recipient Address (Optional) -->
             <div class="mb-6">
               <div class="flex justify-between items-center mb-3">
-                <label class="text-sm font-medium text-white">Send to (optional)</label>
+                <label class="text-sm font-medium text-white">Send to another address (optional)</label>
                 <button
                   @click="useConnectedWallet"
                   v-if="recipientAddress && isConnected"
@@ -259,13 +259,18 @@
           </form>
           
           <!-- Chart Expand Button -->
-          <div v-if="!showChart" class="mt-4 text-center">
+          <div v-if="!showChart" class="mt-4 flex justify-start">
             <button
               @click="showChart = true"
-              class="inline-flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white transition-colors text-sm font-medium hover:bg-gray-800/50 rounded-lg"
+              class="inline-flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white border border-gray-600 hover:border-gray-500 transition-all text-sm font-medium hover:bg-gray-800/50 rounded-lg w-fit"
             >
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 3v18h18V3H3zm16 16H5V5h14v14zM7 12l2 2 2-2v4l2-2 2 2V8l-2 2-2-2v4l-2 2z"/>
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 3v18h18"/>
+                <path d="M7 12l3-3 4 4 5-5"/>
+                <circle cx="7" cy="12" r="1"/>
+                <circle cx="10" cy="9" r="1"/>
+                <circle cx="14" cy="13" r="1"/>
+                <circle cx="19" cy="8" r="1"/>
               </svg>
               Expand Chart
             </button>
