@@ -80,7 +80,7 @@
         <div class="space-y-3">
           <!-- MetaMask -->
           <button
-            @click="connectMetaMask"
+            @click="handleConnectMetaMask"
             :disabled="isConnecting"
             class="w-full flex items-center gap-4 p-4 border border-gray-600 rounded-lg hover:border-gray-500 hover:bg-gray-800 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -105,7 +105,7 @@
 
           <!-- Phantom -->
           <button
-            @click="connectPhantom"
+            @click="handleConnectPhantom"
             :disabled="isConnecting"
             class="w-full flex items-center gap-4 p-4 border border-gray-600 rounded-lg hover:border-gray-500 hover:bg-gray-800 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -130,7 +130,7 @@
 
           <!-- WalletConnect -->
           <button
-            @click="connectWalletConnect"
+            @click="handleConnectWalletConnect"
             :disabled="isConnecting"
             class="w-full flex items-center gap-4 p-4 border border-gray-600 rounded-lg hover:border-gray-500 hover:bg-gray-800 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -288,10 +288,7 @@ const handleConnectWalletConnect = async () => {
   }
 }
 
-// Update the connect methods in template to use handlers
-const connectMetaMask = handleConnectMetaMask
-const connectPhantom = handleConnectPhantom
-const connectWalletConnect = handleConnectWalletConnect
+// Template now uses handler functions directly
 
 // Disconnect handler
 const handleDisconnect = async () => {
