@@ -5,7 +5,7 @@
       <div class="container">
         <nav class="nav">
           <NuxtLink to="/" class="logo">
-            UniswapV3 Clone
+            Circular CIRX
           </NuxtLink>
           <div class="flex items-center gap-4">
             <NuxtLink to="/swap" class="nav-link">
@@ -32,7 +32,7 @@
     <!-- Footer -->
     <footer class="footer">
       <div class="container">
-        <p>&copy; 2024 UniswapV3 Clone. Built with Nuxt.js and Solidity.</p>
+        <p>&copy; 2024 Circular CIRX. Professional OTC Trading Platform.</p>
       </div>
     </footer>
   </div>

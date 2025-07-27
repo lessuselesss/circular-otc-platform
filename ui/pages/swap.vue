@@ -50,28 +50,28 @@
             <button
               @click="activeTab = 'liquid'"
               :class="[
-                'px-6 py-3 text-sm font-medium font-michroma transition-all duration-300 border-b-2',
+                'px-6 py-3 text-sm font-medium font-michroma transition-all duration-300 border-b-2 flex-shrink-0',
                 activeTab === 'liquid' 
                   ? 'text-circular-primary border-circular-primary bg-circular-primary/10' 
                   : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
               ]"
             >
               Buy Liquid
-              <span class="ml-2 px-2 py-1 text-xs bg-circular-primary text-gray-900 rounded-full font-semibold">
+              <span class="ml-2 px-2 py-1 text-xs bg-circular-primary text-gray-900 rounded-full font-semibold whitespace-nowrap">
                 Immediate
               </span>
             </button>
             <button
               @click="activeTab = 'otc'"
               :class="[
-                'px-6 py-3 text-sm font-medium font-michroma transition-all duration-300 border-b-2 ml-4',
+                'px-6 py-3 text-sm font-medium font-michroma transition-all duration-300 border-b-2 ml-4 flex-shrink-0',
                 activeTab === 'otc' 
                   ? 'text-circular-purple border-circular-purple bg-circular-purple/10' 
                   : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
               ]"
             >
               Buy OTC
-              <span class="ml-2 px-2 py-1 text-xs bg-circular-purple text-white rounded-full font-semibold">
+              <span class="ml-2 px-2 py-1 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap">
                 5-12% Discount
               </span>
             </button>

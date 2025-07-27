@@ -241,7 +241,7 @@ const addLiquidityToPool = (pool) => {
 
 // Head configuration
 useHead({
-  title: 'Liquidity Pools - UniswapV3 Clone',
+  title: 'Liquidity Pools - Circular CIRX',
   meta: [
     { name: 'description', content: 'Provide liquidity to earn fees from trades on our decentralized exchange protocol.' }
   ]

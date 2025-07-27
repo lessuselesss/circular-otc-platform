@@ -104,11 +104,11 @@ useHead({
   meta: [
     { 
       name: 'description', 
-      content: 'Professional CIRX OTC trading platform with instant delivery and discounted vesting options. Built on UniswapV4 with 30% gas savings.' 
+      content: 'Professional CIRX OTC trading platform with instant delivery and discounted vesting options.' 
     },
     { 
       name: 'keywords', 
-      content: 'CIRX, OTC trading, crypto, tokens, UniswapV4, vesting, discounts, DeFi' 
+      content: 'CIRX, OTC trading, crypto, tokens, vesting, discounts, DeFi' 
     }
   ]
 })

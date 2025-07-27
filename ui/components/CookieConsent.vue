@@ -22,7 +22,7 @@
           Buy CIRX tokens with instant delivery or OTC discounts up to 12%
         </p>
         <p class="text-sm mb-6 max-w-2xl mx-auto text-gray-400">
-          Professional over-the-counter trading platform powered by UniswapV4 with 6-month linear vesting for discounted purchases.
+          Professional over-the-counter trading platform with 6-month linear vesting for discounted purchases.
         </p>
       </div>
 
@@ -48,8 +48,8 @@
           <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
             <span class="text-green-400 text-lg">✓</span>
           </div>
-          <h3 class="text-sm font-semibold mb-2 text-white font-michroma">UniswapV4 Powered</h3>
-          <p class="text-xs text-gray-400">Built on UniswapV4 with 30% gas savings.</p>
+          <h3 class="text-sm font-semibold mb-2 text-white font-michroma">Secure & Efficient</h3>
+          <p class="text-xs text-gray-400">Built with advanced DeFi infrastructure for optimal security.</p>
         </div>
       </div>
 
