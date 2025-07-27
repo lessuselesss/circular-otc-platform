@@ -9,10 +9,15 @@
             <span class="text-xs sm:text-sm hidden sm:block text-gray-400">OTC Trading Platform</span>
           </div>
           <div class="flex items-center gap-2 sm:gap-4">
-            <!-- Wallet connection placeholder -->
-            <button class="px-4 py-2 bg-circular-primary text-gray-900 rounded-lg font-medium hover:bg-circular-primary-hover transition-colors">
-              Connect Wallet
-            </button>
+            <!-- Navigation -->
+            <NuxtLink 
+              to="/history" 
+              class="px-3 py-2 text-gray-400 hover:text-white transition-colors text-sm font-medium"
+            >
+              History
+            </NuxtLink>
+            <!-- Wallet connection -->
+            <WalletButton />
           </div>
         </div>
       </div>
@@ -62,7 +67,7 @@
               <div class="flex justify-between items-center mb-3">
                 <label class="text-sm font-medium text-white">Pay with</label>
                 <span v-if="inputBalance" class="text-sm cursor-pointer hover:text-white transition-colors text-gray-400" @click="setMaxAmount">
-                  Balance: {{ inputBalance }}
+                  Balance: {{ inputBalance }} {{ inputToken }}
                 </span>
               </div>
               <div class="relative">
@@ -106,8 +111,8 @@
             <div class="mb-6">
               <div class="flex justify-between items-center mb-3">
                 <label class="text-sm font-medium text-white">Receive</label>
-                <span v-if="cirxBalance" class="text-sm text-gray-400">
-                  Balance: {{ cirxBalance }} CIRX
+                <span v-if="displayCirxBalance" class="text-sm text-gray-400">
+                  Balance: {{ displayCirxBalance }} CIRX
                 </span>
               </div>
               <div class="relative">
@@ -177,9 +182,10 @@
               ]"
             >
               <span v-if="loading">{{ loadingText || 'Processing...' }}</span>
+              <span v-else-if="!isConnected">Connect Wallet to Continue</span>
               <span v-else-if="!inputAmount">Enter an amount</span>
               <span v-else-if="activeTab === 'liquid'">Buy Liquid CIRX</span>
-              <span v-else>Buy OTC CIRX</span>
+              <span v-else>Buy OTC CIRX (6mo vest)</span>
             </button>
           </form>
         </div>
@@ -195,6 +201,16 @@ definePageMeta({
   layout: 'default'
 })
 
+// Wallet connection
+const { 
+  isConnected, 
+  account, 
+  balances, 
+  cirxBalance, 
+  getQuote, 
+  executeSwap 
+} = useWalletConnection()
+
 // Reactive state
 const activeTab = ref('liquid')
 const inputAmount = ref('')
@@ -202,11 +218,19 @@ const cirxAmount = ref('')
 const inputToken = ref('ETH')
 const loading = ref(false)
 const loadingText = ref('')
-
-// Mock balances for display
-const inputBalance = ref('0.0')
-const cirxBalance = ref('0.0')
 const quote = ref(null)
+
+// Use wallet balances when connected, otherwise show placeholders
+const inputBalance = computed(() => {
+  if (!isConnected.value || !balances.value[inputToken.value]) {
+    return '0.0'
+  }
+  return parseFloat(balances.value[inputToken.value]).toFixed(4)
+})
+
+const displayCirxBalance = computed(() => {
+  return isConnected.value ? cirxBalance.value : '0.0'
+})
 
 // Token prices (mock data)
 const tokenPrices = {
@@ -232,7 +256,8 @@ const discountTiers = [
 const canPurchase = computed(() => {
   return inputAmount.value && 
          parseFloat(inputAmount.value) > 0 && 
-         !loading.value
+         !loading.value &&
+         isConnected.value
 })
 
 // Calculate discount based on USD amount
@@ -279,8 +304,14 @@ const calculateQuote = (amount, token, isOTC = false) => {
 
 // Methods
 const setMaxAmount = () => {
-  // Mock max amount
-  inputAmount.value = '1.0'
+  if (isConnected.value && balances.value[inputToken.value]) {
+    // Set to 95% of balance to account for gas fees
+    const balance = parseFloat(balances.value[inputToken.value])
+    const maxAmount = inputToken.value === 'ETH' ? balance * 0.95 : balance * 0.99
+    inputAmount.value = maxAmount.toFixed(6)
+  } else {
+    inputAmount.value = '1.0' // Fallback for demo
+  }
 }
 
 const reverseSwap = () => {
@@ -290,24 +321,51 @@ const reverseSwap = () => {
 const handleSwap = async () => {
   if (!canPurchase.value) return
   
-  loading.value = true
-  loadingText.value = activeTab.value === 'liquid' ? 'Executing liquid purchase...' : 'Creating vesting position...'
+  // Check wallet connection
+  if (!isConnected.value) {
+    alert('Please connect your wallet first')
+    return
+  }
   
-  // Mock transaction delay
-  await new Promise(resolve => setTimeout(resolve, 2000))
-  
-  // Reset form
-  inputAmount.value = ''
-  cirxAmount.value = ''
-  quote.value = null
-  loading.value = false
-  loadingText.value = ''
-  
-  alert('Transaction completed! (This is a demo)')
+  try {
+    loading.value = true
+    loadingText.value = activeTab.value === 'liquid' ? 'Executing liquid purchase...' : 'Creating OTC vesting position...'
+    
+    const isOTC = activeTab.value === 'otc'
+    const minCirxOut = parseFloat(cirxAmount.value) * 0.99 // 1% slippage tolerance
+    
+    // Execute the swap (this will use mock transaction for now)
+    const result = await executeSwap(
+      inputToken.value,
+      inputAmount.value,
+      minCirxOut.toString(),
+      isOTC
+    )
+    
+    if (result.success) {
+      // Show success message
+      const message = isOTC 
+        ? `OTC purchase successful! Your ${cirxAmount.value} CIRX will vest over 6 months. Transaction: ${result.hash.slice(0, 10)}...`
+        : `Liquid purchase successful! You received ${cirxAmount.value} CIRX immediately. Transaction: ${result.hash.slice(0, 10)}...`
+      
+      alert(message)
+      
+      // Reset form
+      inputAmount.value = ''
+      cirxAmount.value = ''
+      quote.value = null
+    }
+  } catch (error) {
+    console.error('Swap failed:', error)
+    alert(`Transaction failed: ${error.message}`)
+  } finally {
+    loading.value = false
+    loadingText.value = ''
+  }
 }
 
 // Watch for amount and tab changes to update quote
-watch([inputAmount, inputToken, activeTab], () => {
+watch([inputAmount, inputToken, activeTab], async () => {
   if (!inputAmount.value || parseFloat(inputAmount.value) <= 0) {
     cirxAmount.value = ''
     quote.value = null
@@ -315,7 +373,14 @@ watch([inputAmount, inputToken, activeTab], () => {
   }
   
   const isOTC = activeTab.value === 'otc'
-  const newQuote = calculateQuote(inputAmount.value, inputToken.value, isOTC)
+  
+  // Use wallet connection quote if available, otherwise fallback to mock
+  let newQuote
+  if (isConnected.value) {
+    newQuote = await getQuote(inputToken.value, inputAmount.value, isOTC)
+  } else {
+    newQuote = calculateQuote(inputAmount.value, inputToken.value, isOTC)
+  }
   
   if (newQuote) {
     quote.value = newQuote
