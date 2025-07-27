@@ -46,33 +46,33 @@
         <!-- Centered Trading Card -->
         <div class="bg-gradient-to-br from-circular-bg-secondary to-circular-bg-secondary/95 border border-gray-700 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm">
           <!-- Tab Headers -->
-          <div class="flex mb-6 border-b border-gray-600">
+          <div class="flex mb-6 border-b border-gray-600 overflow-hidden">
             <button
               @click="activeTab = 'liquid'"
               :class="[
-                'px-6 py-3 text-sm font-medium font-michroma transition-all duration-300 border-b-2 flex-shrink-0',
+                'flex-1 px-3 py-3 text-sm font-medium font-michroma transition-all duration-300 border-b-2 flex items-center justify-center gap-2',
                 activeTab === 'liquid' 
                   ? 'text-circular-primary border-circular-primary bg-circular-primary/10' 
                   : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
               ]"
             >
-              Buy Liquid
-              <span class="ml-2 px-2 py-1 text-xs bg-circular-primary text-gray-900 rounded-full font-semibold whitespace-nowrap">
+              <span class="truncate">Buy Liquid</span>
+              <span class="px-2 py-1 text-xs bg-circular-primary text-gray-900 rounded-full font-semibold whitespace-nowrap flex-shrink-0">
                 Immediate
               </span>
             </button>
             <button
               @click="activeTab = 'otc'"
               :class="[
-                'px-6 py-3 text-sm font-medium font-michroma transition-all duration-300 border-b-2 ml-4 flex-shrink-0',
+                'flex-1 px-3 py-3 text-sm font-medium font-michroma transition-all duration-300 border-b-2 flex items-center justify-center gap-2',
                 activeTab === 'otc' 
                   ? 'text-circular-purple border-circular-purple bg-circular-purple/10' 
                   : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
               ]"
             >
-              Buy OTC
-              <span class="ml-2 px-2 py-1 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap">
-                5-12% Discount
+              <span class="truncate">Buy OTC</span>
+              <span class="px-2 py-1 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap flex-shrink-0">
+                5-12%
               </span>
             </button>
           </div>
