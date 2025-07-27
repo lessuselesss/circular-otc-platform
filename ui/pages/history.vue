@@ -14,7 +14,7 @@
             <NuxtLink to="/swap" class="px-4 py-2 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors">
               Back to Swap
             </NuxtLink>
-            <WalletButton />
+            <MultiWalletButton />
           </div>
         </div>
       </div>
@@ -38,7 +38,7 @@
           </div>
           <h3 class="text-xl font-semibold text-white mb-2">Connect Your Wallet</h3>
           <p class="text-gray-400 mb-6">Connect your wallet to view your transaction history and vesting positions.</p>
-          <WalletButton />
+          <MultiWalletButton />
         </div>
       </div>
 
@@ -247,12 +247,11 @@ definePageMeta({
   layout: 'default'
 })
 
-// Wallet connection
+// Multi-Wallet connection
 const { 
   isConnected, 
-  cirxBalance,
-  claimVestedTokens 
-} = useWalletConnection()
+  getTokenBalance
+} = useMultiWallet()
 
 // Mock data for transaction history (replace with real data when contracts are connected)
 const mockStats = ref({
@@ -299,7 +298,7 @@ const mockVestingPositions = ref([
 ])
 
 const displayCirxBalance = computed(() => {
-  return isConnected.value ? cirxBalance.value : '1,000'
+  return isConnected.value ? getTokenBalance('CIRX') : '1,000'
 })
 
 // Claiming state
@@ -312,7 +311,7 @@ const claimTokens = async (positionId) => {
     claimingPositions.value.push(positionId)
     
     // Execute claim (mock for now)
-    await claimVestedTokens()
+    await new Promise(resolve => setTimeout(resolve, 2000))
     
     // Update the position (in real app, this would be fetched from contract)
     const position = mockVestingPositions.value.find(p => p.id === positionId)

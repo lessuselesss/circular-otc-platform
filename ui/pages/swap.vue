@@ -16,8 +16,8 @@
             >
               History
             </NuxtLink>
-            <!-- Wallet connection -->
-            <WalletButton />
+            <!-- Multi-Wallet connection -->
+            <MultiWalletButton />
           </div>
         </div>
       </div>
@@ -85,9 +85,16 @@
                     class="h-full py-0 pl-3 pr-8 border-0 bg-transparent font-medium text-white rounded-r-xl focus:outline-none"
                     :disabled="loading"
                   >
-                    <option value="ETH" class="bg-gray-900">ETH</option>
-                    <option value="USDC" class="bg-gray-900">USDC</option>
-                    <option value="USDT" class="bg-gray-900">USDT</option>
+                    <!-- Dynamic token options based on connected wallet -->
+                    <template v-if="connectedWallet === 'phantom'">
+                      <option value="SOL" class="bg-gray-900">SOL</option>
+                      <option value="USDC_SOL" class="bg-gray-900">USDC</option>
+                    </template>
+                    <template v-else>
+                      <option value="ETH" class="bg-gray-900">ETH</option>
+                      <option value="USDC" class="bg-gray-900">USDC</option>
+                      <option value="USDT" class="bg-gray-900">USDT</option>
+                    </template>
                   </select>
                 </div>
               </div>
@@ -201,15 +208,15 @@ definePageMeta({
   layout: 'default'
 })
 
-// Wallet connection
+// Multi-Wallet connection
 const { 
   isConnected, 
   account, 
-  balances, 
-  cirxBalance, 
-  getQuote, 
-  executeSwap 
-} = useWalletConnection()
+  balance,
+  connectedWallet,
+  getTokenBalance,
+  executeSwap
+} = useMultiWallet()
 
 // Reactive state
 const activeTab = ref('liquid')
@@ -222,14 +229,23 @@ const quote = ref(null)
 
 // Use wallet balances when connected, otherwise show placeholders
 const inputBalance = computed(() => {
-  if (!isConnected.value || !balances.value[inputToken.value]) {
+  if (!isConnected.value) {
     return '0.0'
   }
-  return parseFloat(balances.value[inputToken.value]).toFixed(4)
+  
+  // Adjust token symbol based on connected wallet
+  let tokenSymbol = inputToken.value
+  if (connectedWallet.value === 'phantom' && inputToken.value === 'ETH') {
+    tokenSymbol = 'SOL'
+  } else if (connectedWallet.value === 'phantom' && inputToken.value === 'USDC') {
+    tokenSymbol = 'USDC_SOL'
+  }
+  
+  return getTokenBalance(tokenSymbol)
 })
 
 const displayCirxBalance = computed(() => {
-  return isConnected.value ? cirxBalance.value : '0.0'
+  return isConnected.value ? getTokenBalance('CIRX') : '0.0'
 })
 
 // Token prices (mock data)
@@ -304,9 +320,9 @@ const calculateQuote = (amount, token, isOTC = false) => {
 
 // Methods
 const setMaxAmount = () => {
-  if (isConnected.value && balances.value[inputToken.value]) {
+  if (isConnected.value) {
     // Set to 95% of balance to account for gas fees
-    const balance = parseFloat(balances.value[inputToken.value])
+    const balance = parseFloat(getTokenBalance(inputToken.value))
     const maxAmount = inputToken.value === 'ETH' ? balance * 0.95 : balance * 0.99
     inputAmount.value = maxAmount.toFixed(6)
   } else {
@@ -334,11 +350,11 @@ const handleSwap = async () => {
     const isOTC = activeTab.value === 'otc'
     const minCirxOut = parseFloat(cirxAmount.value) * 0.99 // 1% slippage tolerance
     
-    // Execute the swap (this will use mock transaction for now)
+    // Execute the swap via connected wallet
     const result = await executeSwap(
       inputToken.value,
       inputAmount.value,
-      minCirxOut.toString(),
+      'CIRX',
       isOTC
     )
     
@@ -374,13 +390,8 @@ watch([inputAmount, inputToken, activeTab], async () => {
   
   const isOTC = activeTab.value === 'otc'
   
-  // Use wallet connection quote if available, otherwise fallback to mock
-  let newQuote
-  if (isConnected.value) {
-    newQuote = await getQuote(inputToken.value, inputAmount.value, isOTC)
-  } else {
-    newQuote = calculateQuote(inputAmount.value, inputToken.value, isOTC)
-  }
+  // Always use mock quote for now (will be replaced with real contract calls)
+  const newQuote = calculateQuote(inputAmount.value, inputToken.value, isOTC)
   
   if (newQuote) {
     quote.value = newQuote
