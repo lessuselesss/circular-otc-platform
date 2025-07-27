@@ -58,11 +58,12 @@
     <!-- Connect Modal -->
     <div
       v-if="showConnectModal"
-      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      class="fixed top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
       @click="showConnectModal = false"
+      style="min-height: 100vh; min-height: 100dvh;"
     >
       <div
-        class="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md"
+        class="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md mx-auto my-auto max-h-[90vh] overflow-y-auto"
         @click.stop
       >
         <div class="flex justify-between items-center mb-6">
