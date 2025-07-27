@@ -154,6 +154,50 @@
               </div>
             </div>
 
+            <!-- Recipient Address (Optional) -->
+            <div class="mb-6">
+              <div class="flex justify-between items-center mb-3">
+                <label class="text-sm font-medium text-white">Send to (optional)</label>
+                <button
+                  @click="useConnectedWallet"
+                  v-if="recipientAddress && isConnected"
+                  class="text-xs text-circular-primary hover:text-circular-primary-hover transition-colors"
+                >
+                  Use connected wallet
+                </button>
+              </div>
+              <div class="relative">
+                <input
+                  v-model="recipientAddress"
+                  type="text"
+                  :placeholder="isConnected ? 'Leave empty to use connected wallet' : 'Enter wallet address to receive CIRX'"
+                  class="w-full pl-4 pr-12 py-3 text-sm bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:border-circular-primary focus:ring-1 focus:ring-circular-primary transition-colors"
+                  :disabled="loading"
+                />
+                <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+                  <button
+                    v-if="recipientAddress"
+                    @click="recipientAddress = ''"
+                    class="text-gray-400 hover:text-white transition-colors"
+                    title="Clear address"
+                  >
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div v-if="recipientAddressError" class="mt-2 text-sm text-red-400">
+                {{ recipientAddressError }}
+              </div>
+              <div v-else-if="recipientAddress" class="mt-2 text-sm text-green-400">
+                ✓ Valid {{ recipientAddressType }} address
+              </div>
+              <div v-else-if="isConnected" class="mt-2 text-sm text-gray-400">
+                CIRX will be sent to your connected wallet: {{ shortAddress }}
+              </div>
+            </div>
+
             <!-- Purchase Details -->
             <div v-if="quote" class="bg-gray-900 border border-gray-600 rounded-xl p-4 mb-6">
               <div class="flex justify-between items-center mb-2">
@@ -206,8 +250,9 @@
               ]"
             >
               <span v-if="loading">{{ loadingText || 'Processing...' }}</span>
-              <span v-else-if="!isConnected">Connect Wallet to Continue</span>
               <span v-else-if="!inputAmount">Enter an amount</span>
+              <span v-else-if="!isConnected && !recipientAddress">Connect Wallet or Enter Address</span>
+              <span v-else-if="recipientAddress && recipientAddressError">Invalid Address</span>
               <span v-else-if="activeTab === 'liquid'">Buy Liquid CIRX</span>
               <span v-else>Buy OTC CIRX (6mo vest)</span>
             </button>
@@ -246,6 +291,7 @@ const {
   account, 
   balance,
   connectedWallet,
+  shortAddress,
   getTokenBalance,
   executeSwap
 } = useMultiWallet()
@@ -259,6 +305,9 @@ const loading = ref(false)
 const loadingText = ref('')
 const quote = ref(null)
 const showChart = ref(false)
+const recipientAddress = ref('')
+const recipientAddressError = ref('')
+const recipientAddressType = ref('')
 
 // Use wallet balances when connected, otherwise show placeholders
 const inputBalance = computed(() => {
@@ -301,12 +350,19 @@ const discountTiers = [
   { minAmount: 1000, discount: 5 }     // $1K+: 5%
 ]
 
-// Computed properties
+// Computed properties  
 const canPurchase = computed(() => {
-  return inputAmount.value && 
-         parseFloat(inputAmount.value) > 0 && 
-         !loading.value &&
-         isConnected.value
+  // Basic requirements
+  const hasAmount = inputAmount.value && parseFloat(inputAmount.value) > 0
+  const notLoading = !loading.value
+  
+  // Address validation
+  const addressValid = validateRecipientAddress(recipientAddress.value)
+  
+  // Either connected wallet OR valid recipient address required
+  const hasValidRecipient = isConnected.value || (recipientAddress.value && addressValid)
+  
+  return hasAmount && notLoading && hasValidRecipient
 })
 
 // Calculate discount based on USD amount
@@ -351,7 +407,49 @@ const calculateQuote = (amount, token, isOTC = false) => {
   }
 }
 
+// Address validation functions
+const validateEthereumAddress = (address) => {
+  // Basic Ethereum address validation (0x + 40 hex characters)
+  return /^0x[a-fA-F0-9]{40}$/.test(address)
+}
+
+const validateSolanaAddress = (address) => {
+  // Basic Solana address validation (base58, 32-44 characters)
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)
+}
+
+const validateRecipientAddress = (address) => {
+  if (!address) {
+    recipientAddressError.value = ''
+    recipientAddressType.value = ''
+    return true
+  }
+
+  // Check if it's a valid Ethereum address
+  if (validateEthereumAddress(address)) {
+    recipientAddressError.value = ''
+    recipientAddressType.value = 'Ethereum'
+    return true
+  }
+
+  // Check if it's a valid Solana address
+  if (validateSolanaAddress(address)) {
+    recipientAddressError.value = ''
+    recipientAddressType.value = 'Solana'
+    return true
+  }
+
+  // Invalid address
+  recipientAddressError.value = 'Invalid wallet address format'
+  recipientAddressType.value = ''
+  return false
+}
+
 // Methods
+const useConnectedWallet = () => {
+  recipientAddress.value = ''
+}
+
 const setMaxAmount = () => {
   if (isConnected.value) {
     // Set to 95% of balance to account for gas fees
@@ -431,6 +529,11 @@ watch([inputAmount, inputToken, activeTab], async () => {
     cirxAmount.value = newQuote.cirxAmount
   }
 }, { immediate: true })
+
+// Watch recipient address for validation
+watch(recipientAddress, (newAddress) => {
+  validateRecipientAddress(newAddress)
+})
 
 // Head configuration
 useHead({
