@@ -125,6 +125,17 @@
 import { createChart } from 'lightweight-charts';
 import { onMounted, onUnmounted, ref, nextTick, watch } from 'vue';
 import { useFetch } from '#imports';
+import pako from 'pako';
+
+// Chart type configuration
+const chartTypes = [
+  { value: 'candlestick', label: 'Candlestick' },
+  { value: 'line', label: 'Line' },
+  { value: 'area', label: 'Area' }
+]
+const selectedChartType = ref('candlestick')
+let lineSeries = null
+let areaSeries = null
 
 // Props and emits
 defineEmits(['close'])
@@ -293,47 +304,85 @@ const changeTimeframe = (newTimeframe) => {
   updateChartData()
 }
 
-// Simulate real-time price updates
-const updatePrice = () => {
-  if (!candlestickSeries) return
-  
-  const currentValue = parseFloat(currentPrice.value)
-  const variation = (Math.random() - 0.5) * 0.00005 // Very small movements
-  const newPrice = currentValue + variation
-  
-  // Add new data point
-  const now = Date.now() / 1000
-  const lastData = candlestickSeries.data?.[candlestickSeries.data.length - 1]
-  
-  if (lastData) {
-    const newDataPoint = {
-      time: now,
-      open: lastData.close,
-      high: Math.max(lastData.close, newPrice),
-      low: Math.min(lastData.close, newPrice),
-      close: newPrice
+// WebSocket for real-time data
+let ws = null;
+let pingInterval = null;
+
+const connectWebSocket = () => {
+  ws = new WebSocket('wss://fstream.xt.com/ws/market');
+
+  ws.onopen = () => {
+    console.log('WebSocket connected.');
+    // Subscribe to CIRX/USDT K-line data (1-minute interval for real-time)
+    const subscribeMessage = {
+      req: 'sub_kline',
+      symbol: 'cirx_usdt', // Assuming CIRX/USDT is the correct symbol
+      type: '1m'
+    };
+    ws.send(JSON.stringify(subscribeMessage));
+
+    // Start pinging to keep the connection alive
+    pingInterval = setInterval(() => {
+      ws.send(JSON.stringify({ ping: Date.now() }));
+    }, 30000); // Ping every 30 seconds
+  };
+
+  ws.onmessage = (event) => {
+    // XT.COM data is GZIP compressed and Base64 encoded
+    // You might need to install 'pako' for decompression: npm install pako
+    // import pako from 'pako';
+    try {
+      const decodedData = atob(event.data);
+      const decompressedData = pako.inflate(decodedData, { to: 'string' });
+      const message = JSON.parse(decompressedData);
+
+      if (message.data && message.channel === 'kline_1m') { // Adjust channel name if different
+        const kline = message.data;
+        const newPoint = {
+          time: kline.t / 1000, // Convert ms to seconds
+          open: parseFloat(kline.o),
+          high: parseFloat(kline.h),
+          low: parseFloat(kline.l),
+          close: parseFloat(kline.c)
+        };
+        candlestickSeries.update(newPoint);
+
+        // Update current price display
+        currentPrice.value = newPoint.close.toFixed(6);
+        // 24h change would ideally come from a separate 24h ticker feed
+        // For now, it will remain static or you can implement a calculation based on fetched data.
+      } else if (message.ping) {
+        // Respond to ping with pong
+        ws.send(JSON.stringify({ pong: message.ping }));
+      }
+    } catch (e) {
+      console.error('Error processing WebSocket message:', e);
     }
-    
-    candlestickSeries.update(newDataPoint)
-    currentPrice.value = newPrice.toFixed(6)
-  }
-  
-  // Update 24h change slightly
-  const changeVariation = (Math.random() - 0.5) * 0.1
-  priceChange24h.value = parseFloat((priceChange24h.value + changeVariation).toFixed(2))
-}
+  };
+
+  ws.onerror = (error) => {
+    console.error('WebSocket error:', error);
+  };
+
+  ws.onclose = () => {
+    console.log('WebSocket closed. Attempting to reconnect...');
+    clearInterval(pingInterval);
+    setTimeout(connectWebSocket, 5000); // Attempt to reconnect after 5 seconds
+  };
+};
 
 // Initialize chart when component mounts
 onMounted(() => {
   nextTick(() => {
-    initChart()
-    
-    // Update price every 10 seconds for demo
-    const interval = setInterval(updatePrice, 10000)
-    
+    initChart();
+    connectWebSocket(); // Establish WebSocket connection
+
     onUnmounted(() => {
-      clearInterval(interval)
-    })
-  })
-})
+      if (ws) {
+        ws.close();
+      }
+      clearInterval(pingInterval);
+    });
+  });
+});
 </script>
