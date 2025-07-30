@@ -336,7 +336,7 @@ const connectWebSocket = () => {
       const decompressedData = pako.inflate(decodedData, { to: 'string' });
       const message = JSON.parse(decompressedData);
 
-      if (message.data && message.channel === 'kline_1m') { // Adjust channel name if different
+      if (message.data && message.topic === 'kline') {
         const kline = message.data;
         const newPoint = {
           time: kline.t / 1000, // Convert ms to seconds
