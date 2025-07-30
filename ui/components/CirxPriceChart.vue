@@ -33,8 +33,16 @@
           {{ priceChange24h >= 0 ? '+' : '' }}{{ priceChange24h }}%
         </span>
       </div>
-      <div class="text-sm text-gray-400">
-        24h Range: ${{ dayLow }} - ${{ dayHigh }}
+      <div class="flex justify-between text-sm">
+        <div class="text-gray-400">
+          24h Range: ${{ dayLow }} - ${{ dayHigh }}
+        </div>
+        <div 
+          v-if="crosshairPrice" 
+          class="text-gray-300 font-medium"
+        >
+          {{ crosshairTime }}: ${{ crosshairPrice }}
+        </div>
       </div>
     </div>
 
@@ -58,7 +66,7 @@
       </div>
     </div>
 
-    <!-- Mock Chart Area -->
+    <!-- TradingView Lightweight Chart Area -->
     <div class="bg-gray-800/30 rounded-lg p-4 mb-6">
       <div class="flex justify-between items-center mb-4">
         <div class="text-sm font-medium text-white">Price Chart</div>
@@ -66,7 +74,7 @@
           <button
             v-for="timeframe in timeframes"
             :key="timeframe.value"
-            @click="selectedTimeframe = timeframe.value"
+            @click="changeTimeframe(timeframe.value)"
             :class="[
               'px-3 py-1 text-xs rounded-lg font-medium transition-colors',
               selectedTimeframe === timeframe.value
@@ -79,22 +87,15 @@
         </div>
       </div>
       
-      <!-- Simplified Chart Visualization -->
-      <div class="h-48 flex items-end justify-between gap-1">
-        <div
-          v-for="(bar, index) in chartBars"
-          :key="index"
-          :class="[
-            'w-2 rounded-t-sm transition-all duration-300',
-            bar.trend === 'up' ? 'bg-green-500' : 'bg-red-500'
-          ]"
-          :style="{ height: bar.height + '%' }"
-          :title="`Price: $${bar.price}`"
-        ></div>
-      </div>
+      <!-- TradingView Chart Container -->
+      <div 
+        ref="chartContainer" 
+        class="h-64 w-full rounded-lg overflow-hidden"
+        style="background: #1a1a1a;"
+      ></div>
       
       <div class="text-center text-sm text-gray-400 mt-4">
-        Live CIRX price chart • Data from CoinMarketCap
+        Live CIRX price chart • Powered by TradingView
       </div>
     </div>
 
@@ -121,6 +122,10 @@
 </template>
 
 <script setup>
+import { createChart } from 'lightweight-charts';
+import { onMounted, onUnmounted, ref, nextTick, watch } from 'vue';
+import { useFetch } from '#imports';
+
 // Props and emits
 defineEmits(['close'])
 
@@ -144,48 +149,191 @@ const timeframes = [
   { label: '1Y', value: '1Y' }
 ]
 
-// Mock chart data - simplified bars representing price movement
-const chartBars = computed(() => {
-  // Generate mock chart data based on selected timeframe
-  const basePrice = parseFloat(currentPrice.value)
-  const bars = []
-  const numBars = selectedTimeframe.value === '1H' ? 60 : 
-                  selectedTimeframe.value === '24H' ? 24 :
-                  selectedTimeframe.value === '7D' ? 7 :
-                  selectedTimeframe.value === '30D' ? 30 : 52
+// Chart references
+const chartContainer = ref(null)
+let chart = null
+let candlestickSeries = null
 
-  for (let i = 0; i < numBars; i++) {
-    // Create realistic price variation
-    const variation = (Math.random() - 0.5) * 0.0002 // Small price movements
-    const price = (basePrice + variation).toFixed(6)
-    const trend = Math.random() > 0.5 ? 'up' : 'down'
-    const height = 20 + Math.random() * 60 // 20-80% height
+// Generate realistic OHLC data for the chart
+const processGeckoData = (apiData, timeframe) => {
+  // Transform CoinGecko API response to TradingView format
+  return apiData.map(item => ({
+    time: item[0] / 1000, // Convert ms to seconds
+    open: item[1],
+    high: item[2],
+    low: item[3],
+    close: item[4]
+  }))
+}
 
-    bars.push({
-      price,
-      trend,
-      height
-    })
+const fetchOHLC = async (timeframe) => {
+  const days = {
+    '1H': 1, '24H': 1, '7D': 7, '30D': 30, '1Y': 365 
+  }[timeframe]
+
+  const { data, error } = await useFetch(
+    `https://api.coingecko.com/api/v3/coins/circular-protocol/ohlc?vs_currency=usd&days=${days}`
+  )
+
+  if (error.value) {
+    console.error('Failed to fetch OHLC data:', error.value)
+    throw error.value
   }
 
-  return bars
-})
+  return processGeckoData(data.value, timeframe)
+}
+
+// Initialize the chart
+const initChart = () => {
+  if (!chartContainer.value) return
+  
+  chart = createChart(chartContainer.value, {
+    layout: {
+      background: { color: '#1a1a1a' },
+      textColor: '#d1d5db',
+    },
+    grid: {
+      vertLines: { color: '#374151' },
+      horzLines: { color: '#374151' },
+    },
+    crosshair: {
+      mode: 1,
+    },
+    rightPriceScale: {
+      borderColor: '#4b5563',
+    },
+    timeScale: {
+      borderColor: '#4b5563',
+      timeVisible: true,
+      secondsVisible: false,
+    },
+    width: chartContainer.value.clientWidth,
+    height: 256,
+  })
+  
+  // Set up crosshair subscription
+  chart.subscribeCrosshairMove(param => {
+    if (param.time && param.point && candlestickSeries) {
+      const price = param.seriesPrices.get(candlestickSeries)
+      if (price) {
+        crosshairPrice.value = price.close.toFixed(6)
+        crosshairTime.value = new Date(param.time * 1000).toLocaleString()
+      }
+    } else {
+      // Reset to last price when not hovering
+      if (candlestickSeries?.data?.length) {
+        const last = candlestickSeries.data[candlestickSeries.data.length - 1]
+        crosshairPrice.value = last.close.toFixed(6)
+        crosshairTime.value = new Date(last.time * 1000).toLocaleString()
+      }
+    }
+  })
+
+  // Add candlestick series
+  candlestickSeries = chart.addCandlestickSeries({
+    upColor: '#22c55e',
+    downColor: '#ef4444',
+    borderDownColor: '#ef4444',
+    borderUpColor: '#22c55e',
+    wickDownColor: '#ef4444',
+    wickUpColor: '#22c55e',
+  })
+
+  // Load initial data
+  updateChartData()
+  
+  // Handle resize
+  const resizeChart = () => {
+    if (chart && chartContainer.value) {
+      chart.applyOptions({ width: chartContainer.value.clientWidth })
+    }
+  }
+  
+  window.addEventListener('resize', resizeChart)
+  
+  // Cleanup function
+  onUnmounted(() => {
+    window.removeEventListener('resize', resizeChart)
+    if (chart) {
+      chart.remove()
+    }
+  })
+}
+
+// Update chart data based on timeframe
+const crosshairPrice = ref('')
+const crosshairTime = ref('')
+
+const updateChartData = async () => {
+  if (!candlestickSeries) return
+  
+  try {
+    const data = await fetchOHLC(selectedTimeframe.value)
+    candlestickSeries.setData(data)
+    
+    if (data.length > 0) {
+      const latest = data[data.length - 1]
+      currentPrice.value = latest.close.toFixed(6)
+      
+      // Set default crosshair to latest price
+      crosshairPrice.value = latest.close.toFixed(6)
+      crosshairTime.value = new Date(latest.time * 1000).toLocaleString()
+    }
+  } catch (error) {
+    console.error('Error updating chart data:', error)
+    // Fallback to mock data if API fails
+    // const data = generateOHLCData(selectedTimeframe.value)
+    // candlestickSeries.setData(data)
+  }
+}
+
+// Change timeframe
+const changeTimeframe = (newTimeframe) => {
+  selectedTimeframe.value = newTimeframe
+  updateChartData()
+}
 
 // Simulate real-time price updates
 const updatePrice = () => {
+  if (!candlestickSeries) return
+  
   const currentValue = parseFloat(currentPrice.value)
   const variation = (Math.random() - 0.5) * 0.00005 // Very small movements
-  const newPrice = (currentValue + variation).toFixed(6)
-  currentPrice.value = newPrice
+  const newPrice = currentValue + variation
+  
+  // Add new data point
+  const now = Date.now() / 1000
+  const lastData = candlestickSeries.data?.[candlestickSeries.data.length - 1]
+  
+  if (lastData) {
+    const newDataPoint = {
+      time: now,
+      open: lastData.close,
+      high: Math.max(lastData.close, newPrice),
+      low: Math.min(lastData.close, newPrice),
+      close: newPrice
+    }
+    
+    candlestickSeries.update(newDataPoint)
+    currentPrice.value = newPrice.toFixed(6)
+  }
   
   // Update 24h change slightly
   const changeVariation = (Math.random() - 0.5) * 0.1
   priceChange24h.value = parseFloat((priceChange24h.value + changeVariation).toFixed(2))
 }
 
-// Update price every 10 seconds for demo
+// Initialize chart when component mounts
 onMounted(() => {
-  const interval = setInterval(updatePrice, 10000)
-  onUnmounted(() => clearInterval(interval))
+  nextTick(() => {
+    initChart()
+    
+    // Update price every 10 seconds for demo
+    const interval = setInterval(updatePrice, 10000)
+    
+    onUnmounted(() => {
+      clearInterval(interval)
+    })
+  })
 })
 </script>
