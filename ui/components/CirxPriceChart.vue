@@ -332,11 +332,25 @@ const connectWebSocket = () => {
     // You might need to install 'pako' for decompression: npm install pako
     // import pako from 'pako';
     try {
+      console.log('Raw WebSocket data:', event.data);
       const decodedData = atob(event.data);
+      console.log('Decoded data (Base64):', decodedData);
       const decompressedData = pako.inflate(decodedData, { to: 'string' });
+      console.log('Decompressed data (GZIP):', decompressedData);
       const message = JSON.parse(decompressedData);
+      console.log('Parsed WebSocket message:', message);
 
       if (message.data && message.topic === 'kline') {
+        const kline = message.data;
+        console.log('Kline data:', kline);
+        const newPoint = {
+          time: kline.t / 1000, // Convert ms to seconds
+          open: parseFloat(kline.o),
+          high: parseFloat(kline.h),
+          low: parseFloat(kline.l),
+          close: parseFloat(kline.c)
+        };
+        console.log('New chart point:', newPoint);
         const kline = message.data;
         const newPoint = {
           time: kline.t / 1000, // Convert ms to seconds
