@@ -122,7 +122,7 @@
 </template>
 
 <script setup>
-import { createChart } from 'lightweight-charts';
+import { createChart, CandlestickSeries } from 'lightweight-charts';
 import { onMounted, onUnmounted, ref, nextTick, watch } from 'vue';
 import { useFetch } from '#imports';
 
@@ -246,11 +246,12 @@ const initChart = () => {
 
   // Add candlestick series
   console.log('Adding candlestick series to chart')
-  console.log('Available chart methods:', Object.getOwnPropertyNames(chart).filter(name => name.includes('add')))
-  console.log('Chart prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)).filter(name => name.includes('add')))
+  console.log('All chart methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)))
+  console.log('Chart object:', chart)
   
   try {
-    candlestickSeries = chart.addCandlestickSeries({
+    // Try the correct v5.0.8 method
+    candlestickSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#22c55e',
       downColor: '#ef4444',
       borderDownColor: '#ef4444',
@@ -258,18 +259,24 @@ const initChart = () => {
       wickDownColor: '#ef4444',
       wickUpColor: '#22c55e',
     })
+    console.log('Successfully added candlestick series with CandlestickSeries import')
   } catch (error) {
-    console.error('Error adding candlestick series:', error)
-    console.log('Trying alternative method...')
-    // Try alternative method name
-    candlestickSeries = chart.addSeries('Candlestick', {
-      upColor: '#22c55e',
-      downColor: '#ef4444',
-      borderDownColor: '#ef4444',
-      borderUpColor: '#22c55e',
-      wickDownColor: '#ef4444',
-      wickUpColor: '#22c55e',
-    })
+    console.error('Error with CandlestickSeries import method:', error)
+    try {
+      // Fallback method
+      candlestickSeries = chart.addCandlestickSeries({
+        upColor: '#22c55e',
+        downColor: '#ef4444',
+        borderDownColor: '#ef4444',
+        borderUpColor: '#22c55e',
+        wickDownColor: '#ef4444',
+        wickUpColor: '#22c55e',
+      })
+      console.log('Successfully added with addCandlestickSeries method')
+    } catch (error2) {
+      console.error('Both methods failed:', error2)
+      console.log('Chart methods available:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)))
+    }
   }
   console.log('Candlestick series added successfully')
 
