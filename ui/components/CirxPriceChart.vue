@@ -195,8 +195,13 @@ const fetchOHLC = async (timeframe) => {
 
 // Initialize the chart
 const initChart = () => {
-  if (!chartContainer.value) return
+  console.log('initChart called, chartContainer.value:', chartContainer.value)
+  if (!chartContainer.value) {
+    console.error('chartContainer.value is null, cannot initialize chart')
+    return
+  }
   
+  console.log('Creating chart with dimensions:', chartContainer.value.clientWidth, 'x', 256)
   chart = createChart(chartContainer.value, {
     layout: {
       background: { color: '#1a1a1a' },
@@ -240,6 +245,7 @@ const initChart = () => {
   })
 
   // Add candlestick series
+  console.log('Adding candlestick series to chart')
   candlestickSeries = chart.addCandlestickSeries({
     upColor: '#22c55e',
     downColor: '#ef4444',
@@ -248,8 +254,10 @@ const initChart = () => {
     wickDownColor: '#ef4444',
     wickUpColor: '#22c55e',
   })
+  console.log('Candlestick series added successfully')
 
   // Load initial data
+  console.log('Loading initial chart data')
   updateChartData()
   
   // Handle resize
@@ -275,33 +283,33 @@ const crosshairPrice = ref('')
 const crosshairTime = ref('')
 
 const updateChartData = async () => {
-  if (!candlestickSeries) return
+  console.log('updateChartData called, candlestickSeries exists:', !!candlestickSeries)
+  if (!candlestickSeries) {
+    console.error('candlestickSeries is null, cannot update chart data')
+    return
+  }
   
   try {
-    console.log('Fetching OHLC data for timeframe:', selectedTimeframe.value)
-    const data = await fetchOHLC(selectedTimeframe.value)
-    console.log('Received OHLC data points:', data.length)
+    // Use fallback data directly for debugging
+    console.log('Using fallback data for debugging (API disabled)')
+    const fallbackData = generateFallbackData()
+    console.log('Generated fallback data:', fallbackData.length, 'points')
+    console.log('Sample data point:', fallbackData[0])
     
-    if (data && data.length > 0) {
-      candlestickSeries.setData(data)
-      console.log('Chart data set successfully')
-      
-      const latest = data[data.length - 1]
-      currentPrice.value = latest.close.toFixed(6)
-      
-      // Set default crosshair to latest price
-      crosshairPrice.value = latest.close.toFixed(6)
-      crosshairTime.value = new Date(latest.time * 1000).toLocaleString()
-    } else {
-      console.warn('No OHLC data received, using fallback')
-      const fallbackData = generateFallbackData()
-      candlestickSeries.setData(fallbackData)
-    }
+    candlestickSeries.setData(fallbackData)
+    console.log('Chart data set successfully with fallback data')
+    
+    const latest = fallbackData[fallbackData.length - 1]
+    currentPrice.value = latest.close.toFixed(6)
+    console.log('Current price updated to:', currentPrice.value)
+    
+    // Set default crosshair to latest price
+    crosshairPrice.value = latest.close.toFixed(6)
+    crosshairTime.value = new Date(latest.time * 1000).toLocaleString()
+    console.log('Crosshair updated to:', crosshairPrice.value, crosshairTime.value)
+    
   } catch (error) {
     console.error('Error updating chart data:', error)
-    console.log('Using fallback data due to API error')
-    const fallbackData = generateFallbackData()
-    candlestickSeries.setData(fallbackData)
   }
 }
 
@@ -381,7 +389,9 @@ const simulateRealTimeData = () => {
 
 // Initialize chart when component mounts
 onMounted(() => {
+  console.log('CirxPriceChart component mounted')
   nextTick(() => {
+    console.log('nextTick callback executing')
     initChart();
     simulateRealTimeData(); // Start price simulation
 
