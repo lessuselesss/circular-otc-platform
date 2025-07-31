@@ -221,6 +221,10 @@ const initChart = () => {
       borderColor: '#4b5563',
       timeVisible: true,
       secondsVisible: false,
+      rightOffset: 12, // Reduce empty space on right
+      barSpacing: 6,   // Adjust spacing between bars
+      fixLeftEdge: false,
+      fixRightEdge: false,
     },
     width: chartContainer.value.clientWidth,
     height: 256,
@@ -245,9 +249,6 @@ const initChart = () => {
   })
 
   // Add candlestick series
-  console.log('Adding candlestick series to chart')
-  console.log('All chart methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)))
-  console.log('Chart object:', chart)
   
   try {
     // Try the correct v5.0.8 method
@@ -259,29 +260,12 @@ const initChart = () => {
       wickDownColor: '#ef4444',
       wickUpColor: '#22c55e',
     })
-    console.log('Successfully added candlestick series with CandlestickSeries import')
   } catch (error) {
-    console.error('Error with CandlestickSeries import method:', error)
-    try {
-      // Fallback method
-      candlestickSeries = chart.addCandlestickSeries({
-        upColor: '#22c55e',
-        downColor: '#ef4444',
-        borderDownColor: '#ef4444',
-        borderUpColor: '#22c55e',
-        wickDownColor: '#ef4444',
-        wickUpColor: '#22c55e',
-      })
-      console.log('Successfully added with addCandlestickSeries method')
-    } catch (error2) {
-      console.error('Both methods failed:', error2)
-      console.log('Chart methods available:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)))
-    }
+    console.error('Error adding candlestick series:', error)
+    return
   }
-  console.log('Candlestick series added successfully')
 
   // Load initial data
-  console.log('Loading initial chart data')
   updateChartData()
   
   // Handle resize
@@ -307,30 +291,23 @@ const crosshairPrice = ref('')
 const crosshairTime = ref('')
 
 const updateChartData = async () => {
-  console.log('updateChartData called, candlestickSeries exists:', !!candlestickSeries)
-  if (!candlestickSeries) {
-    console.error('candlestickSeries is null, cannot update chart data')
-    return
-  }
+  if (!candlestickSeries) return
   
   try {
-    // Use fallback data directly for debugging
-    console.log('Using fallback data for debugging (API disabled)')
+    // Use fallback data for now (API integration can be added later)
     const fallbackData = generateFallbackData()
-    console.log('Generated fallback data:', fallbackData.length, 'points')
-    console.log('Sample data point:', fallbackData[0])
     
     candlestickSeries.setData(fallbackData)
-    console.log('Chart data set successfully with fallback data')
+    
+    // Fit the chart to show all data properly
+    chart.timeScale().fitContent()
     
     const latest = fallbackData[fallbackData.length - 1]
     currentPrice.value = latest.close.toFixed(6)
-    console.log('Current price updated to:', currentPrice.value)
     
     // Set default crosshair to latest price
     crosshairPrice.value = latest.close.toFixed(6)
     crosshairTime.value = new Date(latest.time * 1000).toLocaleString()
-    console.log('Crosshair updated to:', crosshairPrice.value, crosshairTime.value)
     
   } catch (error) {
     console.error('Error updating chart data:', error)
@@ -358,7 +335,6 @@ const generateFallbackData = () => {
     })
   }
   
-  console.log('Generated fallback data points:', data.length)
   return data
 }
 
@@ -413,9 +389,7 @@ const simulateRealTimeData = () => {
 
 // Initialize chart when component mounts
 onMounted(() => {
-  console.log('CirxPriceChart component mounted')
   nextTick(() => {
-    console.log('nextTick callback executing')
     initChart();
     simulateRealTimeData(); // Start price simulation
 
