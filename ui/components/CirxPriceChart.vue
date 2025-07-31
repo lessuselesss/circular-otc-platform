@@ -246,14 +246,31 @@ const initChart = () => {
 
   // Add candlestick series
   console.log('Adding candlestick series to chart')
-  candlestickSeries = chart.addCandlestickSeries({
-    upColor: '#22c55e',
-    downColor: '#ef4444',
-    borderDownColor: '#ef4444',
-    borderUpColor: '#22c55e',
-    wickDownColor: '#ef4444',
-    wickUpColor: '#22c55e',
-  })
+  console.log('Available chart methods:', Object.getOwnPropertyNames(chart).filter(name => name.includes('add')))
+  console.log('Chart prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)).filter(name => name.includes('add')))
+  
+  try {
+    candlestickSeries = chart.addCandlestickSeries({
+      upColor: '#22c55e',
+      downColor: '#ef4444',
+      borderDownColor: '#ef4444',
+      borderUpColor: '#22c55e',
+      wickDownColor: '#ef4444',
+      wickUpColor: '#22c55e',
+    })
+  } catch (error) {
+    console.error('Error adding candlestick series:', error)
+    console.log('Trying alternative method...')
+    // Try alternative method name
+    candlestickSeries = chart.addSeries('Candlestick', {
+      upColor: '#22c55e',
+      downColor: '#ef4444',
+      borderDownColor: '#ef4444',
+      borderUpColor: '#22c55e',
+      wickDownColor: '#ef4444',
+      wickUpColor: '#22c55e',
+    })
+  }
   console.log('Candlestick series added successfully')
 
   // Load initial data
