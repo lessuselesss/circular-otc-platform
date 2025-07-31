@@ -221,10 +221,10 @@ const initChart = () => {
       borderColor: '#4b5563',
       timeVisible: true,
       secondsVisible: false,
-      rightOffset: 12, // Reduce empty space on right
-      barSpacing: 6,   // Adjust spacing between bars
-      fixLeftEdge: false,
-      fixRightEdge: false,
+      rightOffset: 5,   // Minimal empty space on right
+      barSpacing: 8,    // Wider bars
+      fixLeftEdge: true,
+      fixRightEdge: true,
     },
     width: chartContainer.value.clientWidth,
     height: 256,
@@ -299,8 +299,18 @@ const updateChartData = async () => {
     
     candlestickSeries.setData(fallbackData)
     
-    // Fit the chart to show all data properly
-    chart.timeScale().fitContent()
+    // Force the chart to use the full visible range
+    const firstTime = fallbackData[0].time
+    const lastTime = fallbackData[fallbackData.length - 1].time
+    
+    // Set visible range to exactly match our data
+    chart.timeScale().setVisibleRange({
+      from: firstTime,
+      to: lastTime
+    })
+    
+    // Also fit content as backup
+    setTimeout(() => chart.timeScale().fitContent(), 100)
     
     const latest = fallbackData[fallbackData.length - 1]
     currentPrice.value = latest.close.toFixed(6)
@@ -319,10 +329,20 @@ const generateFallbackData = () => {
   const basePrice = 0.004663
   const data = []
   const now = Math.floor(Date.now() / 1000)
-  const intervalSeconds = selectedTimeframe.value === '1H' ? 300 : 1800 // 5min or 30min intervals
   
-  for (let i = 47; i >= 0; i--) {
-    const time = now - (i * intervalSeconds)
+  // Generate more data points to fill the chart better
+  const timeframes = {
+    '1H': { points: 60, interval: 60 },    // 1 minute intervals for 1 hour
+    '24H': { points: 48, interval: 1800 }, // 30 minute intervals for 24 hours  
+    '7D': { points: 84, interval: 7200 },  // 2 hour intervals for 7 days
+    '30D': { points: 60, interval: 43200 }, // 12 hour intervals for 30 days
+    '1Y': { points: 52, interval: 604800 }  // 1 week intervals for 1 year
+  }
+  
+  const config = timeframes[selectedTimeframe.value] || timeframes['24H']
+  
+  for (let i = config.points - 1; i >= 0; i--) {
+    const time = now - (i * config.interval)
     const variation = (Math.random() - 0.5) * 0.02 // ±1% variation
     const price = basePrice * (1 + variation)
     
