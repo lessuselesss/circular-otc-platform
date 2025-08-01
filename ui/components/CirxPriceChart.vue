@@ -221,10 +221,13 @@ const initChart = () => {
       borderColor: '#4b5563',
       timeVisible: true,
       secondsVisible: false,
-      rightOffset: 5,   // Minimal empty space on right
-      barSpacing: 8,    // Wider bars
-      fixLeftEdge: true,
-      fixRightEdge: true,
+      rightOffset: 12,
+      leftOffset: 12,
+      barSpacing: 6,
+      minBarSpacing: 0.5,
+      fixLeftEdge: false,
+      fixRightEdge: false,
+      shiftVisibleRangeOnNewBar: true,
     },
     width: chartContainer.value.clientWidth,
     height: 256,
@@ -299,18 +302,16 @@ const updateChartData = async () => {
     
     candlestickSeries.setData(fallbackData)
     
-    // Force the chart to use the full visible range
-    const firstTime = fallbackData[0].time
-    const lastTime = fallbackData[fallbackData.length - 1].time
-    
-    // Set visible range to exactly match our data
-    chart.timeScale().setVisibleRange({
-      from: firstTime,
-      to: lastTime
-    })
-    
-    // Also fit content as backup
-    setTimeout(() => chart.timeScale().fitContent(), 100)
+    // Allow TradingView to automatically fit content to use full chart width
+    setTimeout(() => {
+      chart.timeScale().fitContent()
+      
+      // Then ensure we're using the full viewport with some padding
+      chart.timeScale().setVisibleLogicalRange({
+        from: 0,
+        to: fallbackData.length - 1
+      })
+    }, 100)
     
     const latest = fallbackData[fallbackData.length - 1]
     currentPrice.value = latest.close.toFixed(6)
@@ -330,13 +331,13 @@ const generateFallbackData = () => {
   const data = []
   const now = Math.floor(Date.now() / 1000)
   
-  // Generate more data points to fill the chart better
+  // Generate optimal data points to fill the chart completely
   const timeframes = {
-    '1H': { points: 60, interval: 60 },    // 1 minute intervals for 1 hour
-    '24H': { points: 48, interval: 1800 }, // 30 minute intervals for 24 hours  
-    '7D': { points: 84, interval: 7200 },  // 2 hour intervals for 7 days
-    '30D': { points: 60, interval: 43200 }, // 12 hour intervals for 30 days
-    '1Y': { points: 52, interval: 604800 }  // 1 week intervals for 1 year
+    '1H': { points: 60, interval: 60 },     // 1 minute intervals for 1 hour
+    '24H': { points: 96, interval: 900 },   // 15 minute intervals for 24 hours  
+    '7D': { points: 168, interval: 3600 },  // 1 hour intervals for 7 days
+    '30D': { points: 120, interval: 21600 }, // 6 hour intervals for 30 days
+    '1Y': { points: 100, interval: 315360 } // ~3.65 day intervals for 1 year
   }
   
   const config = timeframes[selectedTimeframe.value] || timeframes['24H']
