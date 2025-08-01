@@ -221,13 +221,13 @@ const initChart = () => {
       borderColor: '#4b5563',
       timeVisible: true,
       secondsVisible: false,
-      rightOffset: 12,
-      leftOffset: 12,
-      barSpacing: 6,
-      minBarSpacing: 0.5,
-      fixLeftEdge: false,
-      fixRightEdge: false,
-      shiftVisibleRangeOnNewBar: true,
+      rightOffset: 0,
+      leftOffset: 0,
+      barSpacing: 3,
+      minBarSpacing: 1,
+      fixLeftEdge: true,
+      fixRightEdge: true,
+      shiftVisibleRangeOnNewBar: false,
     },
     width: chartContainer.value.clientWidth,
     height: 256,
@@ -271,10 +271,24 @@ const initChart = () => {
   // Load initial data
   updateChartData()
   
-  // Handle resize
+  // Handle resize and maintain full width coverage
   const resizeChart = () => {
     if (chart && chartContainer.value) {
       chart.applyOptions({ width: chartContainer.value.clientWidth })
+      
+      // After resize, ensure chart still uses full width
+      if (candlestickSeries && candlestickSeries.data().length > 0) {
+        const data = candlestickSeries.data()
+        const firstTime = data[0].time
+        const lastTime = data[data.length - 1].time
+        
+        setTimeout(() => {
+          chart.timeScale().setVisibleRange({
+            from: firstTime,
+            to: lastTime
+          })
+        }, 50)
+      }
     }
   }
   
@@ -302,15 +316,25 @@ const updateChartData = async () => {
     
     candlestickSeries.setData(fallbackData)
     
-    // Allow TradingView to automatically fit content to use full chart width
+    // Force chart to use full width by setting exact time range
+    const firstTime = fallbackData[0].time
+    const lastTime = fallbackData[fallbackData.length - 1].time
+    
+    // Use setTimeout to ensure chart is fully initialized
     setTimeout(() => {
-      chart.timeScale().fitContent()
-      
-      // Then ensure we're using the full viewport with some padding
-      chart.timeScale().setVisibleLogicalRange({
-        from: 0,
-        to: fallbackData.length - 1
+      // Set visible range to match our data exactly with no padding
+      chart.timeScale().setVisibleRange({
+        from: firstTime,
+        to: lastTime
       })
+      
+      // Force a second update to ensure it takes effect
+      setTimeout(() => {
+        chart.timeScale().setVisibleRange({
+          from: firstTime, 
+          to: lastTime
+        })
+      }, 50)
     }, 100)
     
     const latest = fallbackData[fallbackData.length - 1]
@@ -331,13 +355,13 @@ const generateFallbackData = () => {
   const data = []
   const now = Math.floor(Date.now() / 1000)
   
-  // Generate optimal data points to fill the chart completely
+  // Generate fewer, wider data points to fill chart width
   const timeframes = {
-    '1H': { points: 60, interval: 60 },     // 1 minute intervals for 1 hour
-    '24H': { points: 96, interval: 900 },   // 15 minute intervals for 24 hours  
-    '7D': { points: 168, interval: 3600 },  // 1 hour intervals for 7 days
-    '30D': { points: 120, interval: 21600 }, // 6 hour intervals for 30 days
-    '1Y': { points: 100, interval: 315360 } // ~3.65 day intervals for 1 year
+    '1H': { points: 30, interval: 120 },    // 2 minute intervals for 1 hour
+    '24H': { points: 48, interval: 1800 },  // 30 minute intervals for 24 hours  
+    '7D': { points: 56, interval: 10800 },  // 3 hour intervals for 7 days
+    '30D': { points: 60, interval: 43200 }, // 12 hour intervals for 30 days
+    '1Y': { points: 52, interval: 604800 }  // 1 week intervals for 1 year
   }
   
   const config = timeframes[selectedTimeframe.value] || timeframes['24H']
