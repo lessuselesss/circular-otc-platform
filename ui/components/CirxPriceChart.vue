@@ -162,7 +162,7 @@ const timeframes = [
 // Chart references
 const chartContainer = ref(null)
 let chart = null
-let candlestickSeries = null
+let lineSeries = null
 
 // Generate realistic OHLC data for the chart
 const processGeckoData = (apiData, timeframe) => {
@@ -236,16 +236,16 @@ const initChart = () => {
   
   // Set up crosshair subscription
   chart.subscribeCrosshairMove(param => {
-    if (param.time && param.point && candlestickSeries) {
-      const price = param.seriesPrices.get(candlestickSeries)
+    if (param.time && param.point && lineSeries) {
+      const price = param.seriesPrices.get(lineSeries)
       if (price) {
         crosshairPrice.value = price.toFixed(6)
         crosshairTime.value = new Date(param.time * 1000).toLocaleString()
       }
     } else {
       // Reset to last price when not hovering
-      if (candlestickSeries?.data?.length) {
-        const last = candlestickSeries.data[candlestickSeries.data.length - 1]
+      if (lineSeries?.data?.length) {
+        const last = lineSeries.data[lineSeries.data.length - 1]
         crosshairPrice.value = last.value.toFixed(6)
         crosshairTime.value = new Date(last.time * 1000).toLocaleString()
       }
@@ -254,7 +254,7 @@ const initChart = () => {
 
   // Add line series (normal chart)
   try {
-    candlestickSeries = chart.addLineSeries({
+    lineSeries = chart.addLineSeries({
       color: '#22c55e',
       lineWidth: 2,
     })
@@ -304,13 +304,13 @@ const crosshairPrice = ref('')
 const crosshairTime = ref('')
 
 const updateChartData = async () => {
-  if (!candlestickSeries) return
+  if (!lineSeries) return
   
   try {
     // Use fallback data for now (API integration can be added later)
     const fallbackData = generateFallbackData()
     
-    candlestickSeries.setData(fallbackData)
+    lineSeries.setData(fallbackData)
     
     // Simple approach: just use fitContent
     setTimeout(() => {
@@ -374,11 +374,11 @@ let priceUpdateInterval = null;
 const simulateRealTimeData = () => {
   // Simulate price updates every 30 seconds
   priceUpdateInterval = setInterval(() => {
-    if (!candlestickSeries) return;
+    if (!lineSeries) return;
     
     try {
       // Get the last data point
-      const currentData = candlestickSeries.data();
+      const currentData = lineSeries.data();
       if (!currentData || currentData.length === 0) return;
       
       const lastPoint = currentData[currentData.length - 1];
@@ -394,7 +394,7 @@ const simulateRealTimeData = () => {
       };
       
       // Update the chart with new data
-      candlestickSeries.update(newPoint);
+      lineSeries.update(newPoint);
       
       // Update current price display
       currentPrice.value = newValue.toFixed(6);
