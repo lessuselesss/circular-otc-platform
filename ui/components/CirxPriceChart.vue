@@ -231,8 +231,6 @@ const initChart = () => {
       secondsVisible: false,
       rightOffset: 0,
       leftOffset: 0,
-      barSpacing: 3,
-      minBarSpacing: 1,
       fixLeftEdge: true,
       fixRightEdge: true,
       shiftVisibleRangeOnNewBar: false,
@@ -285,17 +283,11 @@ const initChart = () => {
       const newWidth = getChartWidth()
       chart.applyOptions({ width: newWidth })
       
-      // After resize, ensure chart still uses full width
+      // After resize, ensure chart still uses full width with fitContent
       if (candlestickSeries && candlestickSeries.data().length > 0) {
-        const data = candlestickSeries.data()
-        const firstTime = data[0].time
-        const lastTime = data[data.length - 1].time
-        
         setTimeout(() => {
-          chart.timeScale().setVisibleRange({
-            from: firstTime,
-            to: lastTime
-          })
+          chart.timeScale().fitContent()
+          console.log('Applied fitContent() after resize')
         }, 50)
       }
     }
@@ -325,25 +317,11 @@ const updateChartData = async () => {
     
     candlestickSeries.setData(fallbackData)
     
-    // Force chart to use full width by setting exact time range
-    const firstTime = fallbackData[0].time
-    const lastTime = fallbackData[fallbackData.length - 1].time
-    
-    // Use setTimeout to ensure chart is fully initialized
+    // Use fitContent() to automatically fit all data to chart width
+    // This method adjusts bar spacing to use the full available width
     setTimeout(() => {
-      // Set visible range to match our data exactly with no padding
-      chart.timeScale().setVisibleRange({
-        from: firstTime,
-        to: lastTime
-      })
-      
-      // Force a second update to ensure it takes effect
-      setTimeout(() => {
-        chart.timeScale().setVisibleRange({
-          from: firstTime, 
-          to: lastTime
-        })
-      }, 50)
+      chart.timeScale().fitContent()
+      console.log('Applied fitContent() to fill chart width')
     }, 100)
     
     const latest = fallbackData[fallbackData.length - 1]
@@ -364,13 +342,13 @@ const generateFallbackData = () => {
   const data = []
   const now = Math.floor(Date.now() / 1000)
   
-  // Generate fewer, wider data points to fill chart width
+  // Generate more data points to ensure chart can fill full width
   const timeframes = {
-    '1H': { points: 30, interval: 120 },    // 2 minute intervals for 1 hour
-    '24H': { points: 48, interval: 1800 },  // 30 minute intervals for 24 hours  
-    '7D': { points: 56, interval: 10800 },  // 3 hour intervals for 7 days
-    '30D': { points: 60, interval: 43200 }, // 12 hour intervals for 30 days
-    '1Y': { points: 52, interval: 604800 }  // 1 week intervals for 1 year
+    '1H': { points: 60, interval: 60 },     // 1 minute intervals for 1 hour
+    '24H': { points: 96, interval: 900 },   // 15 minute intervals for 24 hours  
+    '7D': { points: 112, interval: 5400 },  // 1.5 hour intervals for 7 days
+    '30D': { points: 120, interval: 21600 }, // 6 hour intervals for 30 days
+    '1Y': { points: 104, interval: 302400 }  // 3.5 day intervals for 1 year
   }
   
   const config = timeframes[selectedTimeframe.value] || timeframes['24H']
@@ -453,6 +431,12 @@ onMounted(() => {
         const properWidth = getChartWidth()
         chart.applyOptions({ width: properWidth })
         console.log('Post-mount resize to width:', properWidth)
+        
+        // Ensure chart uses full width after resize
+        setTimeout(() => {
+          chart.timeScale().fitContent()
+          console.log('Applied fitContent() after post-mount resize')
+        }, 50)
       }
     }, 100)
 
