@@ -122,7 +122,7 @@
 </template>
 
 <script setup>
-import { createChart, CandlestickSeries } from 'lightweight-charts';
+import { createChart } from 'lightweight-charts';
 import { onMounted, onUnmounted, ref, nextTick, watch } from 'vue';
 import { useFetch } from '#imports';
 
@@ -239,33 +239,27 @@ const initChart = () => {
     if (param.time && param.point && candlestickSeries) {
       const price = param.seriesPrices.get(candlestickSeries)
       if (price) {
-        crosshairPrice.value = price.close.toFixed(6)
+        crosshairPrice.value = price.toFixed(6)
         crosshairTime.value = new Date(param.time * 1000).toLocaleString()
       }
     } else {
       // Reset to last price when not hovering
       if (candlestickSeries?.data?.length) {
         const last = candlestickSeries.data[candlestickSeries.data.length - 1]
-        crosshairPrice.value = last.close.toFixed(6)
+        crosshairPrice.value = last.value.toFixed(6)
         crosshairTime.value = new Date(last.time * 1000).toLocaleString()
       }
     }
   })
 
-  // Add candlestick series
-  
+  // Add line series (normal chart)
   try {
-    // Try the correct v5.0.8 method
-    candlestickSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#22c55e',
-      downColor: '#ef4444',
-      borderDownColor: '#ef4444',
-      borderUpColor: '#22c55e',
-      wickDownColor: '#ef4444',
-      wickUpColor: '#22c55e',
+    candlestickSeries = chart.addLineSeries({
+      color: '#22c55e',
+      lineWidth: 2,
     })
   } catch (error) {
-    console.error('Error adding candlestick series:', error)
+    console.error('Error adding line series:', error)
     return
   }
 
@@ -325,10 +319,10 @@ const updateChartData = async () => {
     }, 200)
     
     const latest = fallbackData[fallbackData.length - 1]
-    currentPrice.value = latest.close.toFixed(6)
+    currentPrice.value = latest.value.toFixed(6)
     
     // Set default crosshair to latest price
-    crosshairPrice.value = latest.close.toFixed(6)
+    crosshairPrice.value = latest.value.toFixed(6)
     crosshairTime.value = new Date(latest.time * 1000).toLocaleString()
     
   } catch (error) {
@@ -336,7 +330,7 @@ const updateChartData = async () => {
   }
 }
 
-// Generate fallback data when API fails
+// Generate fallback data for line chart
 const generateFallbackData = () => {
   const basePrice = 0.004663
   const data = []
@@ -358,12 +352,10 @@ const generateFallbackData = () => {
     const variation = (Math.random() - 0.5) * 0.02 // ±1% variation
     const price = basePrice * (1 + variation)
     
+    // Line chart just needs time and value
     data.push({
       time: time,
-      open: price * (1 + (Math.random() - 0.5) * 0.005),
-      high: price * (1 + Math.random() * 0.01),
-      low: price * (1 - Math.random() * 0.01),
-      close: price
+      value: price
     })
   }
   
@@ -394,23 +386,18 @@ const simulateRealTimeData = () => {
       
       // Create a new data point with slight price variation (±0.5%)
       const variation = (Math.random() - 0.5) * 0.01; // ±0.5%
-      const newClose = lastPoint.close * (1 + variation);
-      const newHigh = Math.max(lastPoint.high, newClose * 1.001);
-      const newLow = Math.min(lastPoint.low, newClose * 0.999);
+      const newValue = lastPoint.value * (1 + variation);
       
       const newPoint = {
         time: now,
-        open: lastPoint.close,
-        high: newHigh,
-        low: newLow,
-        close: newClose
+        value: newValue
       };
       
       // Update the chart with new data
       candlestickSeries.update(newPoint);
       
       // Update current price display
-      currentPrice.value = newClose.toFixed(6);
+      currentPrice.value = newValue.toFixed(6);
       
       console.log('Simulated price update:', newPoint);
     } catch (error) {
