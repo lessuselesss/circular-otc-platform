@@ -257,6 +257,7 @@ const initChart = () => {
       color: '#22c55e',
       lineWidth: 2,
     })
+    console.log('Line series created successfully:', lineSeries)
   } catch (error) {
     console.error('Error adding line series:', error)
     return
@@ -308,8 +309,11 @@ const updateChartData = async () => {
   try {
     // Use fallback data for now (API integration can be added later)
     const fallbackData = generateFallbackData()
+    console.log('Generated fallback data:', fallbackData.length, 'points')
+    console.log('First few data points:', fallbackData.slice(0, 3))
     
     lineSeries.setData(fallbackData)
+    console.log('Set data to line series')
     
     // Simple approach: just use fitContent
     setTimeout(() => {
