@@ -27,21 +27,21 @@
     <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8">
       <div :class="[
         'w-full mx-auto transition-all duration-500',
-        showChart ? 'max-w-7xl' : 'max-w-lg'
+        showChart ? 'max-w-none px-4' : 'max-w-lg'
       ]">
         <div :class="[
           'flex gap-6 items-start',
-          showChart ? 'flex-col' : 'justify-center'
+          showChart ? 'flex-col lg:flex-row' : 'justify-center'
         ]">
-          <!-- Chart Panel (expandable) - Takes full width -->
-          <div v-if="showChart" class="w-full">
+          <!-- Chart Panel (expandable) - Takes majority of width -->
+          <div v-if="showChart" class="w-full lg:w-2/3 xl:w-3/4">
             <CirxPriceChart @close="showChart = false" />
           </div>
           
-          <!-- Trading Card - Full width in stacked layout -->
+          <!-- Trading Card - Flexible width -->
           <div :class="[
             'transition-all duration-500',
-            showChart ? 'w-full max-w-lg mx-auto' : 'w-full max-w-lg'
+            showChart ? 'w-full lg:w-1/3 xl:w-1/4 lg:min-w-[350px]' : 'w-full max-w-lg'
           ]">
         <!-- Centered Trading Card -->
         <div class="bg-gradient-to-br from-circular-bg-secondary to-circular-bg-secondary/95 border border-gray-700 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm">
