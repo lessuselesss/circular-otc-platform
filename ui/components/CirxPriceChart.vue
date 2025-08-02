@@ -132,8 +132,7 @@ const chartTypes = [
   { value: 'line', label: 'Line' },
   { value: 'area', label: 'Area' }
 ]
-const selectedChartType = ref('candlestick')
-let lineSeries = null
+const selectedChartType = ref('line')
 let areaSeries = null
 
 // Props and emits
