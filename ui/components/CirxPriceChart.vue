@@ -122,7 +122,7 @@
 </template>
 
 <script setup>
-import * as LightweightCharts from 'lightweight-charts';
+import { createChart, LineType } from 'lightweight-charts';
 import { onMounted, onUnmounted, ref, nextTick, watch } from 'vue';
 import { useFetch } from '#imports';
 
@@ -209,7 +209,7 @@ const initChart = () => {
   
   const chartWidth = chartContainer.value.offsetWidth
   console.log('Creating chart with dimensions:', chartWidth, 'x', 256)
-  chart = LightweightCharts.createChart(chartContainer.value, {
+  chart = createChart(chartContainer.value, {
     layout: {
       background: { color: '#1a1a1a' },
       textColor: '#d1d5db',
@@ -251,46 +251,28 @@ const initChart = () => {
     }
   })
 
-  // Debug available methods on chart
-  console.log('Chart prototype:', Object.getPrototypeOf(chart))
-  console.log('Chart methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)))
-  
-  // Try different API approaches for v5.0.8
+  // Add line series using correct v5.0.8 API
   try {
-    // Method 1: Try addSeries with type parameter
-    lineSeries = chart.addSeries('area', {
-      lineColor: '#22c55e',
-      topColor: 'rgba(34, 197, 94, 0.2)',
-      bottomColor: 'rgba(34, 197, 94, 0.0)',
+    lineSeries = chart.addLineSeries({
+      color: '#22c55e',
       lineWidth: 2,
+      lineType: LineType.Simple,
     })
-    console.log('Area series created with addSeries:', lineSeries)
+    console.log('Line series created successfully:', lineSeries)
   } catch (error) {
-    console.error('Error with addSeries area:', error)
+    console.error('Error adding line series:', error)
+    // Fallback to area series
     try {
-      // Method 2: Try addSeries with 'line' type
-      lineSeries = chart.addSeries('line', {
-        color: '#22c55e',
+      lineSeries = chart.addAreaSeries({
+        lineColor: '#22c55e',
+        topColor: 'rgba(34, 197, 94, 0.2)',
+        bottomColor: 'rgba(34, 197, 94, 0.0)',
         lineWidth: 2,
       })
-      console.log('Line series created with addSeries:', lineSeries)
+      console.log('Area series created as fallback:', lineSeries)
     } catch (error2) {
-      console.error('Error with addSeries line:', error2)
-      try {
-        // Method 3: Try legacy candlestick that we know works
-        lineSeries = chart.addSeries('candlestick', {
-          upColor: '#22c55e',
-          downColor: '#22c55e',
-          borderDownColor: '#22c55e',
-          borderUpColor: '#22c55e',
-          wickDownColor: '#22c55e',
-          wickUpColor: '#22c55e',
-        })
-        console.log('Candlestick series created as fallback:', lineSeries)
-      } catch (error3) {
-        console.error('All series creation methods failed:', error3)
-        return
-      }
+      console.error('Area series also failed:', error2)
+      return
     }
   }
 
