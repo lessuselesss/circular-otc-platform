@@ -251,27 +251,46 @@ const initChart = () => {
     }
   })
 
-  // Add area series using correct v5.0.8 API
+  // Debug available methods on chart
+  console.log('Chart prototype:', Object.getPrototypeOf(chart))
+  console.log('Chart methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)))
+  
+  // Try different API approaches for v5.0.8
   try {
-    lineSeries = chart.addAreaSeries({
+    // Method 1: Try addSeries with type parameter
+    lineSeries = chart.addSeries('area', {
       lineColor: '#22c55e',
       topColor: 'rgba(34, 197, 94, 0.2)',
       bottomColor: 'rgba(34, 197, 94, 0.0)',
       lineWidth: 2,
     })
-    console.log('Area series created successfully:', lineSeries)
+    console.log('Area series created with addSeries:', lineSeries)
   } catch (error) {
-    console.error('Error adding area series:', error)
-    // Fallback to line series
+    console.error('Error with addSeries area:', error)
     try {
-      lineSeries = chart.addLineSeries({
+      // Method 2: Try addSeries with 'line' type
+      lineSeries = chart.addSeries('line', {
         color: '#22c55e',
         lineWidth: 2,
       })
-      console.log('Line series created successfully:', lineSeries)
+      console.log('Line series created with addSeries:', lineSeries)
     } catch (error2) {
-      console.error('Error adding line series:', error2)
-      return
+      console.error('Error with addSeries line:', error2)
+      try {
+        // Method 3: Try legacy candlestick that we know works
+        lineSeries = chart.addSeries('candlestick', {
+          upColor: '#22c55e',
+          downColor: '#22c55e',
+          borderDownColor: '#22c55e',
+          borderUpColor: '#22c55e',
+          wickDownColor: '#22c55e',
+          wickUpColor: '#22c55e',
+        })
+        console.log('Candlestick series created as fallback:', lineSeries)
+      } catch (error3) {
+        console.error('All series creation methods failed:', error3)
+        return
+      }
     }
   }
 
