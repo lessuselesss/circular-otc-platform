@@ -122,7 +122,7 @@
 </template>
 
 <script setup>
-import { createChart } from 'lightweight-charts';
+import * as LightweightCharts from 'lightweight-charts';
 import { onMounted, onUnmounted, ref, nextTick, watch } from 'vue';
 import { useFetch } from '#imports';
 
@@ -209,7 +209,7 @@ const initChart = () => {
   
   const chartWidth = chartContainer.value.offsetWidth
   console.log('Creating chart with dimensions:', chartWidth, 'x', 256)
-  chart = createChart(chartContainer.value, {
+  chart = LightweightCharts.createChart(chartContainer.value, {
     layout: {
       background: { color: '#1a1a1a' },
       textColor: '#d1d5db',
@@ -251,30 +251,26 @@ const initChart = () => {
     }
   })
 
-  // Debug: Check what methods are available on the chart
-  console.log('Chart object methods:', Object.getOwnPropertyNames(chart))
-  console.log('Chart addSeries method:', typeof chart.addSeries)
-  
-  // Add line series using the correct API
+  // Add area series using correct v5.0.8 API
   try {
-    lineSeries = chart.addSeries('Area', {
+    lineSeries = chart.addAreaSeries({
       lineColor: '#22c55e',
-      topColor: 'rgba(34, 197, 94, 0.4)',
+      topColor: 'rgba(34, 197, 94, 0.2)',
       bottomColor: 'rgba(34, 197, 94, 0.0)',
       lineWidth: 2,
     })
     console.log('Area series created successfully:', lineSeries)
   } catch (error) {
-    console.error('Error adding area series with addSeries:', error)
-    // Try alternative approach
+    console.error('Error adding area series:', error)
+    // Fallback to line series
     try {
-      lineSeries = chart.addSeries('Line', {
+      lineSeries = chart.addLineSeries({
         color: '#22c55e',
         lineWidth: 2,
       })
       console.log('Line series created successfully:', lineSeries)
     } catch (error2) {
-      console.error('Error adding line series with addSeries:', error2)
+      console.error('Error adding line series:', error2)
       return
     }
   }
