@@ -285,9 +285,16 @@ const initChart = () => {
       
       // After resize, ensure chart still uses full width with fitContent
       if (candlestickSeries && candlestickSeries.data().length > 0) {
+        const dataLength = candlestickSeries.data().length
         setTimeout(() => {
           chart.timeScale().fitContent()
           console.log('Applied fitContent() after resize')
+          
+          // Also force logical range for complete width
+          setTimeout(() => {
+            chart.timeScale().setVisibleLogicalRange({ from: 0, to: dataLength - 1 })
+            console.log('Applied setVisibleLogicalRange() after resize for full width')
+          }, 50)
         }, 50)
       }
     }
@@ -322,6 +329,12 @@ const updateChartData = async () => {
     setTimeout(() => {
       chart.timeScale().fitContent()
       console.log('Applied fitContent() to fill chart width')
+      
+      // Force chart to use full logical range as backup
+      setTimeout(() => {
+        chart.timeScale().setVisibleLogicalRange({ from: 0, to: fallbackData.length - 1 })
+        console.log('Applied setVisibleLogicalRange() for complete width usage')
+      }, 50)
     }, 100)
     
     const latest = fallbackData[fallbackData.length - 1]
