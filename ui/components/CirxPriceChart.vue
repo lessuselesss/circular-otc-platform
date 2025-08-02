@@ -233,8 +233,6 @@ const initChart = () => {
       leftOffset: 0,
       barSpacing: 12, // Increased from default 6 to make bars wider and use more space
       minBarSpacing: 8, // Minimum spacing to prevent overcrowding
-      fixLeftEdge: true,
-      fixRightEdge: true,
       shiftVisibleRangeOnNewBar: false,
     },
     width: chartWidth,
@@ -323,6 +321,16 @@ const updateChartData = async () => {
     setTimeout(() => {
       chart.timeScale().fitContent()
       console.log('Applied fitContent() to optimize chart width usage')
+      
+      // Force chart to use BEYOND data bounds to fill complete width
+      setTimeout(() => {
+        const dataLength = fallbackData.length
+        chart.timeScale().setVisibleLogicalRange({ 
+          from: -2, // Start before first data point
+          to: dataLength + 1 // End after last data point
+        })
+        console.log('Extended logical range beyond data bounds for full width')
+      }, 50)
     }, 100)
     
     const latest = fallbackData[fallbackData.length - 1]
