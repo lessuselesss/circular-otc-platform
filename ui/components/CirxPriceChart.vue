@@ -208,7 +208,7 @@ const initChart = () => {
     return
   }
   
-  const chartWidth = getChartWidth()
+  const chartWidth = chartContainer.value.offsetWidth
   console.log('Creating chart with dimensions:', chartWidth, 'x', 256)
   chart = createChart(chartContainer.value, {
     layout: {
@@ -272,25 +272,33 @@ const initChart = () => {
   // Load initial data
   updateChartData()
   
-  // Handle resize and maintain full width coverage
-  const resizeChart = () => {
-    if (chart && chartContainer.value) {
-      const newWidth = getChartWidth()
-      chart.applyOptions({ width: newWidth })
+  // Use ResizeObserver for proper responsive handling
+  let resizeObserver = null
+  if (window.ResizeObserver) {
+    resizeObserver = new ResizeObserver(entries => {
+      if (entries.length === 0 || entries[0].target !== chartContainer.value) {
+        return
+      }
+      const newRect = entries[0].contentRect
+      chart.applyOptions({
+        width: newRect.width,
+        height: 256 // Keep height fixed
+      })
+      console.log('ResizeObserver updated chart width to:', newRect.width)
       
-      // After resize, just fit content
+      // Fit content after resize
       setTimeout(() => {
         chart.timeScale().fitContent()
-        console.log('Applied fitContent() after resize')
-      }, 100)
-    }
+      }, 50)
+    })
+    resizeObserver.observe(chartContainer.value)
   }
-  
-  window.addEventListener('resize', resizeChart)
   
   // Cleanup function
   onUnmounted(() => {
-    window.removeEventListener('resize', resizeChart)
+    if (resizeObserver) {
+      resizeObserver.disconnect()
+    }
     if (chart) {
       chart.remove()
     }
@@ -417,20 +425,8 @@ onMounted(() => {
     initChart();
     simulateRealTimeData(); // Start price simulation
 
-    // Add a slight delay then force a resize to ensure proper width calculation
-    setTimeout(() => {
-      if (chart && chartContainer.value) {
-        const properWidth = getChartWidth()
-        chart.applyOptions({ width: properWidth })
-        console.log('Post-mount resize to width:', properWidth)
-        
-        // Final fitContent after mount
-        setTimeout(() => {
-          chart.timeScale().fitContent()
-          console.log('Final fitContent() after mount')
-        }, 100)
-      }
-    }, 100)
+    // ResizeObserver will handle width automatically
+    console.log('Chart initialized - ResizeObserver will handle responsive width')
 
     onUnmounted(() => {
       clearInterval(priceUpdateInterval);
