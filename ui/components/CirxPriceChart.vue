@@ -229,11 +229,6 @@ const initChart = () => {
       borderColor: '#4b5563',
       timeVisible: true,
       secondsVisible: false,
-      rightOffset: 0,
-      leftOffset: 0,
-      barSpacing: 12, // Increased from default 6 to make bars wider and use more space
-      minBarSpacing: 8, // Minimum spacing to prevent overcrowding
-      shiftVisibleRangeOnNewBar: false,
     },
     width: chartWidth,
     height: 256,
@@ -283,13 +278,11 @@ const initChart = () => {
       const newWidth = getChartWidth()
       chart.applyOptions({ width: newWidth })
       
-      // After resize, ensure chart uses optimal width
-      if (candlestickSeries && candlestickSeries.data().length > 0) {
-        setTimeout(() => {
-          chart.timeScale().fitContent()
-          console.log('Applied fitContent() after resize')
-        }, 50)
-      }
+      // After resize, just fit content
+      setTimeout(() => {
+        chart.timeScale().fitContent()
+        console.log('Applied fitContent() after resize')
+      }, 100)
     }
   }
   
@@ -317,21 +310,11 @@ const updateChartData = async () => {
     
     candlestickSeries.setData(fallbackData)
     
-    // Use fitContent() to automatically fit all data to chart width
+    // Simple approach: just use fitContent
     setTimeout(() => {
       chart.timeScale().fitContent()
-      console.log('Applied fitContent() to optimize chart width usage')
-      
-      // Force chart to use BEYOND data bounds to fill complete width
-      setTimeout(() => {
-        const dataLength = fallbackData.length
-        chart.timeScale().setVisibleLogicalRange({ 
-          from: -2, // Start before first data point
-          to: dataLength + 1 // End after last data point
-        })
-        console.log('Extended logical range beyond data bounds for full width')
-      }, 50)
-    }, 100)
+      console.log('Applied fitContent() - should fill chart width')
+    }, 200)
     
     const latest = fallbackData[fallbackData.length - 1]
     currentPrice.value = latest.close.toFixed(6)
@@ -441,11 +424,11 @@ onMounted(() => {
         chart.applyOptions({ width: properWidth })
         console.log('Post-mount resize to width:', properWidth)
         
-        // Ensure chart uses optimal width after mount
+        // Final fitContent after mount
         setTimeout(() => {
           chart.timeScale().fitContent()
-          console.log('Applied fitContent() after post-mount resize')
-        }, 50)
+          console.log('Final fitContent() after mount')
+        }, 100)
       }
     }, 100)
 
