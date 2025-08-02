@@ -251,9 +251,13 @@ const initChart = () => {
     }
   })
 
-  // Add line series (normal chart)
+  // Debug: Check what methods are available on the chart
+  console.log('Chart object methods:', Object.getOwnPropertyNames(chart))
+  console.log('Chart addSeries method:', typeof chart.addSeries)
+  
+  // Add line series using the correct API
   try {
-    lineSeries = chart.addAreaSeries({
+    lineSeries = chart.addSeries('Area', {
       lineColor: '#22c55e',
       topColor: 'rgba(34, 197, 94, 0.4)',
       bottomColor: 'rgba(34, 197, 94, 0.0)',
@@ -261,8 +265,18 @@ const initChart = () => {
     })
     console.log('Area series created successfully:', lineSeries)
   } catch (error) {
-    console.error('Error adding area series:', error)
-    return
+    console.error('Error adding area series with addSeries:', error)
+    // Try alternative approach
+    try {
+      lineSeries = chart.addSeries('Line', {
+        color: '#22c55e',
+        lineWidth: 2,
+      })
+      console.log('Line series created successfully:', lineSeries)
+    } catch (error2) {
+      console.error('Error adding line series with addSeries:', error2)
+      return
+    }
   }
 
   // Load initial data
