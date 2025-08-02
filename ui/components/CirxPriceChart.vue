@@ -122,7 +122,7 @@
 </template>
 
 <script setup>
-import { createChart, LineType } from 'lightweight-charts';
+import { createChart, CandlestickSeries } from 'lightweight-charts';
 import { onMounted, onUnmounted, ref, nextTick, watch } from 'vue';
 import { useFetch } from '#imports';
 
@@ -238,42 +238,36 @@ const initChart = () => {
     if (param.time && param.point && lineSeries) {
       const price = param.seriesPrices.get(lineSeries)
       if (price) {
-        crosshairPrice.value = price.toFixed(6)
+        // For candlestick data, price will be an object with {open, high, low, close}
+        const displayPrice = typeof price === 'object' ? price.close : price
+        crosshairPrice.value = displayPrice.toFixed(6)
         crosshairTime.value = new Date(param.time * 1000).toLocaleString()
       }
     } else {
-      // Reset to last price when not hovering
-      if (lineSeries?.data?.length) {
-        const last = lineSeries.data[lineSeries.data.length - 1]
-        crosshairPrice.value = last.value.toFixed(6)
+      // Reset to last price when not hovering - get last data point
+      const chartData = lineSeries.data()
+      if (chartData && chartData.length > 0) {
+        const last = chartData[chartData.length - 1]
+        crosshairPrice.value = last.close.toFixed(6)
         crosshairTime.value = new Date(last.time * 1000).toLocaleString()
       }
     }
   })
 
-  // Add line series using correct v5.0.8 API
+  // Use candlestick series (which we know works) with line-like styling
   try {
-    lineSeries = chart.addLineSeries({
-      color: '#22c55e',
-      lineWidth: 2,
-      lineType: LineType.Simple,
+    lineSeries = chart.addSeries(CandlestickSeries, {
+      upColor: '#22c55e',
+      downColor: '#22c55e',
+      borderDownColor: '#22c55e',
+      borderUpColor: '#22c55e',
+      wickDownColor: '#22c55e',
+      wickUpColor: '#22c55e',
     })
-    console.log('Line series created successfully:', lineSeries)
+    console.log('Candlestick series created successfully:', lineSeries)
   } catch (error) {
-    console.error('Error adding line series:', error)
-    // Fallback to area series
-    try {
-      lineSeries = chart.addAreaSeries({
-        lineColor: '#22c55e',
-        topColor: 'rgba(34, 197, 94, 0.2)',
-        bottomColor: 'rgba(34, 197, 94, 0.0)',
-        lineWidth: 2,
-      })
-      console.log('Area series created as fallback:', lineSeries)
-    } catch (error2) {
-      console.error('Area series also failed:', error2)
-      return
-    }
+    console.error('Error adding candlestick series:', error)
+    return
   }
 
   // Load initial data
@@ -335,10 +329,10 @@ const updateChartData = async () => {
     }, 200)
     
     const latest = fallbackData[fallbackData.length - 1]
-    currentPrice.value = latest.value.toFixed(6)
+    currentPrice.value = latest.close.toFixed(6)
     
     // Set default crosshair to latest price
-    crosshairPrice.value = latest.value.toFixed(6)
+    crosshairPrice.value = latest.close.toFixed(6)
     crosshairTime.value = new Date(latest.time * 1000).toLocaleString()
     
   } catch (error) {
@@ -346,7 +340,7 @@ const updateChartData = async () => {
   }
 }
 
-// Generate fallback data for line chart
+// Generate fallback data for candlestick chart (will look like a line when all green)
 const generateFallbackData = () => {
   const basePrice = 0.004663
   const data = []
@@ -368,10 +362,14 @@ const generateFallbackData = () => {
     const variation = (Math.random() - 0.5) * 0.02 // ±1% variation
     const price = basePrice * (1 + variation)
     
-    // Line chart just needs time and value
+    // Make very thin candlesticks that look like a line
+    const tinyVariation = price * 0.001 // 0.1% variation for OHLC
     data.push({
       time: time,
-      value: price
+      open: price,
+      high: price + tinyVariation,
+      low: price - tinyVariation,
+      close: price
     })
   }
   
@@ -402,18 +400,23 @@ const simulateRealTimeData = () => {
       
       // Create a new data point with slight price variation (±0.5%)
       const variation = (Math.random() - 0.5) * 0.01; // ±0.5%
-      const newValue = lastPoint.value * (1 + variation);
+      const newPrice = lastPoint.close * (1 + variation);
       
+      // Create OHLC data for candlestick series (thin line-like candle)
+      const tinyVariation = newPrice * 0.001 // 0.1% variation for OHLC
       const newPoint = {
         time: now,
-        value: newValue
+        open: newPrice,
+        high: newPrice + tinyVariation,
+        low: newPrice - tinyVariation,
+        close: newPrice
       };
       
       // Update the chart with new data
       lineSeries.update(newPoint);
       
       // Update current price display
-      currentPrice.value = newValue.toFixed(6);
+      currentPrice.value = newPrice.toFixed(6);
       
       console.log('Simulated price update:', newPoint);
     } catch (error) {
