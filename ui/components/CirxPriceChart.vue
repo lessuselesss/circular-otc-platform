@@ -67,8 +67,8 @@
     </div>
 
     <!-- TradingView Lightweight Chart Area -->
-    <div class="bg-gray-800/30 rounded-lg p-4 mb-6">
-      <div class="flex justify-between items-center mb-4">
+    <div class="bg-gray-800/30 rounded-lg p-2 mb-6">
+      <div class="flex justify-between items-center mb-3 px-2">
         <div class="text-sm font-medium text-white">Price Chart</div>
         <div class="flex gap-2">
           <button
@@ -94,7 +94,7 @@
         style="background: #1a1a1a;"
       ></div>
       
-      <div class="text-center text-sm text-gray-400 mt-4">
+      <div class="text-center text-sm text-gray-400 mt-3 px-2">
         Live CIRX price chart • Powered by TradingView
       </div>
     </div>
@@ -193,6 +193,13 @@ const fetchOHLC = async (timeframe) => {
   return processGeckoData(data.value, timeframe)
 }
 
+// Get accurate chart width accounting for padding and borders
+const getChartWidth = () => {
+  if (!chartContainer.value) return 800
+  const rect = chartContainer.value.getBoundingClientRect()
+  return Math.floor(rect.width) || 800
+}
+
 // Initialize the chart
 const initChart = () => {
   console.log('initChart called, chartContainer.value:', chartContainer.value)
@@ -201,7 +208,8 @@ const initChart = () => {
     return
   }
   
-  console.log('Creating chart with dimensions:', chartContainer.value.clientWidth, 'x', 256)
+  const chartWidth = getChartWidth()
+  console.log('Creating chart with dimensions:', chartWidth, 'x', 256)
   chart = createChart(chartContainer.value, {
     layout: {
       background: { color: '#1a1a1a' },
@@ -229,7 +237,7 @@ const initChart = () => {
       fixRightEdge: true,
       shiftVisibleRangeOnNewBar: false,
     },
-    width: chartContainer.value.clientWidth,
+    width: chartWidth,
     height: 256,
   })
   
@@ -274,7 +282,8 @@ const initChart = () => {
   // Handle resize and maintain full width coverage
   const resizeChart = () => {
     if (chart && chartContainer.value) {
-      chart.applyOptions({ width: chartContainer.value.clientWidth })
+      const newWidth = getChartWidth()
+      chart.applyOptions({ width: newWidth })
       
       // After resize, ensure chart still uses full width
       if (candlestickSeries && candlestickSeries.data().length > 0) {
@@ -437,6 +446,15 @@ onMounted(() => {
   nextTick(() => {
     initChart();
     simulateRealTimeData(); // Start price simulation
+
+    // Add a slight delay then force a resize to ensure proper width calculation
+    setTimeout(() => {
+      if (chart && chartContainer.value) {
+        const properWidth = getChartWidth()
+        chart.applyOptions({ width: properWidth })
+        console.log('Post-mount resize to width:', properWidth)
+      }
+    }, 100)
 
     onUnmounted(() => {
       clearInterval(priceUpdateInterval);
