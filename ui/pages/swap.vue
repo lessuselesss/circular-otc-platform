@@ -53,11 +53,9 @@
             (showChart || showStaking) ? 'w-full lg:w-1/3 xl:w-1/4 lg:min-w-[350px]' : 'w-full max-w-lg'
           ]">
         <!-- Centered Trading Card -->
-        <div class="relative group">
-          <!-- Animated gradient border (outside) -->
-          <div class="absolute -inset-[2px] group-hover:-inset-[6px] rounded-2xl opacity-30 group-hover:opacity-100 transition-all duration-300 bg-gradient-to-r from-pink-500 via-purple-500 via-blue-500 via-green-500 via-yellow-500 to-pink-500 bg-[length:400%_400%] animate-gradient-rotate blur-sm"></div>
+        <div class="relative">
           <!-- Main card content -->
-          <div class="relative bg-circular-bg-primary/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8 group-hover:border-transparent transition-all duration-300">
+          <div class="relative bg-circular-bg-primary/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8">
           <!-- Tab Headers - Jupiter-style Pills -->
           <div class="flex mb-6 bg-gray-800/50 rounded-xl p-1 gap-1">
             <button
@@ -108,17 +106,84 @@
               <div class="relative">
                 <input
                   v-model="inputAmount"
-                  type="number"
-                  step="any"
+                  type="text"
                   placeholder="0.0"
                   :class="[
-                    'w-full pl-4 pr-32 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300',
+                    'w-full pl-4 pr-32 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300 appearance-none',
                     activeTab === 'liquid' 
                       ? 'border-gray-600/50 hover:border-circular-primary focus:border-circular-primary focus:ring-2 focus:ring-circular-primary/50 focus:outline-none' 
                       : 'border-gray-600/50 hover:border-circular-purple focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/50 focus:outline-none'
                   ]"
                   :disabled="loading"
+                  readonly
+                  @click="showSlider = true"
                 />
+                
+                <!-- Percentage Slider (appears when input is clicked) -->
+                <div v-if="showSlider" class="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl p-4 z-20 shadow-xl slider-container">
+                  <div class="mb-3">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="text-sm text-gray-400">Select amount</span>
+                      <button 
+                        @click="showSlider = false"
+                        class="text-gray-400 hover:text-white transition-colors"
+                      >
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    <!-- Percentage Display -->
+                    <div class="text-center mb-3">
+                      <div class="text-2xl font-bold text-white">{{ sliderPercentage }}%</div>
+                      <div class="text-sm text-gray-400">{{ formatSliderAmount }} {{ getTokenSymbol(inputToken) }}</div>
+                    </div>
+                    
+                    <!-- Slider -->
+                    <div class="relative">
+                      <input
+                        v-model="sliderPercentage"
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        :class="[
+                          'w-full h-2 rounded-lg appearance-none cursor-pointer slider',
+                          activeTab === 'liquid' ? 'slider-green' : 'slider-purple'
+                        ]"
+                        @input="updateAmountFromSlider"
+                      />
+                      <!-- Percentage markers -->
+                      <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>0%</span>
+                        <span>25%</span>
+                        <span>50%</span>
+                        <span>75%</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
+                    
+                    <!-- Quick percentage buttons -->
+                    <div class="flex gap-2 mt-3">
+                      <button
+                        v-for="percent in [25, 50, 75, 100]"
+                        :key="percent"
+                        @click="setSliderPercentage(percent)"
+                        :class="[
+                          'flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all duration-200',
+                          sliderPercentage == percent
+                            ? (activeTab === 'liquid' 
+                                ? 'bg-circular-primary text-gray-900' 
+                                : 'bg-circular-purple text-white')
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        ]"
+                      >
+                        {{ percent }}%
+                      </button>
+                    </div>
+                  </div>
+                </div>
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
                   <div class="relative token-dropdown-container">
                     <button
@@ -439,6 +504,8 @@ const recipientAddress = ref('')
 const recipientAddressError = ref('')
 const recipientAddressType = ref('')
 const showTokenDropdown = ref(false)
+const showSlider = ref(false)
+const sliderPercentage = ref(0)
 
 // Use wallet balances when connected, otherwise show placeholders
 const inputBalance = computed(() => {
@@ -459,6 +526,13 @@ const inputBalance = computed(() => {
 
 const displayCirxBalance = computed(() => {
   return isConnected.value ? getTokenBalance('CIRX') : '0.0'
+})
+
+// Calculate slider amount based on percentage and available balance
+const formatSliderAmount = computed(() => {
+  const balance = parseFloat(inputBalance.value) || 0
+  const amount = (balance * sliderPercentage.value) / 100
+  return amount.toFixed(6)
 })
 
 // Token prices (mock data)
@@ -579,11 +653,11 @@ const validateRecipientAddress = (address) => {
 // Token utility functions
 const getTokenLogo = (token) => {
   const logoMap = {
-    'ETH': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
-    'USDC': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86a33E6280c6000E9094E87fF96E39B2e9b18/logo.png',
-    'USDT': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png',
-    'SOL': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-    'USDC_SOL': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86a33E6280c6000E9094E87fF96E39B2e9b18/logo.png',
+    'ETH': 'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
+    'USDC': 'https://assets.coingecko.com/coins/images/6319/small/USD_Coin_icon.png',
+    'USDT': 'https://assets.coingecko.com/coins/images/325/small/Tether.png',
+    'SOL': 'https://assets.coingecko.com/coins/images/4128/small/solana.png',
+    'USDC_SOL': 'https://assets.coingecko.com/coins/images/6319/small/USD_Coin_icon.png',
     'CIRX': '/images/logo/SVG/color-icon-svg.svg'
   }
   
@@ -622,6 +696,28 @@ const setMaxAmount = () => {
 const selectToken = (token) => {
   inputToken.value = token
   showTokenDropdown.value = false
+  // Reset slider when token changes
+  sliderPercentage.value = 0
+  inputAmount.value = ''
+}
+
+const updateAmountFromSlider = () => {
+  const balance = parseFloat(inputBalance.value) || 0
+  const amount = (balance * sliderPercentage.value) / 100
+  inputAmount.value = amount.toFixed(6).replace(/\.?0+$/, '') // Remove trailing zeros
+  
+  // Update CSS custom property for slider fill
+  nextTick(() => {
+    const slider = document.querySelector('.slider')
+    if (slider) {
+      slider.style.setProperty('--progress', `${sliderPercentage.value}%`)
+    }
+  })
+}
+
+const setSliderPercentage = (percent) => {
+  sliderPercentage.value = percent
+  updateAmountFromSlider()
 }
 
 const reverseSwap = () => {
@@ -698,11 +794,14 @@ watch(recipientAddress, (newAddress) => {
   validateRecipientAddress(newAddress)
 })
 
-// Close dropdown when clicking outside
+// Close dropdown and slider when clicking outside
 onMounted(() => {
   const handleClickOutside = (event) => {
     if (showTokenDropdown.value && !event.target.closest('.token-dropdown-container')) {
       showTokenDropdown.value = false
+    }
+    if (showSlider.value && !event.target.closest('.slider-container') && !event.target.closest('input[readonly]')) {
+      showSlider.value = false
     }
   }
   
@@ -740,5 +839,69 @@ useHead({
 
 .animate-gradient-rotate {
   animation: gradient-rotate 12s ease infinite;
+}
+
+/* Custom slider styles */
+.slider {
+  background: #374151;
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider-green {
+  background: linear-gradient(to right, #374151 0%, #10b981 100%);
+}
+
+.slider-green::-webkit-slider-thumb {
+  background: #10b981;
+}
+
+.slider-green::-moz-range-thumb {
+  background: #10b981;
+}
+
+.slider-purple {
+  background: linear-gradient(to right, #374151 0%, #8b5cf6 100%);
+}
+
+.slider-purple::-webkit-slider-thumb {
+  background: #8b5cf6;
+}
+
+.slider-purple::-moz-range-thumb {
+  background: #8b5cf6;
+}
+
+/* Custom slider track fill effect */
+.slider-green {
+  background: #374151;
+  background-image: linear-gradient(#10b981, #10b981);
+  background-repeat: no-repeat;
+  background-size: var(--progress, 0%) 100%;
+}
+
+.slider-purple {
+  background: #374151;
+  background-image: linear-gradient(#8b5cf6, #8b5cf6);
+  background-repeat: no-repeat;
+  background-size: var(--progress, 0%) 100%;
 }
 </style>
