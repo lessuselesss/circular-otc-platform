@@ -86,9 +86,14 @@
               ]"
             >
               <span class="truncate">Buy OTC</span>
-              <span class="px-2 py-1 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap flex-shrink-0">
-                5-12%
-              </span>
+              <div class="flex flex-col items-center gap-0.5">
+                <span class="px-2 py-0.5 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap">
+                  5-12%
+                </span>
+                <span class="text-xs text-gray-400 font-normal">
+                  discount
+                </span>
+              </div>
             </button>
           </div>
 
