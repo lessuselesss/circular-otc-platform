@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-circular-bg-primary">
     <!-- Header -->
-    <header class="bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-50">
+    <header class="bg-transparent backdrop-blur-sm border-b border-gray-800/30 sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <div class="flex items-center gap-2 sm:gap-4">
@@ -86,14 +86,9 @@
               ]"
             >
               <span class="truncate">Buy OTC</span>
-              <div class="flex flex-col items-center gap-0.5">
-                <span class="px-2 py-0.5 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap">
-                  5-12%
-                </span>
-                <span class="text-xs text-gray-400 font-normal">
-                  6mo vest
-                </span>
-              </div>
+              <span class="px-2 py-1 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap flex-shrink-0">
+                5-12%
+              </span>
             </button>
           </div>
 

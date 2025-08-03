@@ -1,7 +1,7 @@
 <template>
   <div class="bg-circular-bg-primary/60 backdrop-blur-sm border border-gray-700/50 hover:border-gray-600 rounded-2xl p-6 transition-all duration-300 h-full flex flex-col">
     <!-- Chart Header -->
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 bg-circular-primary/20 rounded-lg flex items-center justify-center">
           <span class="text-circular-primary font-bold text-sm">C</span>
@@ -23,7 +23,7 @@
     </div>
 
     <!-- Price Information -->
-    <div class="mb-6">
+    <div class="mb-4">
       <div class="flex items-baseline gap-3 mb-2">
         <span class="text-3xl font-bold text-white">${{ currentPrice }}</span>
         <span :class="[
@@ -47,27 +47,27 @@
     </div>
 
     <!-- Market Stats Grid -->
-    <div class="grid grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
-      <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-4 transition-all duration-300">
-        <div class="text-sm text-gray-400 mb-1">Market Cap</div>
-        <div class="text-lg font-semibold text-white">${{ marketCap }}</div>
+    <div class="grid grid-cols-2 lg:grid-cols-2 gap-3 mb-4">
+      <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-3 transition-all duration-300">
+        <div class="text-xs text-gray-400 mb-1">Market Cap</div>
+        <div class="text-sm font-semibold text-white">${{ marketCap }}</div>
       </div>
-      <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-4 transition-all duration-300">
-        <div class="text-sm text-gray-400 mb-1">24h Volume</div>
-        <div class="text-lg font-semibold text-white">${{ volume24h }}</div>
+      <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-3 transition-all duration-300">
+        <div class="text-xs text-gray-400 mb-1">24h Volume</div>
+        <div class="text-sm font-semibold text-white">${{ volume24h }}</div>
       </div>
-      <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-4 transition-all duration-300">
-        <div class="text-sm text-gray-400 mb-1">Circulating Supply</div>
-        <div class="text-lg font-semibold text-white">{{ circulatingSupply }}</div>
+      <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-3 transition-all duration-300">
+        <div class="text-xs text-gray-400 mb-1">Circulating Supply</div>
+        <div class="text-sm font-semibold text-white">{{ circulatingSupply }}</div>
       </div>
-      <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-4 transition-all duration-300">
-        <div class="text-sm text-gray-400 mb-1">Total Supply</div>
-        <div class="text-lg font-semibold text-white">{{ totalSupply }}</div>
+      <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-3 transition-all duration-300">
+        <div class="text-xs text-gray-400 mb-1">Total Supply</div>
+        <div class="text-sm font-semibold text-white">{{ totalSupply }}</div>
       </div>
     </div>
 
     <!-- TradingView Lightweight Chart Area -->
-    <div class="bg-gray-800/30 rounded-lg p-2 mb-6 flex-1 flex flex-col">
+    <div class="bg-gray-800/30 rounded-lg p-2 flex-1 flex flex-col overflow-hidden">
       <div class="flex justify-between items-center mb-3 px-2">
         <div class="text-sm font-medium text-white">Price Chart</div>
         <div class="flex gap-2">
@@ -100,12 +100,12 @@
     </div>
 
     <!-- External Links -->
-    <div class="flex gap-2">
+    <div class="flex gap-2 mt-2">
       <a
         href="https://coinmarketcap.com/currencies/circular-protocol/"
         target="_blank"
         rel="noopener noreferrer"
-        class="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-center text-sm font-medium transition-colors"
+        class="flex-1 px-3 py-1.5 bg-transparent border border-gray-600/50 hover:border-gray-500 text-white rounded-lg text-center text-xs font-medium transition-all duration-300"
       >
         View on CMC
       </a>
@@ -113,7 +113,7 @@
         href="https://circularlabs.io"
         target="_blank"
         rel="noopener noreferrer"
-        class="flex-1 px-4 py-2 bg-circular-primary hover:bg-circular-primary-hover text-gray-900 rounded-lg text-center text-sm font-medium transition-colors"
+        class="flex-1 px-3 py-1.5 bg-circular-primary/20 border border-circular-primary/30 hover:bg-circular-primary/30 text-circular-primary rounded-lg text-center text-xs font-medium transition-all duration-300"
       >
         Learn More
       </a>
