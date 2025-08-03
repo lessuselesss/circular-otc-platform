@@ -607,6 +607,6 @@ useHead({
 }
 
 .animate-gradient-rotate {
-  animation: gradient-rotate 3s ease infinite;
+  animation: gradient-rotate 12s ease infinite;
 }
 </style>
