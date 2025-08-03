@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gradient-to-br from-circular-bg-secondary to-circular-bg-secondary/95 border border-gray-700 rounded-2xl p-6 shadow-2xl backdrop-blur-sm">
+  <div class="bg-circular-bg-primary/60 backdrop-blur-sm border border-gray-700/50 hover:border-gray-600 rounded-2xl p-6 transition-all duration-300 h-full flex flex-col">
     <!-- Chart Header -->
     <div class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-3">
@@ -48,26 +48,26 @@
 
     <!-- Market Stats Grid -->
     <div class="grid grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
-      <div class="bg-gray-800/50 rounded-lg p-4">
+      <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-4 transition-all duration-300">
         <div class="text-sm text-gray-400 mb-1">Market Cap</div>
         <div class="text-lg font-semibold text-white">${{ marketCap }}</div>
       </div>
-      <div class="bg-gray-800/50 rounded-lg p-4">
+      <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-4 transition-all duration-300">
         <div class="text-sm text-gray-400 mb-1">24h Volume</div>
         <div class="text-lg font-semibold text-white">${{ volume24h }}</div>
       </div>
-      <div class="bg-gray-800/50 rounded-lg p-4">
+      <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-4 transition-all duration-300">
         <div class="text-sm text-gray-400 mb-1">Circulating Supply</div>
         <div class="text-lg font-semibold text-white">{{ circulatingSupply }}</div>
       </div>
-      <div class="bg-gray-800/50 rounded-lg p-4">
+      <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-4 transition-all duration-300">
         <div class="text-sm text-gray-400 mb-1">Total Supply</div>
         <div class="text-lg font-semibold text-white">{{ totalSupply }}</div>
       </div>
     </div>
 
     <!-- TradingView Lightweight Chart Area -->
-    <div class="bg-gray-800/30 rounded-lg p-2 mb-6">
+    <div class="bg-gray-800/30 rounded-lg p-2 mb-6 flex-1 flex flex-col">
       <div class="flex justify-between items-center mb-3 px-2">
         <div class="text-sm font-medium text-white">Price Chart</div>
         <div class="flex gap-2">
@@ -90,7 +90,7 @@
       <!-- TradingView Chart Container -->
       <div 
         ref="chartContainer" 
-        class="h-64 w-full rounded-lg overflow-hidden"
+        class="flex-1 w-full rounded-lg overflow-hidden min-h-[300px]"
         style="background: #1a1a1a;"
       ></div>
       

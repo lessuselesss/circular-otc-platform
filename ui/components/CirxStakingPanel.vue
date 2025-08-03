@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gradient-to-br from-circular-bg-secondary to-circular-bg-secondary/95 border border-gray-700 rounded-2xl p-6 shadow-2xl backdrop-blur-sm">
+  <div class="bg-circular-bg-primary/60 backdrop-blur-sm border border-gray-700/50 hover:border-gray-600 rounded-2xl p-6 transition-all duration-300 h-full flex flex-col">
     <!-- Staking Header -->
     <div class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-3">
@@ -26,7 +26,7 @@
     </div>
 
     <!-- Coming Soon Content -->
-    <div class="flex flex-col items-center justify-center text-center py-16">
+    <div class="flex flex-col items-center justify-center text-center flex-1 py-8">
       <!-- Large Coming Soon Icon -->
       <div class="w-24 h-24 bg-circular-primary/10 rounded-full flex items-center justify-center mb-6">
         <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" class="text-circular-primary">
@@ -37,70 +37,30 @@
       <!-- Coming Soon Text -->
       <h2 class="text-2xl font-bold text-white mb-3">Staking Coming Soon</h2>
       <p class="text-gray-400 text-lg mb-8 max-w-md">
-        Stake your CIRX tokens to earn rewards and participate in governance. 
-        Advanced staking features are currently in development.
+        Stake your CIRX tokens to earn rewards. 
+        Staking features are currently in development.
       </p>
       
       <!-- Feature Preview Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mb-8">
-        <div class="bg-gray-800/50 rounded-lg p-4 text-left">
-          <div class="flex items-center gap-3 mb-2">
+      <div class="grid grid-cols-1 gap-4 w-full max-w-md mb-8">
+        <div class="bg-transparent border border-gray-700/30 hover:border-gray-600/50 rounded-lg p-4 text-center transition-all duration-300">
+          <div class="flex items-center justify-center gap-3 mb-2">
             <div class="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center">
               <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" class="text-green-400">
                 <path d="M9 12l2 2 4-4"/>
               </svg>
             </div>
-            <div class="text-sm font-medium text-white">Flexible Rewards</div>
+            <div class="text-sm font-medium text-white">Earn Rewards</div>
           </div>
-          <div class="text-sm text-gray-400">Earn up to 15% APY on staked CIRX</div>
-        </div>
-        
-        <div class="bg-gray-800/50 rounded-lg p-4 text-left">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center">
-              <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" class="text-blue-400">
-                <path d="M9 12l2 2 4-4"/>
-              </svg>
-            </div>
-            <div class="text-sm font-medium text-white">Governance Rights</div>
-          </div>
-          <div class="text-sm text-gray-400">Vote on protocol decisions</div>
-        </div>
-        
-        <div class="bg-gray-800/50 rounded-lg p-4 text-left">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center">
-              <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" class="text-purple-400">
-                <path d="M9 12l2 2 4-4"/>
-              </svg>
-            </div>
-            <div class="text-sm font-medium text-white">Liquid Staking</div>
-          </div>
-          <div class="text-sm text-gray-400">Maintain liquidity while staking</div>
-        </div>
-        
-        <div class="bg-gray-800/50 rounded-lg p-4 text-left">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-6 h-6 bg-orange-500/20 rounded-full flex items-center justify-center">
-              <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" class="text-orange-400">
-                <path d="M9 12l2 2 4-4"/>
-              </svg>
-            </div>
-            <div class="text-sm font-medium text-white">Auto-Compounding</div>
-          </div>
-          <div class="text-sm text-gray-400">Maximize returns automatically</div>
+          <div class="text-sm text-gray-400">Stake CIRX tokens and earn rewards</div>
         </div>
       </div>
 
       <!-- Stats Preview (placeholder) -->
-      <div class="grid grid-cols-3 gap-6 w-full max-w-md mb-8">
+      <div class="grid grid-cols-2 gap-6 w-full max-w-sm mb-8">
         <div class="text-center">
           <div class="text-2xl font-bold text-circular-primary mb-1">--</div>
           <div class="text-sm text-gray-400">Total Staked</div>
-        </div>
-        <div class="text-center">
-          <div class="text-2xl font-bold text-circular-primary mb-1">--%</div>
-          <div class="text-sm text-gray-400">Current APY</div>
         </div>
         <div class="text-center">
           <div class="text-2xl font-bold text-circular-primary mb-1">--</div>

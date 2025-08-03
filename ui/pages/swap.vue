@@ -10,7 +10,7 @@
               alt="Circular Protocol" 
               class="h-8 w-auto"
             />
-            <span class="text-xs sm:text-sm hidden sm:block text-gray-400">OTC Trading Platform</span>
+            <span class="text-xs sm:text-sm hidden sm:block text-gray-400">Swap</span>
           </div>
           <div class="flex items-center gap-2 sm:gap-4">
             <!-- Navigation -->
@@ -37,13 +37,13 @@
           'flex gap-6 items-start',
           (showChart || showStaking) ? 'flex-col lg:flex-row' : 'justify-center'
         ]">
-          <!-- Chart Panel (expandable) - Takes majority of width -->
-          <div v-if="showChart && !showStaking" class="w-full lg:w-2/3 xl:w-3/4">
+          <!-- Chart Panel (expandable) - Takes majority of width and 80% viewport height -->
+          <div v-if="showChart && !showStaking" class="w-full lg:w-2/3 xl:w-3/4 h-[80vh]">
             <CirxPriceChart @close="showChart = false" />
           </div>
           
-          <!-- Staking Panel (expandable) - Takes majority of width -->
-          <div v-if="showStaking && !showChart" class="w-full lg:w-2/3 xl:w-3/4">
+          <!-- Staking Panel (expandable) - Takes majority of width and 80% viewport height -->
+          <div v-if="showStaking && !showChart" class="w-full lg:w-2/3 xl:w-3/4 h-[80vh]">
             <CirxStakingPanel @close="showStaking = false" />
           </div>
           
@@ -53,7 +53,13 @@
             (showChart || showStaking) ? 'w-full lg:w-1/3 xl:w-1/4 lg:min-w-[350px]' : 'w-full max-w-lg'
           ]">
         <!-- Centered Trading Card -->
-        <div class="bg-gradient-to-br from-circular-bg-secondary to-circular-bg-secondary/95 border border-gray-700 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm">
+        <div class="relative group">
+          <!-- Animated gradient border -->
+          <div class="absolute inset-0 rounded-2xl opacity-20 group-hover:opacity-60 transition-opacity duration-500 bg-gradient-to-r from-pink-500 via-purple-500 via-blue-500 via-green-500 via-yellow-500 to-pink-500 bg-[length:400%_400%] animate-gradient-rotate p-[1px]">
+            <div class="w-full h-full rounded-2xl bg-circular-bg-primary"></div>
+          </div>
+          <!-- Main card content -->
+          <div class="relative bg-circular-bg-primary/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8 group-hover:border-transparent transition-all duration-300">
           <!-- Tab Headers -->
           <div class="flex mb-6 border-b border-gray-600 overflow-hidden">
             <button
@@ -80,9 +86,14 @@
               ]"
             >
               <span class="truncate">Buy OTC</span>
-              <span class="px-2 py-1 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap flex-shrink-0">
-                5-12%
-              </span>
+              <div class="flex flex-col items-center gap-0.5">
+                <span class="px-2 py-0.5 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap">
+                  5-12%
+                </span>
+                <span class="text-xs text-gray-400 font-normal">
+                  6mo vest
+                </span>
+              </div>
             </button>
           </div>
 
@@ -102,7 +113,7 @@
                   type="number"
                   step="any"
                   placeholder="0.0"
-                  class="w-full pl-4 pr-32 py-4 text-xl font-semibold bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:border-circular-primary focus:ring-1 focus:ring-circular-primary transition-colors"
+                  class="w-full pl-4 pr-32 py-4 text-xl font-semibold bg-transparent border border-gray-600/50 rounded-xl text-white placeholder-gray-500 hover:border-gray-500 focus:border-transparent focus:ring-1 focus:ring-gradient-border transition-all duration-300"
                   :disabled="loading"
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center">
@@ -154,7 +165,7 @@
                   type="number"
                   step="any"
                   placeholder="0.0"
-                  class="w-full pl-4 pr-20 py-4 text-xl font-semibold bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 opacity-75"
+                  class="w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border border-gray-600/30 rounded-xl text-white placeholder-gray-500 opacity-75"
                   readonly
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
@@ -180,7 +191,7 @@
                   v-model="recipientAddress"
                   type="text"
                   :placeholder="isConnected ? 'Leave empty to use connected wallet' : 'Enter wallet address to receive CIRX'"
-                  class="w-full pl-4 pr-12 py-3 text-sm bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:border-circular-primary focus:ring-1 focus:ring-circular-primary transition-colors"
+                  class="w-full pl-4 pr-12 py-3 text-sm bg-transparent border border-gray-600/50 rounded-xl text-white placeholder-gray-500 hover:border-gray-500 focus:border-transparent focus:ring-1 focus:ring-gradient-border transition-all duration-300"
                   :disabled="loading"
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
@@ -208,7 +219,7 @@
             </div>
 
             <!-- Purchase Details -->
-            <div v-if="quote" class="bg-gray-900 border border-gray-600 rounded-xl p-4 mb-6">
+            <div v-if="quote" class="bg-transparent border border-gray-600/50 rounded-xl p-4 mb-6 hover:border-gray-500 transition-all duration-300">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm text-gray-400">Exchange Rate</span>
                 <span class="text-sm font-medium text-white">1 {{ inputToken }} = ${{ quote.rate }}</span>
@@ -228,7 +239,7 @@
             </div>
 
             <!-- OTC Discount Tiers (only show on OTC tab) -->
-            <div v-if="activeTab === 'otc'" class="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-6">
+            <div v-if="activeTab === 'otc'" class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-4 mb-6 hover:border-purple-500/40 transition-all duration-300">
               <h4 class="text-sm font-medium mb-3 text-purple-400">OTC Discount Tiers</h4>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
@@ -271,7 +282,7 @@
           <div v-if="!showChart && !showStaking" class="mt-4 flex justify-start gap-3">
             <button
               @click="showChart = true"
-              class="inline-flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white border border-gray-600 hover:border-gray-500 transition-all text-sm font-medium hover:bg-gray-800/50 rounded-lg w-fit"
+              class="inline-flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white border border-gray-600/50 hover:border-gray-500 transition-all text-sm font-medium hover:bg-gray-800/30 rounded-lg w-fit"
             >
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M3 3v18h18"/>
@@ -285,7 +296,7 @@
             </button>
             <button
               @click="showStaking = true"
-              class="inline-flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white border border-gray-600 hover:border-gray-500 transition-all text-sm font-medium hover:bg-gray-800/50 rounded-lg w-fit"
+              class="inline-flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white border border-gray-600/50 hover:border-gray-500 transition-all text-sm font-medium hover:bg-gray-800/30 rounded-lg w-fit"
             >
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z"/>
@@ -293,6 +304,7 @@
               </svg>
               Staking
             </button>
+          </div>
           </div>
         </div>
           </div>
@@ -305,7 +317,7 @@
 <script setup>
 // Page metadata
 definePageMeta({
-  title: 'Circular CIRX OTC Platform',
+  title: 'Circular Swap',
   layout: 'default'
 })
 
@@ -562,12 +574,30 @@ watch(recipientAddress, (newAddress) => {
 
 // Head configuration
 useHead({
-  title: 'Circular CIRX OTC Platform - Buy CIRX Tokens',
+  title: 'Circular Swap - Buy CIRX Tokens',
   meta: [
     { 
       name: 'description', 
-      content: 'Buy CIRX tokens with liquid delivery or OTC discounts up to 12%. Demo interface with Tailwind CSS styling.' 
+      content: 'Circular Swap - Buy CIRX tokens with liquid delivery or OTC discounts up to 12%. Modern swap interface with staking coming soon.' 
     }
   ]
 })
 </script>
+
+<style scoped>
+@keyframes gradient-rotate {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-rotate {
+  animation: gradient-rotate 3s ease infinite;
+}
+</style>
