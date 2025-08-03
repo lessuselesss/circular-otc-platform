@@ -55,7 +55,7 @@
         <!-- Centered Trading Card -->
         <div class="relative group">
           <!-- Animated gradient border -->
-          <div class="absolute inset-0 rounded-2xl opacity-20 group-hover:opacity-60 transition-opacity duration-500 bg-gradient-to-r from-pink-500 via-purple-500 via-blue-500 via-green-500 via-yellow-500 to-pink-500 bg-[length:400%_400%] animate-gradient-rotate p-[1px]">
+          <div class="absolute inset-0 rounded-2xl opacity-30 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-pink-400 via-purple-400 via-blue-400 via-green-400 via-yellow-400 to-pink-400 bg-[length:400%_400%] animate-gradient-rotate p-[2px]">
             <div class="w-full h-full rounded-2xl bg-circular-bg-primary"></div>
           </div>
           <!-- Main card content -->
@@ -244,15 +244,24 @@
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
                   <span class="text-gray-400">$1,000 - $10,000</span>
-                  <span class="font-medium text-purple-400">5% discount</span>
+                  <div class="text-right">
+                    <span class="font-medium text-purple-400">5% discount</span>
+                    <span class="block text-xs text-gray-500">X months vest</span>
+                  </div>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-400">$10,000 - $50,000</span>
-                  <span class="font-medium text-purple-400">8% discount</span>
+                  <div class="text-right">
+                    <span class="font-medium text-purple-400">8% discount</span>
+                    <span class="block text-xs text-gray-500">Y months vest</span>
+                  </div>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-400">$50,000+</span>
-                  <span class="font-medium text-purple-400">12% discount</span>
+                  <div class="text-right">
+                    <span class="font-medium text-purple-400">12% discount</span>
+                    <span class="block text-xs text-gray-500">Z months vest</span>
+                  </div>
                 </div>
               </div>
             </div>
