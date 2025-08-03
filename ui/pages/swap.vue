@@ -6,7 +6,7 @@
         <div class="flex justify-between items-center h-16">
           <div class="flex items-center gap-2 sm:gap-4">
             <img 
-              src="/images/logo/SVG/color-logo-white-svg.svg" 
+              src="/circular-logo.svg" 
               alt="Circular Protocol" 
               class="h-8 w-auto"
             />
