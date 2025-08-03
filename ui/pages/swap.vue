@@ -54,10 +54,8 @@
           ]">
         <!-- Centered Trading Card -->
         <div class="relative group">
-          <!-- Animated gradient border -->
-          <div class="absolute inset-0 rounded-2xl opacity-30 group-hover:opacity-100 transition-all duration-300 bg-gradient-to-r from-pink-500 via-purple-500 via-blue-500 via-green-500 via-yellow-500 to-pink-500 bg-[length:400%_400%] animate-gradient-rotate p-[2px] group-hover:p-[6px]">
-            <div class="w-full h-full rounded-2xl bg-circular-bg-primary"></div>
-          </div>
+          <!-- Animated gradient border (outside) -->
+          <div class="absolute -inset-[2px] group-hover:-inset-[6px] rounded-2xl opacity-30 group-hover:opacity-100 transition-all duration-300 bg-gradient-to-r from-pink-500 via-purple-500 via-blue-500 via-green-500 via-yellow-500 to-pink-500 bg-[length:400%_400%] animate-gradient-rotate blur-sm"></div>
           <!-- Main card content -->
           <div class="relative bg-circular-bg-primary/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8 group-hover:border-transparent transition-all duration-300">
           <!-- Tab Headers - Jupiter-style Pills -->
@@ -121,23 +119,80 @@
                   ]"
                   :disabled="loading"
                 />
-                <div class="absolute inset-y-0 right-0 flex items-center">
-                  <select
-                    v-model="inputToken"
-                    class="h-full py-0 pl-3 pr-8 border-0 bg-transparent font-medium text-white rounded-r-xl focus:outline-none"
-                    :disabled="loading"
-                  >
-                    <!-- Dynamic token options based on connected wallet -->
-                    <template v-if="connectedWallet === 'phantom'">
-                      <option value="SOL" class="bg-gray-900">SOL</option>
-                      <option value="USDC_SOL" class="bg-gray-900">USDC</option>
-                    </template>
-                    <template v-else>
-                      <option value="ETH" class="bg-gray-900">ETH</option>
-                      <option value="USDC" class="bg-gray-900">USDC</option>
-                      <option value="USDT" class="bg-gray-900">USDT</option>
-                    </template>
-                  </select>
+                <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+                  <div class="relative token-dropdown-container">
+                    <button
+                      @click="showTokenDropdown = !showTokenDropdown"
+                      :class="[
+                        'flex items-center gap-2 px-3 py-2 rounded-full border transition-all duration-300',
+                        activeTab === 'liquid' 
+                          ? 'border-circular-primary/30 hover:border-circular-primary bg-circular-primary/10' 
+                          : 'border-circular-purple/30 hover:border-circular-purple bg-circular-purple/10'
+                      ]"
+                      :disabled="loading"
+                    >
+                      <!-- Token Logo -->
+                      <img 
+                        :src="getTokenLogo(inputToken)" 
+                        :alt="inputToken"
+                        class="w-5 h-5 rounded-full"
+                      />
+                      <!-- Token Symbol -->
+                      <span class="font-medium text-white text-sm">{{ getTokenSymbol(inputToken) }}</span>
+                      <!-- Dropdown Arrow -->
+                      <svg 
+                        width="12" 
+                        height="12" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        :class="[
+                          'transition-transform duration-200',
+                          showTokenDropdown ? 'rotate-180' : '',
+                          activeTab === 'liquid' ? 'text-circular-primary' : 'text-circular-purple'
+                        ]"
+                      >
+                        <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    
+                    <!-- Custom Dropdown -->
+                    <div 
+                      v-if="showTokenDropdown"
+                      class="absolute top-full right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-10 min-w-[120px]"
+                    >
+                      <!-- Dynamic token options based on connected wallet -->
+                      <template v-if="connectedWallet === 'phantom'">
+                        <button
+                          v-for="token in [{ value: 'SOL', label: 'SOL' }, { value: 'USDC_SOL', label: 'USDC' }]"
+                          :key="token.value"
+                          @click="selectToken(token.value)"
+                          class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors first:rounded-t-xl last:rounded-b-xl"
+                        >
+                          <img 
+                            :src="getTokenLogo(token.value)" 
+                            :alt="token.label"
+                            class="w-5 h-5 rounded-full"
+                          />
+                          <span class="font-medium text-white text-sm">{{ token.label }}</span>
+                        </button>
+                      </template>
+                      <template v-else>
+                        <button
+                          v-for="token in [{ value: 'ETH', label: 'ETH' }, { value: 'USDC', label: 'USDC' }, { value: 'USDT', label: 'USDT' }]"
+                          :key="token.value"
+                          @click="selectToken(token.value)"
+                          class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors first:rounded-t-xl last:rounded-b-xl"
+                        >
+                          <img 
+                            :src="getTokenLogo(token.value)" 
+                            :alt="token.label"
+                            class="w-5 h-5 rounded-full"
+                          />
+                          <span class="font-medium text-white text-sm">{{ token.label }}</span>
+                        </button>
+                      </template>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -184,7 +239,16 @@
                   readonly
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
-                  <span class="font-semibold text-circular-primary">CIRX</span>
+                  <div class="flex items-center gap-2 px-3 py-2 rounded-full border border-circular-primary/30 bg-circular-primary/10">
+                    <!-- CIRX Token Logo -->
+                    <img 
+                      :src="getTokenLogo('CIRX')" 
+                      alt="CIRX"
+                      class="w-5 h-5 rounded-full"
+                    />
+                    <!-- Token Symbol -->
+                    <span class="font-medium text-circular-primary text-sm">CIRX</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -374,6 +438,7 @@ const showStaking = ref(false)
 const recipientAddress = ref('')
 const recipientAddressError = ref('')
 const recipientAddressType = ref('')
+const showTokenDropdown = ref(false)
 
 // Use wallet balances when connected, otherwise show placeholders
 const inputBalance = computed(() => {
@@ -511,6 +576,33 @@ const validateRecipientAddress = (address) => {
   return false
 }
 
+// Token utility functions
+const getTokenLogo = (token) => {
+  const logoMap = {
+    'ETH': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
+    'USDC': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86a33E6280c6000E9094E87fF96E39B2e9b18/logo.png',
+    'USDT': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png',
+    'SOL': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
+    'USDC_SOL': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86a33E6280c6000E9094E87fF96E39B2e9b18/logo.png',
+    'CIRX': '/images/logo/SVG/color-icon-svg.svg'
+  }
+  
+  return logoMap[token] || '/images/logo/SVG/color-icon-svg.svg'
+}
+
+const getTokenSymbol = (token) => {
+  const symbolMap = {
+    'ETH': 'ETH',
+    'USDC': 'USDC',
+    'USDT': 'USDT',
+    'SOL': 'SOL',
+    'USDC_SOL': 'USDC',
+    'CIRX': 'CIRX'
+  }
+  
+  return symbolMap[token] || token
+}
+
 // Methods
 const useConnectedWallet = () => {
   recipientAddress.value = ''
@@ -525,6 +617,11 @@ const setMaxAmount = () => {
   } else {
     inputAmount.value = '1.0' // Fallback for demo
   }
+}
+
+const selectToken = (token) => {
+  inputToken.value = token
+  showTokenDropdown.value = false
 }
 
 const reverseSwap = () => {
@@ -599,6 +696,21 @@ watch([inputAmount, inputToken, activeTab], async () => {
 // Watch recipient address for validation
 watch(recipientAddress, (newAddress) => {
   validateRecipientAddress(newAddress)
+})
+
+// Close dropdown when clicking outside
+onMounted(() => {
+  const handleClickOutside = (event) => {
+    if (showTokenDropdown.value && !event.target.closest('.token-dropdown-container')) {
+      showTokenDropdown.value = false
+    }
+  }
+  
+  document.addEventListener('click', handleClickOutside)
+  
+  onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside)
+  })
 })
 
 // Head configuration
