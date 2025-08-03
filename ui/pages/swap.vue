@@ -84,7 +84,7 @@
               <span class="truncate text-xs sm:text-sm">Buy OTC</span>
               <div class="flex flex-col items-center gap-0.5 min-w-0">
                 <span class="px-1.5 sm:px-2 py-0.5 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap">
-                  5-12%
+                  {{ otcConfig.displayRange }}
                 </span>
                 <span class="text-xs text-gray-400 font-normal hidden sm:inline">
                   discount
@@ -314,6 +314,7 @@
                       :src="getTokenLogo('CIRX')" 
                       alt="CIRX"
                       class="w-5 h-5 rounded-full"
+                      @error="$event.target.src = '/circular-logo.svg'"
                     />
                     <!-- Token Symbol -->
                     <span class="font-medium text-circular-primary text-sm">CIRX</span>
@@ -387,33 +388,25 @@
               </div>
               <div v-if="activeTab === 'otc'" class="flex justify-between items-center">
                 <span class="text-sm text-gray-400">Vesting Period</span>
-                <span class="text-sm font-medium text-white">6 months (linear)</span>
+                <span class="text-sm font-medium text-white">{{ otcConfig.vestingPeriod.months }} months ({{ otcConfig.vestingPeriod.type }})</span>
               </div>
             </div>
 
             <!-- OTC Discount Tiers (only show on OTC tab) -->
-            <div v-if="activeTab === 'otc'" class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 mb-4 hover:border-purple-500/40 transition-all duration-300">
+            <div v-if="activeTab === 'otc' && otcConfig.enabled" class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 mb-4 hover:border-purple-500/40 transition-all duration-300">
               <h4 class="text-xs font-medium mb-2 text-purple-400">OTC Discount Tiers</h4>
               <div class="space-y-1 text-xs">
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-400">$1K-10K</span>
+                <div 
+                  v-for="(tier, index) in otcConfig.discountTiers.slice().reverse()" 
+                  :key="tier.minAmount"
+                  class="flex justify-between items-center"
+                >
+                  <span class="text-gray-400">
+                    {{ formatTierRange(tier, index, otcConfig.discountTiers.length) }}
+                  </span>
                   <div class="text-right">
-                    <span class="font-medium text-purple-400">5%</span>
-                    <span class="text-gray-500 ml-1">X mo</span>
-                  </div>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-400">$10K-50K</span>
-                  <div class="text-right">
-                    <span class="font-medium text-purple-400">8%</span>
-                    <span class="text-gray-500 ml-1">Y mo</span>
-                  </div>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-400">$50K+</span>
-                  <div class="text-right">
-                    <span class="font-medium text-purple-400">12%</span>
-                    <span class="text-gray-500 ml-1">Z mo</span>
+                    <span class="font-medium text-purple-400">{{ tier.discount }}%</span>
+                    <span class="text-gray-500 ml-1">{{ tier.vestingMonths || otcConfig.vestingPeriod.months }}mo</span>
                   </div>
                 </div>
               </div>
@@ -546,18 +539,61 @@ const tokenPrices = {
   USDT: 1      // $1 per USDT
 }
 
-// Fee structure
-const fees = {
-  liquid: 0.3,  // 0.3% for liquid swaps
-  otc: 0.15     // 0.15% for OTC swaps
+// Dynamic fee structure
+const fees = computed(() => otcConfig.value.fees)
+
+// Dynamic OTC configuration from hosted JSON
+const otcConfig = ref({
+  discountTiers: [
+    { minAmount: 50000, discount: 12, vestingMonths: 6 },  // $50K+: 12%
+    { minAmount: 10000, discount: 8, vestingMonths: 6 },   // $10K+: 8%  
+    { minAmount: 1000, discount: 5, vestingMonths: 6 }     // $1K+: 5%
+  ],
+  vestingPeriod: {
+    months: 6,
+    type: 'linear'
+  },
+  fees: {
+    otc: 0.15,
+    liquid: 0.3
+  },
+  displayRange: '5-12%',
+  enabled: true
+})
+
+// Fetch OTC configuration from hosted JSON
+const fetchOtcConfig = async () => {
+  try {
+    // Fetch from local JSON file
+    const configUrl = '/swap/discount.json'
+    
+    const response = await fetch(configUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    })
+    
+    if (response.ok) {
+      const config = await response.json()
+      
+      // Validate and merge config
+      if (config.discountTiers && Array.isArray(config.discountTiers)) {
+        otcConfig.value = { ...otcConfig.value, ...config }
+        console.log('OTC config updated from hosted JSON:', config)
+      }
+    } else {
+      console.warn('Failed to fetch OTC config, using defaults')
+    }
+  } catch (error) {
+    console.warn('Error fetching OTC config:', error.message)
+    // Continue with default config
+  }
 }
 
-// Discount tiers
-const discountTiers = [
-  { minAmount: 50000, discount: 12 },  // $50K+: 12%
-  { minAmount: 10000, discount: 8 },   // $10K+: 8%  
-  { minAmount: 1000, discount: 5 }     // $1K+: 5%
-]
+// Use dynamic discount tiers
+const discountTiers = computed(() => otcConfig.value.discountTiers)
 
 // Computed properties  
 const canPurchase = computed(() => {
@@ -746,6 +782,31 @@ const reverseSwap = () => {
   console.log('Reverse swap not supported yet')
 }
 
+// Format tier range display (e.g., "$1K-10K", "$50K+")
+const formatTierRange = (tier, index, totalTiers) => {
+  const formatAmount = (amount) => {
+    if (amount >= 1000000) return `$${amount / 1000000}M`
+    if (amount >= 1000) return `$${amount / 1000}K`
+    return `$${amount}`
+  }
+  
+  // If it's the highest tier (first in reversed array), show as "50K+"
+  if (index === 0) {
+    return `${formatAmount(tier.minAmount)}+`
+  }
+  
+  // Find the next higher tier to create range
+  const sortedTiers = otcConfig.value.discountTiers.slice().sort((a, b) => a.minAmount - b.minAmount)
+  const currentIndex = sortedTiers.findIndex(t => t.minAmount === tier.minAmount)
+  const nextTier = sortedTiers[currentIndex + 1]
+  
+  if (nextTier) {
+    return `${formatAmount(tier.minAmount)}-${formatAmount(nextTier.minAmount)}`
+  }
+  
+  return `${formatAmount(tier.minAmount)}+`
+}
+
 const handleSwap = async () => {
   if (!canPurchase.value) return
   
@@ -817,7 +878,10 @@ watch(recipientAddress, (newAddress) => {
 })
 
 // Close dropdown and slider when clicking outside
-onMounted(() => {
+onMounted(async () => {
+  // Fetch OTC configuration on component mount
+  await fetchOtcConfig()
+  
   const handleClickOutside = (event) => {
     if (showTokenDropdown.value && !event.target.closest('.token-dropdown-container')) {
       showTokenDropdown.value = false
