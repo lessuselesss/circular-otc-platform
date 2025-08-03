@@ -109,7 +109,8 @@
               <div class="relative">
                 <input
                   v-model="inputAmount"
-                  type="text"
+                  type="number"
+                  step="any"
                   placeholder="0.0"
                   :class="[
                     'w-full pl-4 pr-32 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300 appearance-none',
@@ -118,8 +119,8 @@
                       : 'border-gray-600/50 hover:border-circular-purple focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/50 focus:outline-none'
                   ]"
                   :disabled="loading"
-                  readonly
-                  @click="showSlider = true"
+                  @input="updateSliderFromAmount"
+                  @focus="showSlider = true"
                 />
                 
                 <!-- Percentage Slider (appears when input is clicked) -->
@@ -716,6 +717,24 @@ const updateAmountFromSlider = () => {
       slider.style.setProperty('--progress', `${sliderPercentage.value}%`)
     }
   })
+}
+
+const updateSliderFromAmount = () => {
+  const balance = parseFloat(inputBalance.value) || 0
+  const amount = parseFloat(inputAmount.value) || 0
+  
+  if (balance > 0) {
+    const percentage = Math.min(100, Math.max(0, (amount / balance) * 100))
+    sliderPercentage.value = Math.round(percentage)
+    
+    // Update CSS custom property for slider fill
+    nextTick(() => {
+      const slider = document.querySelector('.slider')
+      if (slider) {
+        slider.style.setProperty('--progress', `${sliderPercentage.value}%`)
+      }
+    })
+  }
 }
 
 const setSliderPercentage = (percent) => {
