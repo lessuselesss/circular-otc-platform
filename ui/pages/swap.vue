@@ -316,7 +316,7 @@
                       :src="getTokenLogo('CIRX')" 
                       alt="CIRX"
                       class="w-5 h-5 rounded-full"
-                      @error="$event.target.src = '/circular-logo.svg'"
+                      @error="$event.target.src = 'https://cdn.prod.website-files.com/65e472c0cd2f1bebcd7fcf73/65e483ab69e2314b250ed7dc_imageedit_1_8961069084.png'"
                     />
                     <!-- Token Symbol -->
                     <span class="font-medium text-circular-primary text-sm">CIRX</span>
@@ -706,7 +706,7 @@ const getTokenLogo = (token) => {
     'USDT': 'https://assets.coingecko.com/coins/images/325/small/Tether.png',
     'SOL': 'https://assets.coingecko.com/coins/images/4128/small/solana.png',
     'USDC_SOL': 'https://assets.coingecko.com/coins/images/6319/small/USD_Coin_icon.png',
-    'CIRX': '/images/logo/SVG/color-icon-svg.svg'
+    'CIRX': '/cirx-icon.svg'
   }
   
   return logoMap[token] || 'https://assets.coingecko.com/coins/images/279/small/ethereum.png'
