@@ -109,11 +109,12 @@
               <div class="relative">
                 <input
                   v-model="inputAmount"
-                  type="number"
-                  step="any"
+                  type="text"
+                  inputmode="decimal"
+                  pattern="[0-9]*\.?[0-9]*"
                   placeholder="0.0"
                   :class="[
-                    'w-full pl-4 pr-32 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300 appearance-none',
+                    'w-full pl-4 pr-32 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300',
                     activeTab === 'liquid' 
                       ? 'border-gray-600/50 hover:border-circular-primary focus:border-circular-primary focus:ring-2 focus:ring-circular-primary/50 focus:outline-none' 
                       : 'border-gray-600/50 hover:border-circular-purple focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/50 focus:outline-none'
@@ -121,6 +122,7 @@
                   :disabled="loading"
                   @input="updateSliderFromAmount"
                   @focus="showSlider = true"
+                  @keypress="validateNumberInput"
                 />
                 
                 <!-- Percentage Slider (appears when input is clicked) -->
@@ -140,7 +142,7 @@
                     
                     <!-- Percentage Display -->
                     <div class="text-center mb-3">
-                      <div class="text-2xl font-bold text-white">{{ sliderPercentage }}%</div>
+                      <div class="text-2xl font-bold text-white">{{ parseFloat(sliderPercentage).toFixed(1) }}%</div>
                       <div class="text-sm text-gray-400">{{ formatSliderAmount }} {{ getTokenSymbol(inputToken) }}</div>
                     </div>
                     
@@ -151,7 +153,7 @@
                         type="range"
                         min="0"
                         max="100"
-                        step="1"
+                        step="0.1"
                         :class="[
                           'w-full h-2 rounded-lg appearance-none cursor-pointer slider',
                           activeTab === 'liquid' ? 'slider-green' : 'slider-purple'
@@ -529,7 +531,13 @@ const displayCirxBalance = computed(() => {
 const formatSliderAmount = computed(() => {
   const balance = parseFloat(inputBalance.value) || 0
   const amount = (balance * sliderPercentage.value) / 100
-  return amount.toFixed(6)
+  
+  // Format with appropriate precision based on amount size
+  if (amount >= 1) {
+    return amount.toFixed(4).replace(/\.?0+$/, '') // Remove trailing zeros
+  } else {
+    return amount.toFixed(6).replace(/\.?0+$/, '') // More precision for small amounts
+  }
 })
 
 // Token prices (mock data)
@@ -761,7 +769,7 @@ const updateSliderFromAmount = () => {
   
   if (balance > 0) {
     const percentage = Math.min(100, Math.max(0, (amount / balance) * 100))
-    sliderPercentage.value = Math.round(percentage)
+    sliderPercentage.value = Math.round(percentage * 10) / 10 // Round to 1 decimal place
     
     // Update CSS custom property for slider fill
     nextTick(() => {
@@ -770,12 +778,39 @@ const updateSliderFromAmount = () => {
         slider.style.setProperty('--progress', `${sliderPercentage.value}%`)
       }
     })
+  } else {
+    sliderPercentage.value = 0
   }
 }
 
 const setSliderPercentage = (percent) => {
   sliderPercentage.value = percent
   updateAmountFromSlider()
+}
+
+const validateNumberInput = (event) => {
+  const char = event.key
+  const currentValue = event.target.value
+  
+  // Allow control keys (backspace, delete, tab, escape, enter, etc.)
+  if (event.ctrlKey || event.metaKey || 
+      ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(char)) {
+    return true
+  }
+  
+  // Allow digits
+  if (/[0-9]/.test(char)) {
+    return true
+  }
+  
+  // Allow decimal point, but only one
+  if (char === '.' && !currentValue.includes('.')) {
+    return true
+  }
+  
+  // Block everything else
+  event.preventDefault()
+  return false
 }
 
 const reverseSwap = () => {
