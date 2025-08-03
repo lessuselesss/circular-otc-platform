@@ -1,19 +1,26 @@
 <template>
   <div class="min-h-screen bg-circular-bg-primary">
     <!-- Header -->
-    <header class="bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-50">
+    <header class="bg-transparent backdrop-blur-sm border-b border-gray-800/30 sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <div class="flex items-center gap-2 sm:gap-4">
-            <NuxtLink to="/swap" class="font-michroma text-lg sm:text-xl text-circular-primary hover:text-circular-primary-hover transition-colors">
-              Circular CIRX
-            </NuxtLink>
-            <span class="text-xs sm:text-sm hidden sm:block text-gray-400">Transaction History</span>
+            <img 
+              src="/circular-logo.svg" 
+              alt="Circular Protocol" 
+              class="h-8 w-auto"
+            />
+            <span class="text-xs sm:text-sm hidden sm:block text-gray-400">History</span>
           </div>
           <div class="flex items-center gap-2 sm:gap-4">
-            <NuxtLink to="/swap" class="px-4 py-2 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors">
-              Back to Swap
+            <!-- Navigation -->
+            <NuxtLink 
+              to="/swap" 
+              class="px-3 py-2 text-gray-400 hover:text-white transition-colors text-sm font-medium"
+            >
+              Swap
             </NuxtLink>
+            <!-- Multi-Wallet connection -->
             <MultiWalletButton />
           </div>
         </div>
@@ -38,7 +45,9 @@
           </div>
           <h3 class="text-xl font-semibold text-white mb-2">Connect Your Wallet</h3>
           <p class="text-gray-400 mb-6">Connect your wallet to view your transaction history and vesting positions.</p>
-          <MultiWalletButton />
+          <div class="flex justify-center">
+            <MultiWalletButton />
+          </div>
         </div>
       </div>
 
