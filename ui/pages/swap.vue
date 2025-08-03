@@ -59,16 +59,16 @@
             <div class="w-full h-full rounded-2xl bg-circular-bg-primary"></div>
           </div>
           <!-- Main card content -->
-          <div class="relative bg-circular-bg-primary/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8 group-hover:border-transparent transition-all duration-300 max-h-[80vh] overflow-y-auto">
-          <!-- Tab Headers -->
-          <div class="flex mb-6 border-b border-gray-600 overflow-hidden">
+          <div class="relative bg-circular-bg-primary/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8 group-hover:border-transparent transition-all duration-300">
+          <!-- Tab Headers - Jupiter-style Pills -->
+          <div class="flex mb-6 bg-gray-800/50 rounded-xl p-1 gap-1">
             <button
               @click="activeTab = 'liquid'"
               :class="[
-                'flex-1 px-3 py-3 text-sm font-medium font-michroma transition-all duration-300 border-b-2 flex items-center justify-center gap-2',
+                'flex-1 px-4 py-3 text-sm font-medium font-michroma transition-all duration-300 rounded-lg flex items-center justify-center gap-2',
                 activeTab === 'liquid' 
-                  ? 'text-circular-primary border-circular-primary bg-circular-primary/10' 
-                  : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
+                  ? 'text-circular-primary bg-circular-primary/20 border border-circular-primary/30' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
               ]"
             >
               <span class="truncate">Buy Liquid</span>
@@ -79,10 +79,10 @@
             <button
               @click="activeTab = 'otc'"
               :class="[
-                'flex-1 px-3 py-3 text-sm font-medium font-michroma transition-all duration-300 border-b-2 flex items-center justify-center gap-2',
+                'flex-1 px-4 py-3 text-sm font-medium font-michroma transition-all duration-300 rounded-lg flex items-center justify-center gap-2',
                 activeTab === 'otc' 
-                  ? 'text-circular-purple border-circular-purple bg-circular-purple/10' 
-                  : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
+                  ? 'text-circular-purple bg-circular-purple/20 border border-circular-purple/30' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
               ]"
             >
               <span class="truncate">Buy OTC</span>
@@ -116,8 +116,8 @@
                   :class="[
                     'w-full pl-4 pr-32 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300',
                     activeTab === 'liquid' 
-                      ? 'border-gray-600/50 hover:border-circular-primary focus:border-circular-primary focus:ring-1 focus:ring-circular-primary/30' 
-                      : 'border-gray-600/50 hover:border-circular-purple focus:border-circular-purple focus:ring-1 focus:ring-circular-purple/30'
+                      ? 'border-gray-600/50 hover:border-circular-primary focus:border-circular-primary focus:ring-2 focus:ring-circular-primary/50 focus:outline-none' 
+                      : 'border-gray-600/50 hover:border-circular-purple focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/50 focus:outline-none'
                   ]"
                   :disabled="loading"
                 />
@@ -206,7 +206,12 @@
                   v-model="recipientAddress"
                   type="text"
                   :placeholder="isConnected ? 'Leave empty to use connected wallet' : 'Enter wallet address to receive CIRX'"
-                  class="w-full pl-4 pr-12 py-3 text-sm bg-transparent border border-gray-600/50 rounded-xl text-white placeholder-gray-500 hover:border-gray-500 focus:border-transparent focus:ring-1 focus:ring-gradient-border transition-all duration-300"
+                  :class="[
+                    'w-full pl-4 pr-12 py-3 text-sm bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300',
+                    activeTab === 'liquid' 
+                      ? 'border-gray-600/50 hover:border-circular-primary focus:border-circular-primary focus:ring-2 focus:ring-circular-primary/50 focus:outline-none' 
+                      : 'border-gray-600/50 hover:border-circular-purple focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/50 focus:outline-none'
+                  ]"
                   :disabled="loading"
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
@@ -254,28 +259,28 @@
             </div>
 
             <!-- OTC Discount Tiers (only show on OTC tab) -->
-            <div v-if="activeTab === 'otc'" class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-4 mb-6 hover:border-purple-500/40 transition-all duration-300">
-              <h4 class="text-sm font-medium mb-3 text-purple-400">OTC Discount Tiers</h4>
-              <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-gray-400">$1,000 - $10,000</span>
+            <div v-if="activeTab === 'otc'" class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 mb-4 hover:border-purple-500/40 transition-all duration-300">
+              <h4 class="text-xs font-medium mb-2 text-purple-400">OTC Discount Tiers</h4>
+              <div class="space-y-1 text-xs">
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400">$1K-10K</span>
                   <div class="text-right">
-                    <span class="font-medium text-purple-400">5% discount</span>
-                    <span class="block text-xs text-gray-500">X months vest</span>
+                    <span class="font-medium text-purple-400">5%</span>
+                    <span class="text-gray-500 ml-1">X mo</span>
                   </div>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-400">$10,000 - $50,000</span>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400">$10K-50K</span>
                   <div class="text-right">
-                    <span class="font-medium text-purple-400">8% discount</span>
-                    <span class="block text-xs text-gray-500">Y months vest</span>
+                    <span class="font-medium text-purple-400">8%</span>
+                    <span class="text-gray-500 ml-1">Y mo</span>
                   </div>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-400">$50,000+</span>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400">$50K+</span>
                   <div class="text-right">
-                    <span class="font-medium text-purple-400">12% discount</span>
-                    <span class="block text-xs text-gray-500">Z months vest</span>
+                    <span class="font-medium text-purple-400">12%</span>
+                    <span class="text-gray-500 ml-1">Z mo</span>
                   </div>
                 </div>
               </div>
