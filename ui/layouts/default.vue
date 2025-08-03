@@ -4,8 +4,12 @@
     <header class="header">
       <div class="container">
         <nav class="nav">
-          <NuxtLink to="/" class="logo">
-            Circular CIRX
+          <NuxtLink to="/" class="logo flex items-center gap-2">
+            <img 
+              src="/images/logo/SVG/color-logo-white-svg.svg" 
+              alt="Circular Protocol" 
+              class="h-8 w-auto"
+            />
           </NuxtLink>
           <div class="flex items-center gap-4">
             <NuxtLink to="/swap" class="nav-link">

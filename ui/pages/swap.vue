@@ -5,7 +5,11 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <div class="flex items-center gap-2 sm:gap-4">
-            <h1 class="font-michroma text-lg sm:text-xl text-circular-primary">Circular CIRX</h1>
+            <img 
+              src="/images/logo/SVG/color-logo-white-svg.svg" 
+              alt="Circular Protocol" 
+              class="h-8 w-auto"
+            />
             <span class="text-xs sm:text-sm hidden sm:block text-gray-400">OTC Trading Platform</span>
           </div>
           <div class="flex items-center gap-2 sm:gap-4">
