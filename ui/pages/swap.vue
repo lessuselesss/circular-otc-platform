@@ -61,33 +61,36 @@
             <button
               @click="activeTab = 'liquid'"
               :class="[
-                'flex-1 px-4 py-3 text-sm font-medium font-michroma transition-all duration-300 rounded-lg flex items-center justify-center gap-2',
+                'flex-1 px-3 sm:px-4 py-3 text-sm font-medium font-michroma transition-all duration-300 rounded-lg flex items-center justify-center gap-1 sm:gap-2',
                 activeTab === 'liquid' 
                   ? 'text-circular-primary bg-circular-primary/20 border border-circular-primary/30' 
                   : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
               ]"
             >
-              <span class="truncate">Buy Liquid</span>
-              <span class="px-2 py-1 text-xs bg-circular-primary text-gray-900 rounded-full font-semibold whitespace-nowrap flex-shrink-0">
+              <span class="truncate text-xs sm:text-sm">Buy Liquid</span>
+              <span class="px-1.5 sm:px-2 py-1 text-xs bg-circular-primary text-gray-900 rounded-full font-semibold whitespace-nowrap flex-shrink-0">
                 Immediate
               </span>
             </button>
             <button
               @click="activeTab = 'otc'"
               :class="[
-                'flex-1 px-4 py-3 text-sm font-medium font-michroma transition-all duration-300 rounded-lg flex items-center justify-center gap-2',
+                'flex-1 px-3 sm:px-4 py-3 text-sm font-medium font-michroma transition-all duration-300 rounded-lg flex items-center justify-center gap-1 sm:gap-2',
                 activeTab === 'otc' 
                   ? 'text-circular-purple bg-circular-purple/20 border border-circular-purple/30' 
                   : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
               ]"
             >
-              <span class="truncate">Buy OTC</span>
-              <div class="flex flex-col items-center gap-0.5">
-                <span class="px-2 py-0.5 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap">
+              <span class="truncate text-xs sm:text-sm">Buy OTC</span>
+              <div class="flex flex-col items-center gap-0.5 min-w-0">
+                <span class="px-1.5 sm:px-2 py-0.5 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap">
                   5-12%
                 </span>
-                <span class="text-xs text-gray-400 font-normal">
+                <span class="text-xs text-gray-400 font-normal hidden sm:inline">
                   discount
+                </span>
+                <span class="text-xs text-gray-400 font-normal sm:hidden">
+                  off
                 </span>
               </div>
             </button>
@@ -658,10 +661,10 @@ const getTokenLogo = (token) => {
     'USDT': 'https://assets.coingecko.com/coins/images/325/small/Tether.png',
     'SOL': 'https://assets.coingecko.com/coins/images/4128/small/solana.png',
     'USDC_SOL': 'https://assets.coingecko.com/coins/images/6319/small/USD_Coin_icon.png',
-    'CIRX': '/images/logo/SVG/color-icon-svg.svg'
+    'CIRX': '/circular-logo.svg'
   }
   
-  return logoMap[token] || '/images/logo/SVG/color-icon-svg.svg'
+  return logoMap[token] || 'https://assets.coingecko.com/coins/images/279/small/ethereum.png'
 }
 
 const getTokenSymbol = (token) => {
