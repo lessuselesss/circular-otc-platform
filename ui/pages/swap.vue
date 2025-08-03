@@ -31,21 +31,26 @@
     <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8">
       <div :class="[
         'w-full mx-auto transition-all duration-500',
-        showChart ? 'max-w-none px-4' : 'max-w-lg'
+        (showChart || showStaking) ? 'max-w-none px-4' : 'max-w-lg'
       ]">
         <div :class="[
           'flex gap-6 items-start',
-          showChart ? 'flex-col lg:flex-row' : 'justify-center'
+          (showChart || showStaking) ? 'flex-col lg:flex-row' : 'justify-center'
         ]">
           <!-- Chart Panel (expandable) - Takes majority of width -->
-          <div v-if="showChart" class="w-full lg:w-2/3 xl:w-3/4">
+          <div v-if="showChart && !showStaking" class="w-full lg:w-2/3 xl:w-3/4">
             <CirxPriceChart @close="showChart = false" />
+          </div>
+          
+          <!-- Staking Panel (expandable) - Takes majority of width -->
+          <div v-if="showStaking && !showChart" class="w-full lg:w-2/3 xl:w-3/4">
+            <CirxStakingPanel @close="showStaking = false" />
           </div>
           
           <!-- Trading Card - Flexible width -->
           <div :class="[
             'transition-all duration-500',
-            showChart ? 'w-full lg:w-1/3 xl:w-1/4 lg:min-w-[350px]' : 'w-full max-w-lg'
+            (showChart || showStaking) ? 'w-full lg:w-1/3 xl:w-1/4 lg:min-w-[350px]' : 'w-full max-w-lg'
           ]">
         <!-- Centered Trading Card -->
         <div class="bg-gradient-to-br from-circular-bg-secondary to-circular-bg-secondary/95 border border-gray-700 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm">
@@ -262,8 +267,8 @@
             </button>
           </form>
           
-          <!-- Chart Expand Button -->
-          <div v-if="!showChart" class="mt-4 flex justify-start">
+          <!-- Chart and Staking Expand Buttons -->
+          <div v-if="!showChart && !showStaking" class="mt-4 flex justify-start gap-3">
             <button
               @click="showChart = true"
               class="inline-flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white border border-gray-600 hover:border-gray-500 transition-all text-sm font-medium hover:bg-gray-800/50 rounded-lg w-fit"
@@ -277,6 +282,16 @@
                 <circle cx="19" cy="8" r="1"/>
               </svg>
               Expand Chart
+            </button>
+            <button
+              @click="showStaking = true"
+              class="inline-flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white border border-gray-600 hover:border-gray-500 transition-all text-sm font-medium hover:bg-gray-800/50 rounded-lg w-fit"
+            >
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z"/>
+                <path d="M9 12l2 2 4-4"/>
+              </svg>
+              Staking
             </button>
           </div>
         </div>
@@ -314,6 +329,7 @@ const loading = ref(false)
 const loadingText = ref('')
 const quote = ref(null)
 const showChart = ref(false)
+const showStaking = ref(false)
 const recipientAddress = ref('')
 const recipientAddressError = ref('')
 const recipientAddressType = ref('')
