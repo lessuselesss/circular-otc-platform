@@ -34,6 +34,7 @@
             <div v-if="connectedWallet === 'metamask'" class="w-3 h-3 bg-orange-500 rounded-sm"></div>
             <div v-else-if="connectedWallet === 'phantom'" class="w-3 h-3 bg-purple-500 rounded-sm"></div>
             <div v-else-if="connectedWallet === 'walletconnect'" class="w-3 h-3 bg-blue-500 rounded-sm"></div>
+            <div v-else-if="connectedWallet === 'coinbase'" class="w-3 h-3 bg-blue-600 rounded-sm"></div>
             <div v-else class="w-2 h-2 bg-green-400 rounded-full"></div>
           </div>
           <span class="text-sm font-medium text-white">{{ shortAddress }}</span>
@@ -94,10 +95,10 @@
             <div>
               <div class="font-medium text-white">MetaMask</div>
               <div class="text-sm text-gray-400">
-                {{ isMetaMaskInstalled ? 'Connect to your MetaMask wallet' : 'Install MetaMask first' }}
+                {{ isMetaMaskAvailable ? 'Connect to your MetaMask wallet' : 'Install MetaMask first' }}
               </div>
             </div>
-            <div v-if="!isMetaMaskInstalled" class="ml-auto">
+            <div v-if="!isMetaMaskAvailable" class="ml-auto">
               <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" class="text-gray-400">
                 <path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
               </svg>
@@ -119,10 +120,10 @@
             <div>
               <div class="font-medium text-white">Phantom</div>
               <div class="text-sm text-gray-400">
-                {{ isPhantomInstalled ? 'Connect to your Phantom wallet (Solana)' : 'Install Phantom first' }}
+                {{ isPhantomAvailable ? 'Connect to your Phantom wallet (Solana)' : 'Install Phantom first' }}
               </div>
             </div>
-            <div v-if="!isPhantomInstalled" class="ml-auto">
+            <div v-if="!isPhantomAvailable" class="ml-auto">
               <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" class="text-gray-400">
                 <path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
               </svg>
@@ -220,58 +221,62 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+import { useWallet } from '~/composables/useWallet'
+
+// Use proper wallet integration
 const {
   isConnected,
   isConnecting,
   account,
   balance,
+  chainId,
   connectedWallet,
-  error,
-  isMetaMaskInstalled,
-  isPhantomInstalled,
-  isWalletConnectAvailable,
   shortAddress,
   isOnSupportedChain,
-  connectMetaMask,
-  connectPhantom,
-  connectWalletConnect,
-  disconnect,
-  switchToMainnet
-} = useMultiWallet()
+  isMetaMaskAvailable,
+  isPhantomAvailable,
+  isWalletConnectAvailable,
+  connectWallet,
+  disconnectWallet,
+  switchChain,
+  autoReconnect,
+  saveWalletPreference,
+  clearWalletPreference,
+  error
+} = useWallet()
 
 // Local state
 const showConnectModal = ref(false)
 
-// Connection handlers
+// Connection handlers with session management
 const handleConnectMetaMask = async () => {
-  if (!isMetaMaskInstalled.value) {
+  if (!isMetaMaskAvailable.value) {
     window.open('https://metamask.io/download/', '_blank')
     return
   }
 
   try {
-    const success = await connectMetaMask()
-    if (success) {
-      showConnectModal.value = false
-      console.log('✅ MetaMask connected successfully!')
-    }
+    showConnectModal.value = false
+    await connectWallet('metamask')
+    saveWalletPreference('metamask')
+    console.log('✅ MetaMask connected successfully!')
   } catch (err) {
     console.error('❌ MetaMask connection failed:', err)
   }
 }
 
 const handleConnectPhantom = async () => {
-  if (!isPhantomInstalled.value) {
+  if (!isPhantomAvailable.value) {
     window.open('https://phantom.app/', '_blank')
     return
   }
 
   try {
-    const success = await connectPhantom()
-    if (success) {
-      showConnectModal.value = false
-      console.log('✅ Phantom connected successfully!')
-    }
+    showConnectModal.value = false
+    await connectWallet('phantom')
+    saveWalletPreference('phantom')
+    console.log('✅ Phantom connected successfully!')
   } catch (err) {
     console.error('❌ Phantom connection failed:', err)
   }
@@ -279,25 +284,32 @@ const handleConnectPhantom = async () => {
 
 const handleConnectWalletConnect = async () => {
   try {
-    const success = await connectWalletConnect()
-    if (success) {
-      showConnectModal.value = false
-      console.log('✅ WalletConnect connected successfully!')
-    }
+    showConnectModal.value = false
+    await connectWallet('walletconnect')
+    saveWalletPreference('walletconnect')
+    console.log('✅ WalletConnect connected successfully!')
   } catch (err) {
     console.error('❌ WalletConnect connection failed:', err)
   }
 }
 
-// Template now uses handler functions directly
-
-// Disconnect handler
+// Disconnect handler with session cleanup
 const handleDisconnect = async () => {
   try {
-    await disconnect()
+    await disconnectWallet()
+    clearWalletPreference()
     console.log('✅ Wallet disconnected')
   } catch (err) {
     console.error('❌ Disconnect failed:', err)
+  }
+}
+
+// Network switching
+const switchToMainnet = async () => {
+  try {
+    await switchChain({ chainId: 1 }) // Ethereum mainnet
+  } catch (err) {
+    console.error('Failed to switch network:', err)
   }
 }
 
@@ -306,7 +318,17 @@ const clearError = () => {
   // Error will be cleared by the composable
 }
 
-// Close modal when connected
+// Close modal when clicking outside
+const closeModal = (event) => {
+  if (event.target === event.currentTarget) {
+    showConnectModal.value = false
+  }
+}
+
+// Auto-reconnect on component mount
+onMounted(async () => {
+  await autoReconnect()
+})
 watch(isConnected, (connected) => {
   if (connected) {
     showConnectModal.value = false

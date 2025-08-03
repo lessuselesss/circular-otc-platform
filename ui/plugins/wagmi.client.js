@@ -1,4 +1,6 @@
 import { VueQueryPlugin } from '@tanstack/vue-query'
+import { WagmiPlugin } from '@wagmi/vue'
+import { config } from '~/wagmi.config'
 
 export default defineNuxtPlugin((nuxtApp) => {
   // Configure Vue Query for Wagmi
@@ -11,4 +13,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       },
     },
   })
+
+  // Configure Wagmi
+  nuxtApp.vueApp.use(WagmiPlugin, { config })
 })
