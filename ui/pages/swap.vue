@@ -662,7 +662,7 @@ const getTokenLogo = (token) => {
     'USDT': 'https://assets.coingecko.com/coins/images/325/small/Tether.png',
     'SOL': 'https://assets.coingecko.com/coins/images/4128/small/solana.png',
     'USDC_SOL': 'https://assets.coingecko.com/coins/images/6319/small/USD_Coin_icon.png',
-    'CIRX': '/circular-logo.svg'
+    'CIRX': '/images/logo/SVG/color-icon-svg.svg'
   }
   
   return logoMap[token] || 'https://assets.coingecko.com/coins/images/279/small/ethereum.png'
