@@ -55,7 +55,7 @@
         <!-- Centered Trading Card -->
         <div class="relative group">
           <!-- Animated gradient border -->
-          <div class="absolute inset-0 rounded-2xl opacity-30 group-hover:opacity-100 transition-all duration-300 bg-gradient-to-r from-pink-400 via-purple-400 via-blue-400 via-green-400 via-yellow-400 to-pink-400 bg-[length:400%_400%] animate-gradient-rotate p-[2px] group-hover:p-[6px]">
+          <div class="absolute inset-0 rounded-2xl opacity-30 group-hover:opacity-100 transition-all duration-300 bg-gradient-to-r from-pink-500 via-purple-500 via-blue-500 via-green-500 via-yellow-500 to-pink-500 bg-[length:400%_400%] animate-gradient-rotate p-[2px] group-hover:p-[6px]">
             <div class="w-full h-full rounded-2xl bg-circular-bg-primary"></div>
           </div>
           <!-- Main card content -->
