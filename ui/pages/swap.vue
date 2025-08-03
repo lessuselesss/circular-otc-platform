@@ -59,7 +59,7 @@
             <div class="w-full h-full rounded-2xl bg-circular-bg-primary"></div>
           </div>
           <!-- Main card content -->
-          <div class="relative bg-circular-bg-primary/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8 group-hover:border-transparent transition-all duration-300">
+          <div class="relative bg-circular-bg-primary/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8 group-hover:border-transparent transition-all duration-300 max-h-[80vh] overflow-y-auto">
           <!-- Tab Headers -->
           <div class="flex mb-6 border-b border-gray-600 overflow-hidden">
             <button
@@ -113,7 +113,12 @@
                   type="number"
                   step="any"
                   placeholder="0.0"
-                  class="w-full pl-4 pr-32 py-4 text-xl font-semibold bg-transparent border border-gray-600/50 rounded-xl text-white placeholder-gray-500 hover:border-gray-500 focus:border-transparent focus:ring-1 focus:ring-gradient-border transition-all duration-300"
+                  :class="[
+                    'w-full pl-4 pr-32 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300',
+                    activeTab === 'liquid' 
+                      ? 'border-gray-600/50 hover:border-circular-primary focus:border-circular-primary focus:ring-1 focus:ring-circular-primary/30' 
+                      : 'border-gray-600/50 hover:border-circular-purple focus:border-circular-purple focus:ring-1 focus:ring-circular-purple/30'
+                  ]"
                   :disabled="loading"
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center">
@@ -141,7 +146,12 @@
             <div class="flex justify-center mb-6">
               <button
                 type="button"
-                class="p-3 bg-gray-700 border border-gray-600 rounded-xl text-circular-primary hover:bg-gray-600 hover:border-circular-primary transition-all duration-300"
+                :class="[
+                  'p-3 bg-transparent border rounded-xl transition-all duration-300',
+                  activeTab === 'liquid' 
+                    ? 'border-gray-600/50 text-circular-primary hover:bg-circular-primary/10 hover:border-circular-primary' 
+                    : 'border-gray-600/50 text-circular-purple hover:bg-circular-purple/10 hover:border-circular-purple'
+                ]"
                 @click="reverseSwap"
                 :disabled="loading"
               >
@@ -165,7 +175,12 @@
                   type="number"
                   step="any"
                   placeholder="0.0"
-                  class="w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border border-gray-600/30 rounded-xl text-white placeholder-gray-500 opacity-75"
+                  :class="[
+                    'w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 opacity-75 transition-all duration-300',
+                    activeTab === 'liquid' 
+                      ? 'border-circular-primary/40' 
+                      : 'border-circular-purple/40'
+                  ]"
                   readonly
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
