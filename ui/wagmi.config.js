@@ -41,9 +41,3 @@ export const config = createConfig({
   },
   ssr: false,
 })
-
-declare module '@wagmi/vue' {
-  interface Register {
-    config: typeof config
-  }
-}
