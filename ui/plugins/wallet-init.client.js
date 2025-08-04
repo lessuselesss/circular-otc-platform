@@ -7,29 +7,65 @@ export default defineNuxtPlugin(async () => {
   // Only run on client side
   if (process.server) return
 
-  const { $pinia } = useNuxtApp()
-  const walletStore = useWalletStore($pinia)
+  // Wait for DOM to be ready
+  await new Promise(resolve => {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', resolve)
+    } else {
+      resolve()
+    }
+  })
 
   try {
-    // Initialize wallet store and attempt auto-reconnection
-    await walletStore.initialize()
+    const { $pinia } = useNuxtApp()
+    const walletStore = useWalletStore($pinia)
 
-    // Global error handler for unhandled wallet errors
+    // Initialize wallet store with proper error handling
+    try {
+      await walletStore.initialize()
+      console.log('✅ Wallet store initialized successfully')
+    } catch (initError) {
+      console.warn('⚠️ Wallet store initialization failed, continuing without auto-reconnect:', initError)
+      // Don't throw - allow app to continue without wallet functionality
+    }
+
+    // Enhanced error handler for wallet-related errors
     window.addEventListener('unhandledrejection', (event) => {
-      if (event.reason?.message?.includes('wallet') || 
-          event.reason?.message?.includes('Web3') ||
-          event.reason?.message?.includes('connection')) {
-        console.error('Unhandled wallet error:', event.reason)
-        // Optionally show user-friendly error notification here
+      const error = event.reason
+      const errorMessage = error?.message || String(error)
+      
+      // Check for wallet-related errors
+      if (errorMessage.includes('wallet') || 
+          errorMessage.includes('Web3') ||
+          errorMessage.includes('connection') ||
+          errorMessage.includes('metamask') ||
+          errorMessage.includes('ethereum')) {
+        
+        console.error('🔒 Wallet error caught and handled:', error)
+        
+        // Prevent the error from causing critical error dialog
+        event.preventDefault()
+        
+        // Clear any wallet state that might be causing issues
+        try {
+          walletStore.clearError()
+        } catch (clearError) {
+          console.warn('Failed to clear wallet error:', clearError)
+        }
       }
     })
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
-      walletStore.cleanup()
+      try {
+        walletStore.cleanup()
+      } catch (cleanupError) {
+        console.warn('Wallet cleanup failed:', cleanupError)
+      }
     })
 
   } catch (error) {
-    console.error('Failed to initialize wallet store:', error)
+    console.error('❌ Critical failure in wallet initialization plugin:', error)
+    // Don't rethrow - prevent this from breaking the entire app
   }
 })

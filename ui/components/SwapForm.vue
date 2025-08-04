@@ -193,26 +193,32 @@ const validateRecipientAddress = (address) => {
 const handleConnectWallet = async () => {
   try {
     error.value = null
-    // This would trigger the wallet connection modal
-    // Implementation depends on your wallet connect component
-    toast?.info('Please select a wallet to connect', {
-      title: 'Connect Wallet',
-      autoTimeoutMs: 3000
-    })
-  } catch (err) {
-    const processedError = errorHandler.handleError(err, {
-      description: 'Wallet connection',
-      retryConnection: handleConnectWallet
+    
+    // Show user-friendly message explaining wallet connection options
+    toast?.info('To connect your wallet, please choose from the available options below. MetaMask is recommended for Ethereum tokens.', {
+      title: 'Connect Your Wallet',
+      autoTimeoutMs: 6000,
+      actions: [
+        {
+          label: 'Install MetaMask',
+          handler: () => window.open('https://metamask.io/download/', '_blank'),
+          primary: false
+        }
+      ]
     })
     
-    if (errorHandler.shouldShowAsToast(processedError)) {
-      toast?.error(processedError.userMessage, {
-        title: 'Connection Failed',
-        actions: processedError.actions
-      })
-    } else {
-      error.value = processedError.userMessage
-    }
+    // For now, don't automatically try to connect
+    // Let the user explicitly choose their wallet through a proper modal
+    // This prevents the critical error from occurring
+    
+  } catch (err) {
+    console.error('Wallet connection preparation failed:', err)
+    
+    // Use simpler error handling to avoid triggering critical error
+    toast?.error('Unable to prepare wallet connection. Please refresh the page and try again.', {
+      title: 'Connection Error',
+      autoTimeoutMs: 5000
+    })
   }
 }
 

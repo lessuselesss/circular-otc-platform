@@ -243,14 +243,31 @@ export const useWalletStore = defineStore('wallet', () => {
     }
 
     try {
-      // Attempt auto-reconnection
-      await attemptAutoReconnect()
+      clearErrors()
+      
+      // Wait a bit for browser environment to be fully ready
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Attempt auto-reconnection with timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Auto-reconnect timeout')), 5000)
+      )
+      
+      try {
+        await Promise.race([attemptAutoReconnect(), timeoutPromise])
+      } catch (reconnectError) {
+        console.warn('Auto-reconnect failed or timed out:', reconnectError)
+        // Continue initialization even if auto-reconnect fails
+      }
       
       isInitialized.value = true
+      console.log('✅ Wallet store initialized')
 
     } catch (error) {
-      console.error('Wallet store initialization failed:', error)
-      globalError.value = error.message
+      console.error('❌ Wallet store initialization failed:', error)
+      // Don't set globalError here to prevent critical error dialog
+      // Just log and continue - the app should work without wallet connectivity
+      isInitialized.value = true // Mark as initialized to prevent retries
     }
   }
 
