@@ -221,20 +221,63 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const showConnectModal = ref(false)
-const isConnected = ref(false) // Placeholder
-const isConnecting = ref(false) // Placeholder
-const error = ref(null) // Placeholder
 
-const handleConnectMetaMask = () => {
-  alert('MetaMask connection is currently disabled.')
-  showConnectModal.value = false
+// Use wallet store
+const walletStore = useWalletStore()
+const { useWallet } = await import('../composables/useWallet.js')
+const wallet = useWallet()
+
+// Computed properties from store and composables
+const isConnected = computed(() => walletStore.isConnected)
+const isConnecting = computed(() => walletStore.isConnecting)
+const error = computed(() => walletStore.currentError)
+const connectedWallet = computed(() => walletStore.activeWallet?.type)
+const shortAddress = computed(() => {
+  if (!walletStore.activeWallet?.address) return ''
+  const addr = walletStore.activeWallet.address
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+})
+const balance = computed(() => {
+  if (connectedWallet.value === 'metamask' && walletStore.metaMaskWallet) {
+    return walletStore.metaMaskWallet.balance?.value || '0.0000'
+  }
+  return '0.0000'
+})
+
+// Check wallet availability
+const isMetaMaskAvailable = computed(() => {
+  if (typeof window === 'undefined') return false
+  return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask
+})
+
+const isPhantomAvailable = computed(() => {
+  if (typeof window === 'undefined') return false
+  return typeof window.solana !== 'undefined' && window.solana.isPhantom
+})
+
+const isOnSupportedChain = computed(() => {
+  if (connectedWallet.value === 'metamask' && walletStore.metaMaskWallet) {
+    return walletStore.metaMaskWallet.isOnSupportedChain?.value || false
+  }
+  return true
+})
+
+// Connection handlers
+const handleConnectMetaMask = async () => {
+  try {
+    await walletStore.connectWallet('metamask', 'ethereum')
+    showConnectModal.value = false
+  } catch (error) {
+    console.error('MetaMask connection failed:', error)
+    // Error is already stored in walletStore.currentError
+  }
 }
 
 const handleConnectPhantom = () => {
-  alert('Phantom connection is currently disabled.')
+  alert('Phantom wallet connection is currently disabled.')
   showConnectModal.value = false
 }
 
@@ -243,15 +286,33 @@ const handleConnectWalletConnect = () => {
   showConnectModal.value = false
 }
 
-const handleDisconnect = () => {
-  alert('Disconnect is currently disabled.')
+const handleDisconnect = async () => {
+  try {
+    await walletStore.disconnectWallet()
+  } catch (error) {
+    console.error('Disconnect failed:', error)
+  }
 }
 
-const switchToMainnet = () => {
-  alert('Network switching is currently disabled.')
+const switchToMainnet = async () => {
+  try {
+    await walletStore.switchChain(1) // Ethereum mainnet
+  } catch (error) {
+    console.error('Network switch failed:', error)
+  }
 }
 
 const clearError = () => {
-  error.value = null
+  walletStore.clearError()
 }
+
+// Initialize wallet store on mount
+onMounted(async () => {
+  try {
+    await walletStore.initialize()
+    await walletStore.attemptAutoReconnect()
+  } catch (error) {
+    console.error('Wallet initialization failed:', error)
+  }
+})
 </script>
