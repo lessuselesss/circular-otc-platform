@@ -261,11 +261,11 @@ export function useWallet() {
     clearWalletPreference,
 
     // Wallet availability
-    isMetaMaskAvailable: computed(() => 
-      connectors.value.some(c => c.name.toLowerCase().includes('metamask'))
+    isMetaMaskAvailable: computed(() =>
+      Array.isArray(connectors.value) && connectors.value.some(c => c.name.toLowerCase().includes('metamask'))
     ),
-    isWalletConnectAvailable: computed(() => 
-      connectors.value.some(c => c.name.toLowerCase().includes('walletconnect'))
+    isWalletConnectAvailable: computed(() =>
+      Array.isArray(connectors.value) && connectors.value.some(c => c.name.toLowerCase().includes('walletconnect'))
     ),
     isPhantomAvailable: computed(() => 
       typeof window !== 'undefined' && window.solana && window.solana.isPhantom
