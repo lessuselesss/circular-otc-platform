@@ -1,17 +1,25 @@
 <template>
   <div class="relative">
-    <!-- Connect Button -->
+    <!-- Connect Button - Direct MetaMask Connection -->
     <button
       v-if="!isConnected"
-      @click="showConnectModal = true"
+      @click="handleConnectMetaMask"
       class="px-4 py-2 bg-circular-primary text-gray-900 rounded-lg font-medium hover:bg-circular-primary-hover transition-colors flex items-center gap-2"
-      :disabled="isConnecting"
+      :disabled="isConnecting || !isMetaMaskAvailable"
     >
-      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+      <!-- MetaMask Icon -->
+      <svg v-if="isMetaMaskAvailable" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M22.46 12.58l-.86-2.89L20.05 4.47l-5.87 4.34 2.25 1.67 1.96-1.45.78 2.62L22.46 12.58zM9.59 8.81l-5.87-4.34L2.14 9.69l-.86 2.89 3.29-.93.78-2.62 1.96 1.45L9.59 8.81z"/>
+        <path d="M18.18 12.42l-2.25-1.67-1.96 1.45-.78-2.62-3.29.93.86 2.89 1.57-1.16 1.57 1.16.86-2.89-3.29-.93-.78 2.62-1.96-1.45-2.25 1.67 4.41 3.27L18.18 12.42z"/>
+      </svg>
+      <!-- Generic Wallet Icon for fallback -->
+      <svg v-else width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
         <path d="M21 6h-2V4a2 2 0 00-2-2H5a2 2 0 00-2 2v2H1v14a2 2 0 002 2h18a2 2 0 002-2V6zM5 4h12v2H5V4zm14 16H3V8h2v2h2V8h10v2h2V8h2v12z"/>
       </svg>
+      
       <span v-if="isConnecting">Connecting...</span>
-      <span v-else>Connect Wallet</span>
+      <span v-else-if="!isMetaMaskAvailable">Install MetaMask</span>
+      <span v-else>Connect MetaMask</span>
     </button>
 
     <!-- Connected State -->
@@ -56,134 +64,21 @@
       </button>
     </div>
 
-    <!-- Connect Modal -->
+    <!-- MetaMask Installation Hint (when not available) -->
     <div
-      v-if="showConnectModal"
-      class="fixed top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
-      @click="showConnectModal = false"
-      style="min-height: 100vh; min-height: 100dvh;"
+      v-if="!isConnected && !isMetaMaskAvailable"
+      class="absolute top-full left-0 right-0 mt-2 p-3 bg-orange-900/90 border border-orange-700 rounded-lg text-orange-200 text-sm z-10"
     >
-      <div
-        class="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md mx-auto my-auto max-h-[90vh] overflow-y-auto"
-        @click.stop
-      >
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-lg font-semibold text-white">Connect Wallet</h3>
-          <button
-            @click="showConnectModal = false"
-            class="text-gray-400 hover:text-white transition-colors"
-          >
-            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-          </button>
-        </div>
-
-        <div class="space-y-3">
-          <!-- MetaMask -->
-          <button
-            @click="handleConnectMetaMask"
-            :disabled="isConnecting"
-            class="w-full flex items-center gap-4 p-4 border border-gray-600 rounded-lg hover:border-gray-500 hover:bg-gray-800 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div class="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                <path d="M22.46 12.58l-.86-2.89L20.05 4.47l-5.87 4.34 2.25 1.67 1.96-1.45.78 2.62L22.46 12.58zM9.59 8.81l-5.87-4.34L2.14 9.69l-.86 2.89 3.29-.93.78-2.62 1.96 1.45L9.59 8.81z"/>
-                <path d="M18.18 12.42l-2.25-1.67-1.96 1.45-.78-2.62-3.29.93.86 2.89 1.57-1.16 1.57 1.16.86-2.89-3.29-.93-.78 2.62-1.96-1.45-2.25 1.67 4.41 3.27L18.18 12.42z"/>
-              </svg>
-            </div>
-            <div>
-              <div class="font-medium text-white">MetaMask</div>
-              <div class="text-sm text-gray-400">
-                {{ isMetaMaskAvailable ? 'Connect to your MetaMask wallet' : 'Install MetaMask first' }}
-              </div>
-            </div>
-            <div v-if="!isMetaMaskAvailable" class="ml-auto">
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" class="text-gray-400">
-                <path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
-              </svg>
-            </div>
-          </button>
-
-          <!-- Phantom -->
-          <button
-            @click="handleConnectPhantom"
-            :disabled="isConnecting"
-            class="w-full flex items-center gap-4 p-4 border border-gray-600 rounded-lg hover:border-gray-500 hover:bg-gray-800 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                <path d="M17.06 12.94c0 1.34-.77 2.43-1.72 2.43h-1.61c-.64 0-1.16-.52-1.16-1.16v-.24c0-.64.52-1.16 1.16-1.16h1.61c.95 0 1.72 1.09 1.72 2.43z"/>
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
-            </div>
-            <div>
-              <div class="font-medium text-white">Phantom</div>
-              <div class="text-sm text-gray-400">
-                {{ isPhantomAvailable ? 'Connect to your Phantom wallet (Solana)' : 'Install Phantom first' }}
-              </div>
-            </div>
-            <div v-if="!isPhantomAvailable" class="ml-auto">
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" class="text-gray-400">
-                <path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
-              </svg>
-            </div>
-          </button>
-
-          <!-- WalletConnect -->
-          <button
-            @click="handleConnectWalletConnect"
-            :disabled="isConnecting"
-            class="w-full flex items-center gap-4 p-4 border border-gray-600 rounded-lg hover:border-gray-500 hover:bg-gray-800 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                <circle cx="12" cy="12" r="2"/>
-              </svg>
-            </div>
-            <div>
-              <div class="font-medium text-white">WalletConnect</div>
-              <div class="text-sm text-gray-400">Connect with mobile wallets via QR code</div>
-            </div>
-          </button>
-        </div>
-
-        <!-- Wallet Installation Links -->
-        <div class="mt-6 pt-4 border-t border-gray-700">
-          <div class="text-sm text-gray-400 mb-3">Don't have a wallet?</div>
-          <div class="flex gap-2">
-            <a
-              href="https://metamask.io/download/"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex-1 px-3 py-2 text-center text-xs bg-orange-600/20 text-orange-400 rounded-lg hover:bg-orange-600/30 transition-colors"
-            >
-              Get MetaMask
-            </a>
-            <a
-              href="https://phantom.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex-1 px-3 py-2 text-center text-xs bg-purple-600/20 text-purple-400 rounded-lg hover:bg-purple-600/30 transition-colors"
-            >
-              Get Phantom
-            </a>
-          </div>
-        </div>
-
-        <!-- Info -->
-        <div class="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-          <div class="text-sm text-blue-400">
-            <strong>Multi-Chain Support:</strong>
-            <br>
-            MetaMask: Ethereum & EVM chains
-            <br>
-            Phantom: Solana blockchain
-            <br>
-            WalletConnect: 100+ wallet apps
-          </div>
-        </div>
+      <div class="flex items-center justify-between">
+        <span>MetaMask not detected</span>
+        <a
+          href="https://metamask.io/download/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="ml-2 px-2 py-1 bg-orange-600 hover:bg-orange-700 text-orange-100 rounded text-xs transition-colors"
+        >
+          Install
+        </a>
       </div>
     </div>
 
@@ -222,8 +117,6 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-
-const showConnectModal = ref(false)
 
 // Use wallet store
 const walletStore = useWalletStore()
@@ -267,23 +160,18 @@ const isOnSupportedChain = computed(() => {
 
 // Connection handlers
 const handleConnectMetaMask = async () => {
+  if (!isMetaMaskAvailable.value) {
+    // Open MetaMask installation page if not available
+    window.open('https://metamask.io/download/', '_blank')
+    return
+  }
+  
   try {
     await walletStore.connectWallet('metamask', 'ethereum')
-    showConnectModal.value = false
   } catch (error) {
     console.error('MetaMask connection failed:', error)
     // Error is already stored in walletStore.currentError
   }
-}
-
-const handleConnectPhantom = () => {
-  alert('Phantom wallet connection is currently disabled.')
-  showConnectModal.value = false
-}
-
-const handleConnectWalletConnect = () => {
-  alert('WalletConnect is currently disabled.')
-  showConnectModal.value = false
 }
 
 const handleDisconnect = async () => {
