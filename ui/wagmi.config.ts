@@ -1,7 +1,6 @@
-import { defineConfig } from '@wagmi/vue'
-import { createConfig, http } from '@wagmi/core'
-import { mainnet, sepolia, base, arbitrum } from '@wagmi/core/chains'
-import { walletConnect, metaMask, coinbaseWallet, injected } from '@wagmi/connectors'
+import { createConfig, http } from '@wagmi/vue'
+import { mainnet, sepolia, base, arbitrum } from '@wagmi/vue/chains'
+import { walletConnect, metaMask, coinbaseWallet, injected } from '@wagmi/vue/connectors'
 
 // WalletConnect project ID - get from https://cloud.walletconnect.com
 const projectId = process.env.WALLETCONNECT_PROJECT_ID || 'your-project-id-here'
@@ -43,7 +42,7 @@ export const config = createConfig({
   ssr: false,
 })
 
-declare module '@wagmi/core' {
+declare module '@wagmi/vue' {
   interface Register {
     config: typeof config
   }
