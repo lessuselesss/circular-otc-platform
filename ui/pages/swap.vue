@@ -120,13 +120,13 @@
                       : 'border-gray-600/50 hover:border-circular-purple focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/50 focus:outline-none'
                   ]"
                   :disabled="loading"
-                  @input="updateSliderFromAmount"
-                  @focus="showSlider = true"
+                  <!-- @input="updateSliderFromAmount" -->
+                  <!-- @focus="showSlider = true" -->
                   @keypress="validateNumberInput"
                 />
                 
-                <!-- Percentage Slider (appears when input is clicked) -->
-                <div v-if="showSlider" class="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl p-4 z-30 shadow-xl slider-container" @click.stop>
+                <!-- Percentage Slider (temporarily commented out) -->
+                <!-- <div v-if="showSlider" class="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl p-4 z-30 shadow-xl slider-container" @click.stop>
                   <div class="mb-3">
                     <div class="flex justify-between items-center mb-2">
                       <span class="text-sm text-gray-400">Select amount</span>
@@ -140,13 +140,11 @@
                       </button>
                     </div>
                     
-                    <!-- Percentage Display -->
                     <div class="text-center mb-3">
                       <div class="text-2xl font-bold text-white">{{ parseFloat(sliderPercentage).toFixed(1) }}%</div>
                       <div class="text-sm text-gray-400">{{ formatSliderAmount }} {{ getTokenSymbol(inputToken) }}</div>
                     </div>
                     
-                    <!-- Slider -->
                     <div class="relative">
                       <input
                         v-model="sliderPercentage"
@@ -160,7 +158,6 @@
                         ]"
                         @input="updateAmountFromSlider"
                       />
-                      <!-- Percentage markers -->
                       <div class="flex justify-between text-xs text-gray-500 mt-1">
                         <span>0%</span>
                         <span>25%</span>
@@ -170,7 +167,6 @@
                       </div>
                     </div>
                     
-                    <!-- Quick percentage buttons -->
                     <div class="flex gap-2 mt-3">
                       <button
                         v-for="percent in [25, 50, 75, 100]"
@@ -189,7 +185,7 @@
                       </button>
                     </div>
                   </div>
-                </div>
+                </div> -->
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
                   <div class="relative token-dropdown-container">
                     <button
@@ -478,7 +474,7 @@ definePageMeta({
   layout: 'default'
 })
 
-// Multi-Wallet connection
+// Multi-Wallet connection (using same composable as MultiWalletButton)
 const { 
   isConnected, 
   account, 
@@ -487,7 +483,7 @@ const {
   shortAddress,
   getTokenBalance,
   executeSwap
-} = useMultiWallet()
+} = useWallet()
 
 // Reactive state
 const activeTab = ref('liquid')
@@ -749,44 +745,45 @@ const selectToken = (token) => {
   inputAmount.value = ''
 }
 
-const updateAmountFromSlider = () => {
-  const balance = parseFloat(inputBalance.value) || 0
-  const amount = (balance * sliderPercentage.value) / 100
-  inputAmount.value = amount.toFixed(6).replace(/\.?0+$/, '') // Remove trailing zeros
-  
-  // Update CSS custom property for slider fill
-  nextTick(() => {
-    const slider = document.querySelector('.slider')
-    if (slider) {
-      slider.style.setProperty('--progress', `${sliderPercentage.value}%`)
-    }
-  })
-}
+// Slider functions temporarily commented out
+// const updateAmountFromSlider = () => {
+//   const balance = parseFloat(inputBalance.value) || 0
+//   const amount = (balance * sliderPercentage.value) / 100
+//   inputAmount.value = amount.toFixed(6).replace(/\.?0+$/, '') // Remove trailing zeros
+//   
+//   // Update CSS custom property for slider fill
+//   nextTick(() => {
+//     const slider = document.querySelector('.slider')
+//     if (slider) {
+//       slider.style.setProperty('--progress', `${sliderPercentage.value}%`)
+//     }
+//   })
+// }
 
-const updateSliderFromAmount = () => {
-  const balance = parseFloat(inputBalance.value) || 0
-  const amount = parseFloat(inputAmount.value) || 0
-  
-  if (balance > 0) {
-    const percentage = Math.min(100, Math.max(0, (amount / balance) * 100))
-    sliderPercentage.value = Math.round(percentage * 10) / 10 // Round to 1 decimal place
-    
-    // Update CSS custom property for slider fill
-    nextTick(() => {
-      const slider = document.querySelector('.slider')
-      if (slider) {
-        slider.style.setProperty('--progress', `${sliderPercentage.value}%`)
-      }
-    })
-  } else {
-    sliderPercentage.value = 0
-  }
-}
+// const updateSliderFromAmount = () => {
+//   const balance = parseFloat(inputBalance.value) || 0
+//   const amount = parseFloat(inputAmount.value) || 0
+//   
+//   if (balance > 0) {
+//     const percentage = Math.min(100, Math.max(0, (amount / balance) * 100))
+//     sliderPercentage.value = Math.round(percentage * 10) / 10 // Round to 1 decimal place
+//     
+//     // Update CSS custom property for slider fill
+//     nextTick(() => {
+//       const slider = document.querySelector('.slider')
+//       if (slider) {
+//         slider.style.setProperty('--progress', `${sliderPercentage.value}%`)
+//       }
+//     })
+//   } else {
+//     sliderPercentage.value = 0
+//   }
+// }
 
-const setSliderPercentage = (percent) => {
-  sliderPercentage.value = percent
-  updateAmountFromSlider()
-}
+// const setSliderPercentage = (percent) => {
+//   sliderPercentage.value = percent
+//   updateAmountFromSlider()
+// }
 
 const validateNumberInput = (event) => {
   const char = event.key
@@ -962,8 +959,8 @@ useHead({
   animation: gradient-rotate 12s ease infinite;
 }
 
-/* Custom slider styles */
-.slider {
+/* Custom slider styles (temporarily commented out) */
+/* .slider {
   background: #374151;
   outline: none;
 }
@@ -1011,7 +1008,6 @@ useHead({
   background: #8b5cf6;
 }
 
-/* Custom slider track fill effect */
 .slider-green {
   background: #374151;
   background-image: linear-gradient(#10b981, #10b981);
@@ -1024,5 +1020,5 @@ useHead({
   background-image: linear-gradient(#8b5cf6, #8b5cf6);
   background-repeat: no-repeat;
   background-size: var(--progress, 0%) 100%;
-}
+} */
 </style>
