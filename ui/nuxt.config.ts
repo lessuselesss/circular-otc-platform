@@ -13,9 +13,11 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxtjs/tailwindcss',
-    '@pinia/nuxt'
+    '@pinia/nuxt',
     // '@nuxt/ui' // Temporarily disabled - causing build issues
   ],
+
+  plugins: ['~/plugins/wagmi.ts'],
 
   // CSS configuration
   css: ['~/assets/css/main.css'],
