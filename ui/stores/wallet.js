@@ -63,23 +63,29 @@ export const useWalletStore = defineStore('wallet', () => {
   const availableWallets = computed(() => {
     const wallets = []
 
-    // Add Ethereum wallets
-    ethereumWallet.availableWallets.value.forEach(wallet => {
-      wallets.push({
-        ...wallet,
-        chain: 'ethereum',
-        icon: getWalletIcon(wallet.type, 'ethereum')
+    // Add Ethereum wallets with defensive check
+    const ethWallets = ethereumWallet.availableWallets?.value || []
+    if (Array.isArray(ethWallets)) {
+      ethWallets.forEach(wallet => {
+        wallets.push({
+          ...wallet,
+          chain: 'ethereum',
+          icon: getWalletIcon(wallet.type, 'ethereum')
+        })
       })
-    })
+    }
 
-    // Add Solana wallets
-    solanaWallet.availableWallets.value.forEach(wallet => {
-      wallets.push({
-        ...wallet,
-        chain: 'solana',
-        icon: getWalletIcon(wallet.type, 'solana')
+    // Add Solana wallets with defensive check
+    const solWallets = solanaWallet.availableWallets?.value || []
+    if (Array.isArray(solWallets)) {
+      solWallets.forEach(wallet => {
+        wallets.push({
+          ...wallet,
+          chain: 'solana',
+          icon: getWalletIcon(wallet.type, 'solana')
+        })
       })
-    })
+    }
 
     return wallets
   })

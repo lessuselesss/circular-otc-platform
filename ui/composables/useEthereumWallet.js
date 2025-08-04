@@ -73,8 +73,14 @@ export function useEthereumWallet() {
   const availableWallets = computed(() => {
     const wallets = []
     
+    // Defensive check: ensure connectors.value exists and is an array
+    if (!connectors.value || !Array.isArray(connectors.value)) {
+      console.warn('⚠️ Connectors not available yet:', connectors.value)
+      return wallets
+    }
+    
     connectors.value.forEach(connector => {
-      const name = connector.name.toLowerCase()
+      const name = connector?.name?.toLowerCase() || ''
       if (name.includes('metamask')) {
         wallets.push({ type: 'metamask', name: 'MetaMask', connector })
       } else if (name.includes('walletconnect')) {
