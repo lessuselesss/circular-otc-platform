@@ -1,4 +1,5 @@
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { getTokenPrices, getTokenPrice } from '../services/priceService.js'
 
 /**
  * Swap business logic composable
@@ -7,14 +8,32 @@ import { computed } from 'vue'
  */
 export function useSwapLogic() {
   
-  // Mock token prices (replace with real price feeds later)
-  const tokenPrices = {
-    ETH: 2500,   // $2500 per ETH
-    USDC: 1,     // $1 per USDC  
-    USDT: 1,     // $1 per USDT
-    SOL: 100,    // $100 per SOL
-    CIRX: 1      // $1 per CIRX (assumed)
+  // Real-time token prices (fetched from live APIs)
+  const tokenPrices = ref({
+    ETH: 2500,   // Will be updated with live prices
+    USDC: 1,     
+    USDT: 1,     
+    SOL: 100,    
+    CIRX: 1      
+  })
+
+  // Track if we're using live or fallback prices
+  const priceSource = ref('loading')
+
+  // Initialize prices on first use
+  const initializePrices = async () => {
+    try {
+      const livePrices = await getTokenPrices()
+      tokenPrices.value = { ...livePrices }
+      priceSource.value = 'live'
+    } catch (error) {
+      console.warn('Failed to load live prices, using fallback:', error)
+      priceSource.value = 'fallback'
+    }
   }
+
+  // Auto-initialize prices
+  initializePrices()
 
   // Fee structure
   const fees = {
@@ -45,7 +64,14 @@ export function useSwapLogic() {
    * Get token price in USD
    */
   const getTokenPrice = (tokenSymbol) => {
-    return tokenPrices[tokenSymbol] || 0
+    return tokenPrices.value[tokenSymbol] || 0
+  }
+
+  /**
+   * Refresh prices from live feed
+   */
+  const refreshPrices = async () => {
+    await initializePrices()
   }
 
   /**
@@ -219,6 +245,7 @@ export function useSwapLogic() {
   return {
     // Price data
     tokenPrices,
+    priceSource,
     fees,
     discountTiers,
     
@@ -227,6 +254,7 @@ export function useSwapLogic() {
     calculateDiscount,
     validateSwap,
     calculateMaxAmount,
+    refreshPrices,
     
     // Utility functions
     formatNumber,

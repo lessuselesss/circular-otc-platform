@@ -99,6 +99,9 @@ export function useMetaMask() {
       // Convert from Wei to ETH
       const balanceEth = parseInt(balanceWei, 16) / Math.pow(10, 18)
       balance.value = balanceEth.toFixed(4)
+      
+      // Also update token balances
+      await updateTokenBalances()
     } catch (err) {
       console.error('❌ Failed to get balance:', err)
       balance.value = '0'
@@ -252,18 +255,39 @@ export function useMetaMask() {
     }
   })
 
-  // Mock token balances for testing
+  // Real token balances
+  const tokenBalances = ref({
+    ETH: '0',
+    USDC: '0', 
+    USDT: '0',
+    CIRX: '0'
+  })
+
+  // Get token balance (real implementation)
   const getTokenBalance = (tokenSymbol) => {
-    const mockBalances = {
-      ETH: balance.value,
-      USDC: '1000.0',
-      USDT: '500.0',
-      CIRX: '0.0'
+    if (tokenSymbol === 'ETH') {
+      return balance.value
     }
-    return mockBalances[tokenSymbol] || '0.0'
+    return tokenBalances.value[tokenSymbol] || '0.0'
   }
 
-  // Mock swap function for testing
+  // Update all token balances
+  const updateTokenBalances = async () => {
+    if (!account.value || !window.ethereum) return
+
+    try {
+      // Import token service dynamically to avoid SSR issues
+      const { getAllTokenBalances } = await import('../services/tokenService.js')
+      const balances = await getAllTokenBalances(account.value, window.ethereum)
+      tokenBalances.value = balances
+      console.log('💰 Token balances updated:', balances)
+    } catch (error) {
+      console.warn('Failed to update token balances:', error)
+      // Keep existing balances on error
+    }
+  }
+
+  // Execute swap (will be replaced with real contract calls when CIRX contracts are deployed)
   const executeSwap = async (inputToken, inputAmount, outputToken, isOTC = false) => {
     if (!isConnected.value) {
       throw new Error('Please connect your wallet first')
@@ -272,20 +296,33 @@ export function useMetaMask() {
     try {
       console.log('🔄 Executing swap:', { inputToken, inputAmount, outputToken, isOTC })
       
-      // Simulate transaction delay
+      // TODO: Replace with real contract interaction when CIRX contracts are ready
+      // For now, simulate the transaction flow that would happen with real contracts
+      
+      // 1. Validate sufficient balance
+      const { hasSufficientBalance } = await import('../services/tokenService.js')
+      const hasBalance = await hasSufficientBalance(account.value, inputToken, inputAmount, window.ethereum)
+      
+      if (!hasBalance) {
+        throw new Error(`Insufficient ${inputToken} balance`)
+      }
+      
+      // 2. Simulate transaction delay (real contract would take ~15 seconds)
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // Mock transaction hash
+      // 3. Generate mock transaction hash (format matches real Ethereum transactions)
       const mockTxHash = '0x' + Math.random().toString(16).substr(2, 64)
       
       console.log('✅ Swap completed:', mockTxHash)
+      console.log('ℹ️ This is a simulation. Real contract integration coming soon.')
       
-      // Update balance after swap
+      // 4. Update balances to reflect the transaction
       await updateBalance()
       
       return {
         hash: mockTxHash,
-        success: true
+        success: true,
+        simulation: true // Flag to indicate this is simulated
       }
     } catch (err) {
       console.error('❌ Swap failed:', err)
@@ -311,6 +348,7 @@ export function useMetaMask() {
     connect,
     disconnect,
     updateBalance,
+    updateTokenBalances,
     switchToMainnet,
     addMainnetNetwork,
     sendTransaction,
