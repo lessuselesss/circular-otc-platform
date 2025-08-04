@@ -8,7 +8,7 @@ import {
   useSwitchChain,
   useConnectorClient,
   useClient
-} from '@wagmi/vue'
+} from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 
 export function useWallet() {

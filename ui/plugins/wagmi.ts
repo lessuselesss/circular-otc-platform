@@ -1,7 +1,7 @@
 import { defineNuxtPlugin } from '#app'
-import { createConfig, http } from '@wagmi/vue'
-import { mainnet, sepolia, base, arbitrum } from '@wagmi/vue/chains'
-import { walletConnect, metaMask, coinbaseWallet, injected } from '@wagmi/vue/connectors'
+import { createConfig, http } from 'wagmi'
+import { mainnet, sepolia, base, arbitrum } from 'wagmi/chains'
+import { walletConnect, metaMask, coinbaseWallet, injected } from 'wagmi/connectors'
 import { WagmiPlugin } from '@wagmi/vue'
 
 export default defineNuxtPlugin((nuxtApp) => {
