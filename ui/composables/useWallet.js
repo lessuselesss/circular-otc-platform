@@ -6,8 +6,8 @@ import {
   useDisconnect, 
   useChainId,
   useSwitchChain,
-  useWalletClient,
-  usePublicClient
+  useConnectorClient,
+  useClient
 } from '@wagmi/vue'
 import { parseEther, formatEther } from 'viem'
 
@@ -19,12 +19,12 @@ export function useWallet() {
   const { disconnect } = useDisconnect()
   const chainId = useChainId()
   const { switchChain } = useSwitchChain()
-  const { data: walletClient } = useWalletClient()
-  const publicClient = usePublicClient()
+  const { data: walletClient } = useConnectorClient()
+  const publicClient = useClient()
 
   // Additional state for multi-wallet support
   const phantomConnected = ref(false)
-  const phantomAddress = ref<string | null>(null)
+  const phantomAddress = ref(null)
   const phantomBalance = ref('0')
 
   // Computed properties
