@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen bg-circular-bg-primary">
-    <!-- Header -->
     <header class="bg-transparent backdrop-blur-sm border-b border-gray-800/30 sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
@@ -13,21 +12,21 @@
             <span class="text-xs sm:text-sm hidden sm:block text-gray-400">Swap</span>
           </div>
           <div class="flex items-center gap-2 sm:gap-4">
-            <!-- Navigation -->
+            
             <NuxtLink 
               to="/history" 
               class="px-3 py-2 text-gray-400 hover:text-white transition-colors text-sm font-medium"
             >
               History
             </NuxtLink>
-            <!-- Multi-Wallet connection -->
+            
             <MultiWalletButton />
           </div>
         </div>
       </div>
     </header>
 
-    <!-- Main Content: Trading Interface with Optional Chart -->
+    
     <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8">
       <div :class="[
         'w-full mx-auto transition-all duration-500',
@@ -37,26 +36,26 @@
           'flex gap-6 items-start',
           (showChart || showStaking) ? 'flex-col lg:flex-row' : 'justify-center'
         ]">
-          <!-- Chart Panel (expandable) - Takes majority of width and 80% viewport height -->
+          
           <div v-if="showChart && !showStaking" class="w-full lg:w-2/3 xl:w-3/4 h-[80vh]">
             <CirxPriceChart @close="showChart = false" />
           </div>
           
-          <!-- Staking Panel (expandable) - Takes majority of width and 80% viewport height -->
+          
           <div v-if="showStaking && !showChart" class="w-full lg:w-2/3 xl:w-3/4 h-[80vh]">
             <CirxStakingPanel @close="showStaking = false" />
           </div>
           
-          <!-- Trading Card - Flexible width -->
+          
           <div :class="[
             'transition-all duration-500',
             (showChart || showStaking) ? 'w-full lg:w-1/3 xl:w-1/4 lg:min-w-[350px]' : 'w-full max-w-lg'
           ]">
-        <!-- Centered Trading Card -->
+        
         <div class="relative">
-          <!-- Main card content -->
+          
           <div class="relative bg-circular-bg-primary/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8">
-          <!-- Tab Headers - Jupiter-style Pills -->
+          
           <div class="flex mb-6 bg-gray-800/50 rounded-xl p-1 gap-1">
             <button
               @click="activeTab = 'liquid'"
@@ -96,9 +95,9 @@
             </button>
           </div>
 
-          <!-- Tab Content -->
+          
           <form @submit.prevent="handleSwap">
-            <!-- Input Token Selection -->
+            
             <div class="mb-6">
               <div class="flex justify-between items-center mb-3">
                 <label class="text-sm font-medium text-white">Pay with</label>
@@ -120,72 +119,10 @@
                       : 'border-gray-600/50 hover:border-circular-purple focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/50 focus:outline-none'
                   ]"
                   :disabled="loading"
-                  <!-- @input="updateSliderFromAmount" -->
-                  <!-- @focus="showSlider = true" -->
+                  
+                  
                   @keypress="validateNumberInput"
                 />
-                
-                <!-- Percentage Slider (temporarily commented out) -->
-                <!-- <div v-if="showSlider" class="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl p-4 z-30 shadow-xl slider-container" @click.stop>
-                  <div class="mb-3">
-                    <div class="flex justify-between items-center mb-2">
-                      <span class="text-sm text-gray-400">Select amount</span>
-                      <button 
-                        @click="showSlider = false"
-                        class="text-gray-400 hover:text-white transition-colors"
-                      >
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                        </svg>
-                      </button>
-                    </div>
-                    
-                    <div class="text-center mb-3">
-                      <div class="text-2xl font-bold text-white">{{ parseFloat(sliderPercentage).toFixed(1) }}%</div>
-                      <div class="text-sm text-gray-400">{{ formatSliderAmount }} {{ getTokenSymbol(inputToken) }}</div>
-                    </div>
-                    
-                    <div class="relative">
-                      <input
-                        v-model="sliderPercentage"
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        :class="[
-                          'w-full h-2 rounded-lg appearance-none cursor-pointer slider',
-                          activeTab === 'liquid' ? 'slider-green' : 'slider-purple'
-                        ]"
-                        @input="updateAmountFromSlider"
-                      />
-                      <div class="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>0%</span>
-                        <span>25%</span>
-                        <span>50%</span>
-                        <span>75%</span>
-                        <span>100%</span>
-                      </div>
-                    </div>
-                    
-                    <div class="flex gap-2 mt-3">
-                      <button
-                        v-for="percent in [25, 50, 75, 100]"
-                        :key="percent"
-                        @click="setSliderPercentage(percent)"
-                        :class="[
-                          'flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all duration-200',
-                          sliderPercentage == percent
-                            ? (activeTab === 'liquid' 
-                                ? 'bg-circular-primary text-gray-900' 
-                                : 'bg-circular-purple text-white')
-                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        ]"
-                      >
-                        {{ percent }}%
-                      </button>
-                    </div>
-                  </div>
-                </div> -->
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
                   <div class="relative token-dropdown-container">
                     <button
@@ -198,15 +135,15 @@
                       ]"
                       :disabled="loading"
                     >
-                      <!-- Token Logo -->
+                      
                       <img 
                         :src="getTokenLogo(inputToken)" 
                         :alt="inputToken"
                         class="w-5 h-5 rounded-full"
                       />
-                      <!-- Token Symbol -->
+                      
                       <span class="font-medium text-white text-sm">{{ getTokenSymbol(inputToken) }}</span>
-                      <!-- Dropdown Arrow -->
+                      
                       <svg 
                         width="12" 
                         height="12" 
@@ -222,12 +159,12 @@
                       </svg>
                     </button>
                     
-                    <!-- Custom Dropdown -->
+                    
                     <div 
                       v-if="showTokenDropdown"
                       class="absolute top-full right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-10 min-w-[120px]"
                     >
-                      <!-- Dynamic token options based on connected wallet -->
+                      
                       <template v-if="connectedWallet === 'phantom'">
                         <button
                           v-for="token in [{ value: 'SOL', label: 'SOL' }, { value: 'USDC_SOL', label: 'USDC' }]"
@@ -264,7 +201,7 @@
               </div>
             </div>
 
-            <!-- Swap Arrow -->
+            
             <div class="flex justify-center mb-6">
               <button
                 type="button"
@@ -283,7 +220,7 @@
               </button>
             </div>
 
-            <!-- CIRX Output -->
+            
             <div class="mb-6">
               <div class="flex justify-between items-center mb-3">
                 <label class="text-sm font-medium text-white">Receive</label>
@@ -307,21 +244,21 @@
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
                   <div class="flex items-center gap-2 px-3 py-2 rounded-full border border-circular-primary/30 bg-circular-primary/10">
-                    <!-- CIRX Token Logo -->
+                    
                     <img 
                       :src="getTokenLogo('CIRX')" 
                       alt="CIRX"
                       class="w-5 h-5 rounded-full"
                       @error="$event.target.src = 'https://cdn.prod.website-files.com/65e472c0cd2f1bebcd7fcf73/65e483ab69e2314b250ed7dc_imageedit_1_8961069084.png'"
                     />
-                    <!-- Token Symbol -->
+                    
                     <span class="font-medium text-circular-primary text-sm">CIRX</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Recipient Address (Optional) -->
+            
             <div class="mb-6">
               <div class="flex justify-between items-center mb-3">
                 <label class="text-sm font-medium text-white">Send to another address (optional)</label>
@@ -370,7 +307,7 @@
               </div>
             </div>
 
-            <!-- Purchase Details -->
+            
             <div v-if="quote" class="bg-transparent border border-gray-600/50 rounded-xl p-4 mb-6 hover:border-gray-500 transition-all duration-300">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm text-gray-400">Exchange Rate</span>
@@ -390,7 +327,7 @@
               </div>
             </div>
 
-            <!-- OTC Discount Tiers (only show on OTC tab) -->
+            
             <div v-if="activeTab === 'otc' && otcConfig.enabled" class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 mb-4 hover:border-purple-500/40 transition-all duration-300">
               <h4 class="text-xs font-medium mb-2 text-purple-400">OTC Discount Tiers</h4>
               <div class="space-y-1 text-xs">
@@ -410,7 +347,7 @@
               </div>
             </div>
 
-            <!-- Action Button -->
+            
             <button
               type="submit"
               :disabled="!canPurchase || loading"
@@ -431,7 +368,7 @@
             </button>
           </form>
           
-          <!-- Chart and Staking Expand Buttons -->
+          
           <div v-if="!showChart && !showStaking" class="mt-4 flex justify-start gap-3">
             <button
               @click="showChart = true"

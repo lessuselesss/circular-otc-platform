@@ -1,8 +1,6 @@
 <template>
   <div class="min-h-screen bg-circular-bg-primary">
-    <!-- Background content (blurred when modal is shown) -->
     <div :class="['transition-all duration-300', showCookieConsent ? 'blur-sm pointer-events-none' : '']">
-      <!-- Header -->
       <header class="bg-transparent backdrop-blur-sm border-b border-gray-800/30 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
@@ -15,21 +13,18 @@
               <span class="text-xs sm:text-sm hidden sm:block text-gray-400">Swap</span>
             </div>
             <div class="flex items-center gap-2 sm:gap-4">
-              <!-- Navigation -->
               <NuxtLink 
                 to="/history" 
                 class="px-3 py-2 text-gray-400 hover:text-white transition-colors text-sm font-medium"
               >
                 History
               </NuxtLink>
-              <!-- Multi-Wallet connection -->
-              <MultiWalletButton />
+                <MultiWalletButton />
             </div>
           </div>
         </div>
       </header>
 
-      <!-- Simplified content when consent is needed -->
       <div class="flex items-center justify-center min-h-[calc(100vh-4rem)] p-8">
         <div class="text-center max-w-2xl">
           <div class="w-16 h-16 bg-circular-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
@@ -48,7 +43,6 @@
       </div>
     </div>
 
-    <!-- Cookie Consent Modal -->
     <CookieConsent v-if="showCookieConsent" @accepted="handleConsentAccepted" />
   </div>
 </template>
