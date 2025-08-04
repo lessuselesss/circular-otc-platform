@@ -87,7 +87,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, provide, h } from 'vue'
 
 // Notification store
 const notifications = ref([])
@@ -222,10 +222,25 @@ const getCloseButtonClass = (type) => {
 
 const getIconComponent = (type) => {
   const icons = {
-    error: 'ErrorIcon',
-    warning: 'WarningIcon',
-    info: 'InfoIcon',
-    success: 'CheckIcon'
+    error: () => h('svg', { class: 'w-5 h-5', viewBox: '0 0 24 24', fill: 'none' }, [
+      h('circle', { cx: '12', cy: '12', r: '10', stroke: 'currentColor', 'stroke-width': '2' }),
+      h('line', { x1: '15', y1: '9', x2: '9', y2: '15', stroke: 'currentColor', 'stroke-width': '2' }),
+      h('line', { x1: '9', y1: '9', x2: '15', y2: '15', stroke: 'currentColor', 'stroke-width': '2' })
+    ]),
+    warning: () => h('svg', { class: 'w-5 h-5', viewBox: '0 0 24 24', fill: 'none' }, [
+      h('path', { d: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z', stroke: 'currentColor', 'stroke-width': '2', fill: 'none' }),
+      h('line', { x1: '12', y1: '9', x2: '12', y2: '13', stroke: 'currentColor', 'stroke-width': '2' }),
+      h('circle', { cx: '12', cy: '17', r: '1', fill: 'currentColor' })
+    ]),
+    info: () => h('svg', { class: 'w-5 h-5', viewBox: '0 0 24 24', fill: 'none' }, [
+      h('circle', { cx: '12', cy: '12', r: '10', stroke: 'currentColor', 'stroke-width': '2' }),
+      h('line', { x1: '12', y1: '16', x2: '12', y2: '12', stroke: 'currentColor', 'stroke-width': '2' }),
+      h('circle', { cx: '12', cy: '8', r: '1', fill: 'currentColor' })
+    ]),
+    success: () => h('svg', { class: 'w-5 h-5', viewBox: '0 0 24 24', fill: 'none' }, [
+      h('path', { d: 'M22 11.08V12a10 10 0 1 1-5.93-9.14', stroke: 'currentColor', 'stroke-width': '2', fill: 'none' }),
+      h('polyline', { points: '22,4 12,14.01 9,11.01', stroke: 'currentColor', 'stroke-width': '2', fill: 'none' })
+    ])
   }
   return icons[type] || icons.info
 }
@@ -253,57 +268,6 @@ provide('toast', notificationManager)
 
 // Expose for parent components
 defineExpose(notificationManager)
-</script>
-
-<!-- Icon Components -->
-<script>
-const ErrorIcon = {
-  template: `
-    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-      <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2"/>
-      <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2"/>
-    </svg>
-  `
-}
-
-const WarningIcon = {
-  template: `
-    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" fill="none"/>
-      <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2"/>
-      <circle cx="12" cy="17" r="1" fill="currentColor"/>
-    </svg>
-  `
-}
-
-const InfoIcon = {
-  template: `
-    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-      <line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" stroke-width="2"/>
-      <circle cx="12" cy="8" r="1" fill="currentColor"/>
-    </svg>
-  `
-}
-
-const CheckIcon = {
-  template: `
-    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" fill="none"/>
-      <polyline points="22,4 12,14.01 9,11.01" stroke="currentColor" stroke-width="2" fill="none"/>
-    </svg>
-  `
-}
-
-export default {
-  components: {
-    ErrorIcon,
-    WarningIcon,
-    InfoIcon,
-    CheckIcon
-  }
-}
 </script>
 
 <style scoped>
