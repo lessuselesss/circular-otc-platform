@@ -6,8 +6,7 @@ import {
   useDisconnect, 
   useChainId,
   useSwitchChain,
-  useConnectorClient,
-  usePublicClient
+  useConnectorClient
 } from '@wagmi/vue'
 import { formatEther } from 'viem'
 
@@ -25,7 +24,8 @@ export function useEthereumWallet() {
   const chainId = useChainId()
   const { switchChain, isPending: isSwitching } = useSwitchChain()
   const { data: walletClient } = useConnectorClient()
-  const publicClient = usePublicClient()
+  // Note: usePublicClient not available in @wagmi/vue 0.1.25
+  // Use walletClient for most operations or upgrade to newer version
 
   // Local state for connection management
   const lastConnectedWallet = ref(null)
@@ -272,7 +272,6 @@ export function useEthereumWallet() {
     
     // Clients for advanced usage
     walletClient,
-    publicClient,
     
     // Error state
     error: connectError,

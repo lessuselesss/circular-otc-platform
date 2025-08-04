@@ -20,7 +20,7 @@
       <div class="absolute inset-y-0 right-0 flex items-center pr-4">
         <div class="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-700/50">
           <img 
-            src="/tokens/cirx.svg" 
+            src="/cirx-icon.svg" 
             alt="CIRX"
             class="w-5 h-5 rounded-full"
             @error="handleImageError"
@@ -84,7 +84,12 @@ const formatUsdValue = (amount) => {
 }
 
 const handleImageError = (event) => {
-  // Fallback to default CIRX icon
-  event.target.src = '/tokens/default.svg'
+  // Fallback to a simple SVG circle
+  event.target.style.display = 'none'
+  // Add a simple colored circle as fallback
+  const fallback = document.createElement('div')
+  fallback.className = 'w-5 h-5 rounded-full bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center text-white text-xs font-bold'
+  fallback.textContent = 'C'
+  event.target.parentNode.replaceChild(fallback, event.target)
 }
 </script>

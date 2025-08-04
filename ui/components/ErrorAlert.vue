@@ -67,7 +67,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted, h } from 'vue'
 
 // Props
 const props = defineProps({
@@ -176,13 +176,52 @@ const closeButtonClass = computed(() => {
   return classes[props.severity]
 })
 
-// Icon components
+// Icon components using render functions
+const ErrorIcon = () => h('svg', {
+  class: 'w-5 h-5',
+  viewBox: '0 0 24 24',
+  fill: 'none'
+}, [
+  h('circle', { cx: '12', cy: '12', r: '10', stroke: 'currentColor', 'stroke-width': '2' }),
+  h('line', { x1: '15', y1: '9', x2: '9', y2: '15', stroke: 'currentColor', 'stroke-width': '2' }),
+  h('line', { x1: '9', y1: '9', x2: '15', y2: '15', stroke: 'currentColor', 'stroke-width': '2' })
+])
+
+const WarningIcon = () => h('svg', {
+  class: 'w-5 h-5',
+  viewBox: '0 0 24 24',
+  fill: 'none'
+}, [
+  h('path', { d: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z', stroke: 'currentColor', 'stroke-width': '2', fill: 'none' }),
+  h('line', { x1: '12', y1: '9', x2: '12', y2: '13', stroke: 'currentColor', 'stroke-width': '2' }),
+  h('circle', { cx: '12', cy: '17', r: '1', fill: 'currentColor' })
+])
+
+const InfoIcon = () => h('svg', {
+  class: 'w-5 h-5',
+  viewBox: '0 0 24 24',
+  fill: 'none'
+}, [
+  h('circle', { cx: '12', cy: '12', r: '10', stroke: 'currentColor', 'stroke-width': '2' }),
+  h('line', { x1: '12', y1: '16', x2: '12', y2: '12', stroke: 'currentColor', 'stroke-width': '2' }),
+  h('circle', { cx: '12', cy: '8', r: '1', fill: 'currentColor' })
+])
+
+const SuccessIcon = () => h('svg', {
+  class: 'w-5 h-5',
+  viewBox: '0 0 24 24',
+  fill: 'none'
+}, [
+  h('path', { d: 'M22 11.08V12a10 10 0 1 1-5.93-9.14', stroke: 'currentColor', 'stroke-width': '2', fill: 'none' }),
+  h('polyline', { points: '22,4 12,14.01 9,11.01', stroke: 'currentColor', 'stroke-width': '2', fill: 'none' })
+])
+
 const iconComponent = computed(() => {
   const icons = {
-    error: 'ErrorIcon',
-    warning: 'WarningIcon', 
-    info: 'InfoIcon',
-    success: 'SuccessIcon'
+    error: ErrorIcon,
+    warning: WarningIcon,
+    info: InfoIcon,
+    success: SuccessIcon
   }
   return icons[props.severity]
 })
@@ -234,65 +273,4 @@ onMounted(() => {
 onUnmounted(() => {
   clearTimeouts()
 })
-</script>
-
-<!-- Icon Components -->
-<template>
-  <component :is="'style'">
-    .error-icon, .warning-icon, .info-icon, .success-icon {
-      display: inline-block;
-    }
-  </component>
-</template>
-
-<!-- Define icon components inline -->
-<script>
-// Icon components as inline templates
-const ErrorIcon = {
-  template: `
-    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-      <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2"/>
-      <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2"/>
-    </svg>
-  `
-}
-
-const WarningIcon = {
-  template: `
-    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" fill="none"/>
-      <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2"/>
-      <circle cx="12" cy="17" r="1" fill="currentColor"/>
-    </svg>
-  `
-}
-
-const InfoIcon = {
-  template: `
-    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-      <line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" stroke-width="2"/>
-      <circle cx="12" cy="8" r="1" fill="currentColor"/>
-    </svg>
-  `
-}
-
-const SuccessIcon = {
-  template: `
-    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" fill="none"/>
-      <polyline points="22,4 12,14.01 9,11.01" stroke="currentColor" stroke-width="2" fill="none"/>
-    </svg>
-  `
-}
-
-export default {
-  components: {
-    ErrorIcon,
-    WarningIcon,
-    InfoIcon,
-    SuccessIcon
-  }
-}
 </script>
