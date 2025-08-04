@@ -8,7 +8,10 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "clean": "node scripts/cleanup.js",
+    "clean:all": "node scripts/cleanup.js --npm-cache",
+    "fresh": "npm run clean:all && npm install"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.5.5",
