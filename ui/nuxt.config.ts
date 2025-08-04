@@ -8,8 +8,8 @@ export default defineNuxtConfig({
     preset: 'static'
   },
   
-  // Enable static generation with prerendering
-  ssr: true,
+  // Disable SSR for Web3 compatibility
+  ssr: false,
 
   modules: [
     '@nuxtjs/tailwindcss'
