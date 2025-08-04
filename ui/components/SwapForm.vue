@@ -110,6 +110,10 @@
 const walletStore = useWalletStore()
 const contracts = useContracts()
 const swapLogic = useSwapLogic()
+const errorHandler = useErrorHandler()
+
+// Toast notifications
+const toast = inject('toast')
 
 // Props and emits
 defineEmits(['show-chart', 'show-staking'])
@@ -191,9 +195,24 @@ const handleConnectWallet = async () => {
     error.value = null
     // This would trigger the wallet connection modal
     // Implementation depends on your wallet connect component
-    console.log('Connect wallet triggered')
+    toast?.info('Please select a wallet to connect', {
+      title: 'Connect Wallet',
+      autoTimeoutMs: 3000
+    })
   } catch (err) {
-    error.value = err.message
+    const processedError = errorHandler.handleError(err, {
+      description: 'Wallet connection',
+      retryConnection: handleConnectWallet
+    })
+    
+    if (errorHandler.shouldShowAsToast(processedError)) {
+      toast?.error(processedError.userMessage, {
+        title: 'Connection Failed',
+        actions: processedError.actions
+      })
+    } else {
+      error.value = processedError.userMessage
+    }
   }
 }
 
@@ -205,20 +224,22 @@ const handleSwap = async () => {
     loading.value = true
     loadingText.value = 'Preparing transaction...'
 
-    // Validate inputs
-    const amount = parseFloat(inputAmount.value)
-    if (amount <= 0) {
-      throw new Error('Invalid amount')
+    // Validate inputs using error handler
+    const validation = swapLogic.validateSwap(
+      inputAmount.value,
+      inputToken.value,
+      recipientAddress.value,
+      walletStore.isConnected
+    )
+
+    if (!validation.isValid) {
+      throw new Error(validation.errors.join(', '))
     }
 
     // Get recipient address
     const recipient = walletStore.isConnected 
       ? walletStore.activeWallet.address 
       : recipientAddress.value
-
-    if (!recipient) {
-      throw new Error('No recipient address')
-    }
 
     // Validate quote
     if (!quote.value) {
@@ -227,7 +248,7 @@ const handleSwap = async () => {
 
     loadingText.value = 'Executing swap...'
 
-    // Execute the appropriate swap type
+    // Execute the appropriate swap type with error context
     let result
     if (activeTab.value === 'otc') {
       result = await contracts.executeOTCSwap(
@@ -250,16 +271,39 @@ const handleSwap = async () => {
       inputAmount.value = ''
       recipientAddress.value = ''
       
-      // Show success message or redirect
-      console.log('Swap successful:', result.hash)
-      
+      // Show success notification
+      toast?.success(`Successfully purchased ${quote.value.cirxAmount} CIRX!`, {
+        title: 'Swap Complete',
+        autoTimeoutMs: 8000,
+        actions: [{
+          label: 'View Transaction',
+          handler: () => window.open(`https://etherscan.io/tx/${result.hash}`, '_blank'),
+          primary: false
+        }]
+      })
+
       // Optionally redirect to transaction page
       // await navigateTo(`/transaction/${result.hash}`)
     }
 
   } catch (err) {
     console.error('Swap failed:', err)
-    error.value = err.message || 'Transaction failed. Please try again.'
+    
+    const processedError = errorHandler.handleError(err, {
+      description: `${activeTab.value} swap`,
+      retryTransaction: () => handleSwap(),
+      retryContract: () => handleSwap()
+    })
+
+    if (errorHandler.shouldShowAsToast(processedError)) {
+      toast?.error(processedError.userMessage, {
+        title: 'Swap Failed',
+        actions: processedError.actions,
+        autoTimeoutMs: 10000
+      })
+    } else {
+      error.value = processedError.userMessage
+    }
   } finally {
     loading.value = false
     loadingText.value = ''
@@ -268,6 +312,7 @@ const handleSwap = async () => {
 
 const clearError = () => {
   error.value = null
+  errorHandler.clearError()
 }
 
 // Watch for token changes to validate wallet compatibility
@@ -277,7 +322,16 @@ watch([inputToken, () => walletStore.activeChain], () => {
       walletStore.validateWalletForToken(inputToken.value)
       error.value = null
     } catch (err) {
-      error.value = err.message
+      const processedError = errorHandler.handleError(err, {
+        description: 'Token validation'
+      })
+      
+      // Show as toast for validation errors
+      toast?.warning(processedError.userMessage, {
+        title: 'Token Not Supported',
+        autoTimeoutMs: 4000
+      })
+      
       // Auto-switch to compatible token
       if (walletStore.activeChain === 'solana' && ['ETH', 'USDC', 'USDT'].includes(inputToken.value)) {
         inputToken.value = 'SOL'
