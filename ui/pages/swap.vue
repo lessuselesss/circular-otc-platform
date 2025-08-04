@@ -106,7 +106,7 @@
                   Balance: {{ inputBalance }} {{ inputToken }}
                 </span>
               </div>
-              <div class="relative">
+              <div class="relative token-input-container">
                 <input
                   v-model="inputAmount"
                   type="text"
@@ -126,7 +126,7 @@
                 />
                 
                 <!-- Percentage Slider (appears when input is clicked) -->
-                <div v-if="showSlider" class="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl p-4 z-20 shadow-xl slider-container">
+                <div v-if="showSlider" class="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl p-4 z-30 shadow-xl slider-container" @click.stop>
                   <div class="mb-3">
                     <div class="flex justify-between items-center mb-2">
                       <span class="text-sm text-gray-400">Select amount</span>
@@ -921,7 +921,7 @@ onMounted(async () => {
     if (showTokenDropdown.value && !event.target.closest('.token-dropdown-container')) {
       showTokenDropdown.value = false
     }
-    if (showSlider.value && !event.target.closest('.slider-container') && !event.target.closest('input[readonly]')) {
+    if (showSlider.value && !event.target.closest('.slider-container') && !event.target.closest('.token-input-container')) {
       showSlider.value = false
     }
   }

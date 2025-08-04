@@ -2,11 +2,29 @@
   <div class="min-h-screen bg-circular-bg-primary">
     <!-- Background content (blurred when modal is shown) -->
     <div :class="['transition-all duration-300', showCookieConsent ? 'blur-sm pointer-events-none' : '']">
-      <!-- Simplified header when consent is needed -->
-      <header class="bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
+      <!-- Header -->
+      <header class="bg-transparent backdrop-blur-sm border-b border-gray-800/30 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-center items-center h-16">
-            <h1 class="font-michroma text-lg text-circular-primary">Circular CIRX</h1>
+          <div class="flex justify-between items-center h-16">
+            <div class="flex items-center gap-2 sm:gap-4">
+              <img 
+                src="/circular-logo.svg" 
+                alt="Circular Protocol" 
+                class="h-8 w-auto"
+              />
+              <span class="text-xs sm:text-sm hidden sm:block text-gray-400">Swap</span>
+            </div>
+            <div class="flex items-center gap-2 sm:gap-4">
+              <!-- Navigation -->
+              <NuxtLink 
+                to="/history" 
+                class="px-3 py-2 text-gray-400 hover:text-white transition-colors text-sm font-medium"
+              >
+                History
+              </NuxtLink>
+              <!-- Multi-Wallet connection -->
+              <MultiWalletButton />
+            </div>
           </div>
         </div>
       </header>
