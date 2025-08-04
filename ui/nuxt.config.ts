@@ -12,7 +12,8 @@ export default defineNuxtConfig({
   ssr: false,
 
   modules: [
-    '@nuxtjs/tailwindcss'
+    '@nuxtjs/tailwindcss',
+    '@pinia/nuxt'
     // '@nuxt/ui' // Temporarily disabled - causing build issues
   ],
 

@@ -1,0 +1,239 @@
+import { computed } from 'vue'
+
+/**
+ * Swap business logic composable
+ * Handles quote calculations, price feeds, and swap validation
+ * Separated from UI components for better testability
+ */
+export function useSwapLogic() {
+  
+  // Mock token prices (replace with real price feeds later)
+  const tokenPrices = {
+    ETH: 2500,   // $2500 per ETH
+    USDC: 1,     // $1 per USDC  
+    USDT: 1,     // $1 per USDT
+    SOL: 100,    // $100 per SOL
+    CIRX: 1      // $1 per CIRX (assumed)
+  }
+
+  // Fee structure
+  const fees = {
+    liquid: 0.3,  // 0.3% for liquid swaps
+    otc: 0.15     // 0.15% for OTC swaps
+  }
+
+  // OTC discount tiers
+  const discountTiers = [
+    { minAmount: 50000, discount: 12 },  // $50K+: 12%
+    { minAmount: 10000, discount: 8 },   // $10K+: 8%  
+    { minAmount: 1000, discount: 5 }     // $1K+: 5%
+  ]
+
+  /**
+   * Calculate discount percentage based on USD amount
+   */
+  const calculateDiscount = (usdAmount) => {
+    for (const tier of discountTiers) {
+      if (usdAmount >= tier.minAmount) {
+        return tier.discount
+      }
+    }
+    return 0
+  }
+
+  /**
+   * Get token price in USD
+   */
+  const getTokenPrice = (tokenSymbol) => {
+    return tokenPrices[tokenSymbol] || 0
+  }
+
+  /**
+   * Calculate swap quote
+   */
+  const calculateQuote = (inputAmount, inputToken, isOTC = false) => {
+    if (!inputAmount || parseFloat(inputAmount) <= 0) return null
+    
+    const inputValue = parseFloat(inputAmount)
+    const tokenPrice = getTokenPrice(inputToken)
+    const totalUsdValue = inputValue * tokenPrice
+    
+    // Calculate fee
+    const feeRate = isOTC ? fees.otc : fees.liquid
+    const feeAmount = (inputValue * feeRate) / 100
+    const amountAfterFee = inputValue - feeAmount
+    const usdAfterFee = amountAfterFee * tokenPrice
+    
+    // Base CIRX amount (1:1 with USD)
+    let cirxReceived = usdAfterFee
+    let discount = 0
+    
+    // Apply OTC discount
+    if (isOTC) {
+      discount = calculateDiscount(totalUsdValue)
+      cirxReceived = usdAfterFee * (1 + discount / 100)
+    }
+    
+    return {
+      inputAmount: inputValue,
+      inputToken,
+      inputUsdValue: totalUsdValue,
+      tokenPrice,
+      feeRate,
+      feeAmount,
+      feeUsd: feeAmount * tokenPrice,
+      discount,
+      cirxAmount: cirxReceived.toFixed(6),
+      cirxAmountFormatted: formatNumber(cirxReceived),
+      exchangeRate: `1 ${inputToken} = ${tokenPrice.toLocaleString()} CIRX`,
+      isOTC,
+      priceImpact: 0, // Could be calculated based on liquidity
+      minimumReceived: (cirxReceived * 0.995).toFixed(6), // 0.5% slippage
+      vestingPeriod: isOTC ? '6 months' : null
+    }
+  }
+
+  /**
+   * Validate swap parameters
+   */
+  const validateSwap = (inputAmount, inputToken, recipientAddress = null, isConnected = false) => {
+    const errors = []
+
+    // Amount validation
+    if (!inputAmount || parseFloat(inputAmount) <= 0) {
+      errors.push('Invalid amount')
+    }
+
+    // Token validation
+    if (!inputToken || !tokenPrices[inputToken]) {
+      errors.push('Unsupported token')
+    }
+
+    // Recipient validation
+    if (!isConnected && !recipientAddress) {
+      errors.push('Recipient address required')
+    }
+
+    if (recipientAddress && !/^0x[a-fA-F0-9]{40}$/.test(recipientAddress)) {
+      errors.push('Invalid recipient address')
+    }
+
+    // Minimum amount validation
+    const usdValue = parseFloat(inputAmount) * getTokenPrice(inputToken)
+    if (usdValue < 10) {
+      errors.push('Minimum swap amount is $10')
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    }
+  }
+
+  /**
+   * Calculate maximum input amount based on balance
+   */
+  const calculateMaxAmount = (balance, tokenSymbol) => {
+    const availableBalance = parseFloat(balance) || 0
+    
+    if (availableBalance <= 0) return '0'
+
+    // Reserve small amount for gas fees if using native tokens
+    const reserveAmount = ['ETH', 'SOL'].includes(tokenSymbol) ? 0.001 : 0
+    const maxAmount = Math.max(0, availableBalance - reserveAmount)
+
+    return maxAmount.toString()
+  }
+
+  /**
+   * Format number for display
+   */
+  const formatNumber = (value, decimals = 2) => {
+    const num = parseFloat(value)
+    if (isNaN(num)) return '0'
+
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M'
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K'
+    } else if (num >= 1) {
+      return num.toFixed(decimals)
+    } else {
+      return num.toFixed(6).replace(/\.?0+$/, '')
+    }
+  }
+
+  /**
+   * Format USD value
+   */
+  const formatUsd = (value) => {
+    const num = parseFloat(value)
+    if (isNaN(num)) return '$0.00'
+    
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num)
+  }
+
+  /**
+   * Get available tokens for current wallet
+   */
+  const getAvailableTokens = (walletChain) => {
+    if (walletChain === 'solana') {
+      return [
+        { symbol: 'SOL', name: 'Solana', logo: '/tokens/sol.svg' },
+        { symbol: 'USDC', name: 'USD Coin', logo: '/tokens/usdc.svg' }
+      ]
+    } else {
+      return [
+        { symbol: 'ETH', name: 'Ethereum', logo: '/tokens/eth.svg' },
+        { symbol: 'USDC', name: 'USD Coin', logo: '/tokens/usdc.svg' },
+        { symbol: 'USDT', name: 'Tether', logo: '/tokens/usdt.svg' }
+      ]
+    }
+  }
+
+  /**
+   * Check if amount qualifies for OTC discount
+   */
+  const qualifiesForOTC = (inputAmount, inputToken) => {
+    const usdValue = parseFloat(inputAmount) * getTokenPrice(inputToken)
+    return usdValue >= 1000 // Minimum for OTC discount
+  }
+
+  /**
+   * Get estimated transaction time
+   */
+  const getEstimatedTime = (isOTC, walletChain) => {
+    if (isOTC) return 'Immediate (with 6-month vesting)'
+    
+    if (walletChain === 'ethereum') return '~15 seconds'
+    if (walletChain === 'solana') return '~1 second'
+    
+    return '~1 minute'
+  }
+
+  return {
+    // Price data
+    tokenPrices,
+    fees,
+    discountTiers,
+    
+    // Core functions
+    calculateQuote,
+    calculateDiscount,
+    validateSwap,
+    calculateMaxAmount,
+    
+    // Utility functions
+    formatNumber,
+    formatUsd,
+    getTokenPrice,
+    getAvailableTokens,
+    qualifiesForOTC,
+    getEstimatedTime
+  }
+}

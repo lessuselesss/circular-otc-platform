@@ -1,0 +1,290 @@
+<template>
+  <div class="relative">
+    <div class="relative bg-circular-bg-primary/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8">
+      
+      <!-- Tab Selection -->
+      <SwapTabs 
+        v-model="activeTab" 
+        :otc-config="otcConfig"
+      />
+
+      <!-- Error Display -->
+      <ErrorAlert 
+        v-if="error" 
+        :message="error" 
+        @dismiss="clearError"
+        class="mb-6"
+      />
+
+      <!-- Swap Form -->
+      <form @submit.prevent="handleSwap">
+        
+        <!-- Input Section -->
+        <SwapInput
+          v-model:amount="inputAmount"
+          v-model:token="inputToken"
+          :balance="inputBalance"
+          :loading="loading"
+          :active-tab="activeTab"
+          @set-max="setMaxAmount"
+        />
+
+        <!-- Arrow -->
+        <div class="flex justify-center my-4">
+          <div class="p-2 bg-gray-800 rounded-full border border-gray-700">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-400">
+              <path d="M7 13L12 18L17 13M7 6L12 11L17 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Output Section -->
+        <SwapOutput
+          :cirx-amount="quote?.cirxAmount || '0'"
+          :quote="quote"
+          :active-tab="activeTab"
+          :loading="loading"
+        />
+
+        <!-- Recipient Address (for non-connected users) -->
+        <RecipientAddressInput
+          v-if="!walletStore.isConnected"
+          v-model="recipientAddress"
+          :error="recipientAddressError"
+          @validate="validateRecipientAddress"
+        />
+
+        <!-- Quote Details -->
+        <SwapQuoteDetails
+          v-if="quote"
+          :quote="quote"
+          :active-tab="activeTab"
+          :input-token="inputToken"
+          :input-amount="inputAmount"
+        />
+
+        <!-- Action Button -->
+        <SwapActionButton
+          :can-purchase="canPurchase"
+          :loading="loading"
+          :loading-text="loadingText"
+          :active-tab="activeTab"
+          :wallet-connected="walletStore.isConnected"
+          :quote="quote"
+          @connect-wallet="handleConnectWallet"
+        />
+
+      </form>
+
+      <!-- Footer Actions -->
+      <div class="flex justify-center gap-4 mt-6 pt-6 border-t border-gray-700/50">
+        <button
+          @click="$emit('show-chart')"
+          class="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M3 3V21H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 9L12 6L16 10L20 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          View Chart
+        </button>
+        
+        <button
+          @click="$emit('show-staking')"
+          class="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Vesting Info
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+// Composables and stores
+const walletStore = useWalletStore()
+const contracts = useContracts()
+const swapLogic = useSwapLogic()
+
+// Props and emits
+defineEmits(['show-chart', 'show-staking'])
+
+// Local reactive state
+const activeTab = ref('liquid')
+const inputAmount = ref('')
+const inputToken = ref('ETH')
+const recipientAddress = ref('')
+const recipientAddressError = ref('')
+const loading = ref(false)
+const loadingText = ref('')
+const error = ref(null)
+
+// OTC Configuration
+const { otcConfig } = useOtcConfig()
+
+// Computed properties
+const inputBalance = computed(() => {
+  if (!walletStore.isConnected) return '0.0'
+  
+  // Validate wallet supports the selected token
+  try {
+    walletStore.validateWalletForToken(inputToken.value)
+    return contracts.getTokenBalance(inputToken.value)
+  } catch (err) {
+    return '0.0'
+  }
+})
+
+const quote = computed(() => {
+  if (!inputAmount.value || parseFloat(inputAmount.value) <= 0) return null
+  
+  return swapLogic.calculateQuote(
+    inputAmount.value,
+    inputToken.value,
+    activeTab.value === 'otc'
+  )
+})
+
+const canPurchase = computed(() => {
+  const hasAmount = inputAmount.value && parseFloat(inputAmount.value) > 0
+  const notLoading = !loading.value
+  const hasValidRecipient = walletStore.isConnected || 
+    (recipientAddress.value && !recipientAddressError.value)
+  
+  return hasAmount && notLoading && hasValidRecipient
+})
+
+// Methods
+const setMaxAmount = () => {
+  const balance = parseFloat(inputBalance.value)
+  if (balance > 0) {
+    // Reserve a small amount for gas fees if using ETH
+    const reserveAmount = inputToken.value === 'ETH' ? 0.001 : 0
+    const maxAmount = Math.max(0, balance - reserveAmount)
+    inputAmount.value = maxAmount.toString()
+  }
+}
+
+const validateRecipientAddress = (address) => {
+  if (!address) {
+    recipientAddressError.value = ''
+    return true
+  }
+
+  // Validate Ethereum address
+  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+    recipientAddressError.value = 'Invalid Ethereum address format'
+    return false
+  }
+
+  recipientAddressError.value = ''
+  return true
+}
+
+const handleConnectWallet = async () => {
+  try {
+    error.value = null
+    // This would trigger the wallet connection modal
+    // Implementation depends on your wallet connect component
+    console.log('Connect wallet triggered')
+  } catch (err) {
+    error.value = err.message
+  }
+}
+
+const handleSwap = async () => {
+  if (!canPurchase.value) return
+
+  try {
+    error.value = null
+    loading.value = true
+    loadingText.value = 'Preparing transaction...'
+
+    // Validate inputs
+    const amount = parseFloat(inputAmount.value)
+    if (amount <= 0) {
+      throw new Error('Invalid amount')
+    }
+
+    // Get recipient address
+    const recipient = walletStore.isConnected 
+      ? walletStore.activeWallet.address 
+      : recipientAddress.value
+
+    if (!recipient) {
+      throw new Error('No recipient address')
+    }
+
+    // Validate quote
+    if (!quote.value) {
+      throw new Error('Unable to calculate quote')
+    }
+
+    loadingText.value = 'Executing swap...'
+
+    // Execute the appropriate swap type
+    let result
+    if (activeTab.value === 'otc') {
+      result = await contracts.executeOTCSwap(
+        inputToken.value,
+        inputAmount.value,
+        quote.value.cirxAmount,
+        0.5 // 0.5% slippage tolerance
+      )
+    } else {
+      result = await contracts.executeLiquidSwap(
+        inputToken.value,
+        inputAmount.value,
+        quote.value.cirxAmount,
+        0.5 // 0.5% slippage tolerance
+      )
+    }
+
+    if (result.success) {
+      // Clear form
+      inputAmount.value = ''
+      recipientAddress.value = ''
+      
+      // Show success message or redirect
+      console.log('Swap successful:', result.hash)
+      
+      // Optionally redirect to transaction page
+      // await navigateTo(`/transaction/${result.hash}`)
+    }
+
+  } catch (err) {
+    console.error('Swap failed:', err)
+    error.value = err.message || 'Transaction failed. Please try again.'
+  } finally {
+    loading.value = false
+    loadingText.value = ''
+  }
+}
+
+const clearError = () => {
+  error.value = null
+}
+
+// Watch for token changes to validate wallet compatibility
+watch([inputToken, () => walletStore.activeChain], () => {
+  if (walletStore.isConnected) {
+    try {
+      walletStore.validateWalletForToken(inputToken.value)
+      error.value = null
+    } catch (err) {
+      error.value = err.message
+      // Auto-switch to compatible token
+      if (walletStore.activeChain === 'solana' && ['ETH', 'USDC', 'USDT'].includes(inputToken.value)) {
+        inputToken.value = 'SOL'
+      } else if (walletStore.activeChain === 'ethereum' && inputToken.value === 'SOL') {
+        inputToken.value = 'ETH'
+      }
+    }
+  }
+})
+</script>
