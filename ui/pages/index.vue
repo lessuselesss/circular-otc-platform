@@ -57,7 +57,8 @@
 // Page metadata
 definePageMeta({
   title: 'Circular CIRX OTC Trading Platform',
-  description: 'Buy CIRX tokens with instant delivery or OTC discounts up to 12%. Professional trading platform powered by UniswapV4.'
+  description: 'Buy CIRX tokens with instant delivery or OTC discounts up to 12%. Professional trading platform powered by UniswapV4.',
+  ssr: false // Disable SSR for this page due to client-only dependencies
 })
 
 // Reactive state for cookie consent
@@ -65,24 +66,25 @@ const showCookieConsent = ref(true)
 
 // Check if user has already given consent
 const checkCookieConsent = () => {
-  if (process.client) {
+  if (typeof window === 'undefined') {
+    // Server-side rendering, keep modal visible
+    return false
+  }
+  
+  try {
     // Check localStorage for consent
     const consent = localStorage.getItem('circular-cookie-consent')
     if (consent) {
-      try {
-        const consentData = JSON.parse(consent)
-        // Check if consent is less than 1 year old
-        const oneYear = 365 * 24 * 60 * 60 * 1000
-        if (Date.now() - consentData.timestamp < oneYear) {
-          showCookieConsent.value = false
-          // Redirect to swap page if consent already given
-          setTimeout(() => {
-            navigateTo('/swap')
-          }, 100)
-          return true
-        }
-      } catch (e) {
-        // Invalid consent data, show modal
+      const consentData = JSON.parse(consent)
+      // Check if consent is less than 1 year old
+      const oneYear = 365 * 24 * 60 * 60 * 1000
+      if (Date.now() - consentData.timestamp < oneYear) {
+        showCookieConsent.value = false
+        // Redirect to swap page if consent already given
+        setTimeout(() => {
+          navigateTo('/swap')
+        }, 100)
+        return true
       }
     }
     
@@ -101,7 +103,10 @@ const checkCookieConsent = () => {
         return true
       }
     }
+  } catch (error) {
+    console.warn('Error checking cookie consent:', error)
   }
+  
   return false
 }
 

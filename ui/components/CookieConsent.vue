@@ -138,6 +138,8 @@ const showConsentModal = ref(true)
 
 // Cookie management
 const setCookieConsent = (level) => {
+  if (typeof window === 'undefined') return
+  
   // Set cookie consent in localStorage and as a cookie
   const consentData = {
     timestamp: Date.now(),
@@ -145,8 +147,8 @@ const setCookieConsent = (level) => {
     version: '1.0'
   }
   
-  // Store in localStorage
-  if (process.client) {
+  try {
+    // Store in localStorage
     localStorage.setItem('circular-cookie-consent', JSON.stringify(consentData))
     
     // Set cookie with 1 year expiration
@@ -158,6 +160,8 @@ const setCookieConsent = (level) => {
     if (level === 'all') {
       document.cookie = `circular-analytics=true; expires=${expires.toUTCString()}; path=/; SameSite=Strict`
     }
+  } catch (error) {
+    console.warn('Error setting cookie consent:', error)
   }
 }
 
@@ -181,22 +185,23 @@ const acceptEssentialOnly = () => {
 
 // Check if consent already given (for when component mounts)
 const checkExistingConsent = () => {
-  if (process.client) {
+  if (typeof window === 'undefined') return false
+  
+  try {
     const consent = localStorage.getItem('circular-cookie-consent')
     if (consent) {
-      try {
-        const consentData = JSON.parse(consent)
-        // Check if consent is less than 1 year old
-        const oneYear = 365 * 24 * 60 * 60 * 1000
-        if (Date.now() - consentData.timestamp < oneYear) {
-          showConsentModal.value = false
-          return true
-        }
-      } catch (e) {
-        // Invalid consent data, show modal
+      const consentData = JSON.parse(consent)
+      // Check if consent is less than 1 year old
+      const oneYear = 365 * 24 * 60 * 60 * 1000
+      if (Date.now() - consentData.timestamp < oneYear) {
+        showConsentModal.value = false
+        return true
       }
     }
+  } catch (error) {
+    console.warn('Error checking existing consent:', error)
   }
+  
   return false
 }
 
