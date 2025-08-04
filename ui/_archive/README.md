@@ -15,6 +15,11 @@ This directory contains code that was removed from the active codebase to elimin
 ### Pages Archived
 
 - **`swap-new.vue`** - Alternative swap page implementation using `SwapHeader` (unused)
+- **`test-metamask.vue`** - Test page for wallet integration, not needed in production
+
+### Documentation Archived
+
+- **`WALLET_INTEGRATION.md`** - Outdated multi-wallet documentation (described Phantom/WalletConnect support that was removed)
 
 ## Current Active Implementation
 
