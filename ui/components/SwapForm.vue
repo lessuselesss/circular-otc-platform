@@ -106,11 +106,58 @@
 </template>
 
 <script setup>
-// Composables and stores
-const walletStore = useWalletStore()
-const contracts = useContracts()
-const swapLogic = useSwapLogic()
-const errorHandler = useErrorHandler()
+// Composables and stores with defensive initialization
+let walletStore, contracts, swapLogic, errorHandler
+
+try {
+  walletStore = useWalletStore()
+  console.log('✅ WalletStore initialized in SwapForm')
+} catch (error) {
+  console.error('❌ Failed to initialize walletStore in SwapForm:', error)
+  // Create a mock store to prevent crashes
+  walletStore = {
+    isConnected: ref(false),
+    isConnecting: ref(false),
+    activeWallet: ref(null),
+    connectWallet: () => Promise.reject(new Error('Wallet store not available')),
+    clearError: () => {}
+  }
+}
+
+try {
+  contracts = useContracts()
+  console.log('✅ Contracts initialized in SwapForm')
+} catch (error) {
+  console.error('❌ Failed to initialize contracts in SwapForm:', error)
+  contracts = {
+    getTokenBalance: () => '0.0',
+    executeOTCSwap: () => Promise.reject(new Error('Contracts not available')),
+    executeLiquidSwap: () => Promise.reject(new Error('Contracts not available'))
+  }
+}
+
+try {
+  swapLogic = useSwapLogic()
+  console.log('✅ SwapLogic initialized in SwapForm')
+} catch (error) {
+  console.error('❌ Failed to initialize swapLogic in SwapForm:', error)
+  swapLogic = {
+    calculateQuote: () => null,
+    validateSwap: () => ({ isValid: false, errors: ['Swap logic not available'] })
+  }
+}
+
+try {
+  errorHandler = useErrorHandler()
+  console.log('✅ ErrorHandler initialized in SwapForm')
+} catch (error) {
+  console.error('❌ Failed to initialize errorHandler in SwapForm:', error)
+  errorHandler = {
+    handleError: (err) => ({ userMessage: err.message || 'An error occurred' }),
+    shouldShowAsToast: () => true,
+    clearError: () => {}
+  }
+}
 
 // Toast notifications
 const toast = inject('toast')

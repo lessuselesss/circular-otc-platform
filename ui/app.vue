@@ -48,7 +48,13 @@ const toastManager = ref(null)
 
 // Global error handler
 const handleGlobalError = (error, context = 'Unknown') => {
-  console.error('Global error:', error, 'Context:', context)
+  console.error('🚨 GLOBAL ERROR TRIGGERED:', error, 'Context:', context)
+  console.error('🔍 Error details:', {
+    message: error.message,
+    stack: error.stack,
+    name: error.name,
+    cause: error.cause
+  })
   
   // For critical errors, show modal
   if (error.message?.includes('chunk') || error.message?.includes('Loading')) {
@@ -56,7 +62,7 @@ const handleGlobalError = (error, context = 'Unknown') => {
   } else if (error.message?.includes('hydration')) {
     globalError.value = 'Application initialization failed. Please refresh the page.'
   } else {
-    globalError.value = 'A critical error occurred. Please try refreshing the page.'
+    globalError.value = `A critical error occurred: ${error.message || 'Unknown error'}. Please try refreshing the page.`
   }
 }
 
@@ -72,16 +78,30 @@ const handleGlobalErrorReload = () => {
 
 // Vue error boundary
 onErrorCaptured((error, instance, info) => {
-  console.error('Vue error captured:', error, instance, info)
+  console.error('🔴 VUE ERROR CAPTURED:', error)
+  console.error('🔍 Vue error details:', {
+    message: error.message,
+    stack: error.stack,
+    componentInfo: info,
+    instanceType: instance?.$?.type?.name || 'Unknown',
+    props: instance?.$?.props
+  })
   
-  // Determine if this is a critical error
-  if (error.message?.includes('Cannot read properties') || 
-      error.message?.includes('Cannot access before initialization')) {
+  // Check for specific error patterns that should trigger critical error
+  const isCriticalError = error.message?.includes('Cannot read properties') || 
+                         error.message?.includes('Cannot access before initialization') ||
+                         error.message?.includes('useAccount') ||
+                         error.message?.includes('useBalance') ||
+                         error.message?.includes('useConnect')
+  
+  if (isCriticalError) {
+    console.error('🚨 CRITICAL VUE ERROR - triggering global error handler')
     handleGlobalError(error, `Vue component: ${info}`)
     return false // Prevent error from propagating
   }
   
   // For non-critical errors, show toast notification
+  console.warn('⚠️ Non-critical Vue error - showing toast')
   if (toastManager.value) {
     toastManager.value.error('A component error occurred. Some features may not work correctly.', {
       title: 'Component Error',
@@ -101,18 +121,43 @@ onErrorCaptured((error, instance, info) => {
 onMounted(() => {
   // Handle unhandled promise rejections
   window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled promise rejection:', event.reason)
+    console.error('🔴 UNHANDLED PROMISE REJECTION:', event.reason)
+    console.error('🔍 Promise rejection details:', {
+      reason: event.reason,
+      promise: event.promise,
+      message: event.reason?.message,
+      stack: event.reason?.stack
+    })
     
     // Prevent default error handling
     event.preventDefault()
     
     // Check if this is a critical error
     const error = event.reason
-    if (error?.message?.includes('Loading chunk') || 
-        error?.message?.includes('ChunkLoadError')) {
+    const isCriticalChunkError = error?.message?.includes('Loading chunk') || 
+                                error?.message?.includes('ChunkLoadError')
+    
+    const isWalletError = error?.message?.includes('wallet') || 
+                         error?.message?.includes('Web3') ||
+                         error?.message?.includes('connection') ||
+                         error?.message?.includes('metamask') ||
+                         error?.message?.includes('ethereum')
+    
+    if (isCriticalChunkError) {
+      console.error('🚨 CRITICAL CHUNK ERROR - triggering global error handler')
       handleGlobalError(error, 'Chunk loading')
+    } else if (isWalletError) {
+      console.warn('🔒 WALLET ERROR - handled without critical dialog')
+      // Don't show critical error for wallet issues
+      if (toastManager.value) {
+        toastManager.value.error('Wallet connection issue. Please try again.', {
+          title: 'Wallet Error',
+          autoTimeoutMs: 4000
+        })
+      }
     } else if (toastManager.value) {
-      // Show as toast for less critical errors
+      console.warn('⚠️ OTHER ERROR - showing as toast')
+      // Show as toast for other errors
       toastManager.value.error('An unexpected error occurred.', {
         title: 'Application Error',
         autoTimeoutMs: 6000
