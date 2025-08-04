@@ -110,7 +110,7 @@ export function useWallet() {
   }
 
   // Unified connect function
-  const connectWallet = async (walletType: string) => {
+  const connectWallet = async (walletType) => {
     try {
       // Disconnect any existing connections first
       await disconnectWallet()
@@ -161,9 +161,9 @@ export function useWallet() {
   }
 
   // Token balance fetching (mock for now, replace with real contract calls)
-  const getTokenBalance = (tokenSymbol: string) => {
+  const getTokenBalance = (tokenSymbol) => {
     // TODO: Implement real token balance fetching using contract calls
-    const mockBalances: Record<string, string> = {
+    const mockBalances = {
       ETH: formattedBalance.value,
       SOL: phantomConnected.value ? phantomBalance.value : '0',
       USDC: '1000.00', // Replace with real contract call
@@ -176,10 +176,10 @@ export function useWallet() {
 
   // Transaction execution (mock for now)
   const executeSwap = async (
-    inputToken: string,
-    inputAmount: string,
-    outputToken: string,
-    isOTC: boolean = false
+    inputToken,
+    inputAmount,
+    outputToken,
+    isOTC = false
   ) => {
     // TODO: Implement real swap execution using smart contracts
     console.log('Executing swap:', { inputToken, inputAmount, outputToken, isOTC })
@@ -206,7 +206,7 @@ export function useWallet() {
   })
 
   // Session persistence - save wallet preference
-  const saveWalletPreference = (walletType: string) => {
+  const saveWalletPreference = (walletType) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('preferred-wallet', walletType)
     }
@@ -273,14 +273,4 @@ export function useWallet() {
   }
 }
 
-// Type declarations for Phantom
-declare global {
-  interface Window {
-    solana?: {
-      isPhantom: boolean
-      connect(): Promise<{ publicKey: { toString(): string } }>
-      disconnect(): Promise<void>
-      getBalance(): Promise<number>
-    }
-  }
-}
+// Note: Phantom wallet interface is accessed via window.solana
