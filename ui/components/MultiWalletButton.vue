@@ -221,120 +221,37 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue'
-import { useWallet } from '~/composables/useWallet'
+import { ref } from 'vue'
 
-// Use proper wallet integration
-const {
-  isConnected,
-  isConnecting,
-  account,
-  balance,
-  chainId,
-  connectedWallet,
-  shortAddress,
-  isOnSupportedChain,
-  isMetaMaskAvailable,
-  isPhantomAvailable,
-  isWalletConnectAvailable,
-  connectWallet,
-  disconnectWallet,
-  switchChain,
-  autoReconnect,
-  saveWalletPreference,
-  clearWalletPreference,
-  error
-} = useWallet()
-
-// Local state
 const showConnectModal = ref(false)
+const isConnected = ref(false) // Placeholder
+const isConnecting = ref(false) // Placeholder
+const error = ref(null) // Placeholder
 
-// Connection handlers with session management
-const handleConnectMetaMask = async () => {
-  if (!isMetaMaskAvailable.value) {
-    window.open('https://metamask.io/download/', '_blank')
-    return
-  }
-
-  try {
-    showConnectModal.value = false
-    await connectWallet('metamask')
-    saveWalletPreference('metamask')
-    console.log('✅ MetaMask connected successfully!')
-  } catch (err) {
-    console.error('❌ MetaMask connection failed:', err)
-  }
+const handleConnectMetaMask = () => {
+  alert('MetaMask connection is currently disabled.')
+  showConnectModal.value = false
 }
 
-const handleConnectPhantom = async () => {
-  if (!isPhantomAvailable.value) {
-    window.open('https://phantom.app/', '_blank')
-    return
-  }
-
-  try {
-    showConnectModal.value = false
-    await connectWallet('phantom')
-    saveWalletPreference('phantom')
-    console.log('✅ Phantom connected successfully!')
-  } catch (err) {
-    console.error('❌ Phantom connection failed:', err)
-  }
+const handleConnectPhantom = () => {
+  alert('Phantom connection is currently disabled.')
+  showConnectModal.value = false
 }
 
-const handleConnectWalletConnect = async () => {
-  try {
-    showConnectModal.value = false
-    await connectWallet('walletconnect')
-    saveWalletPreference('walletconnect')
-    console.log('✅ WalletConnect connected successfully!')
-  } catch (err) {
-    console.error('❌ WalletConnect connection failed:', err)
-  }
+const handleConnectWalletConnect = () => {
+  alert('WalletConnect is currently disabled.')
+  showConnectModal.value = false
 }
 
-// Disconnect handler with session cleanup
-const handleDisconnect = async () => {
-  try {
-    await disconnectWallet()
-    clearWalletPreference()
-    console.log('✅ Wallet disconnected')
-  } catch (err) {
-    console.error('❌ Disconnect failed:', err)
-  }
+const handleDisconnect = () => {
+  alert('Disconnect is currently disabled.')
 }
 
-// Network switching
-const switchToMainnet = async () => {
-  try {
-    await switchChain({ chainId: 1 }) // Ethereum mainnet
-  } catch (err) {
-    console.error('Failed to switch network:', err)
-  }
+const switchToMainnet = () => {
+  alert('Network switching is currently disabled.')
 }
 
-// Clear error
 const clearError = () => {
-  // Error will be cleared by the composable
+  error.value = null
 }
-
-// Close modal when clicking outside
-const closeModal = (event) => {
-  if (event.target === event.currentTarget) {
-    showConnectModal.value = false
-  }
-}
-
-// Auto-reconnect on component mount
-onMounted(async () => {
-  await autoReconnect()
-})
-// Fix race condition - use nextTick to prevent UI disappearance
-watch(isConnected, (connected) => {
-  if (connected) {
-    nextTick(() => {
-      showConnectModal.value = false
-    })
-  }
-})
 </script>

@@ -17,7 +17,7 @@ export default defineNuxtConfig({
     // '@nuxt/ui' // Temporarily disabled - causing build issues
   ],
 
-  plugins: ['~/plugins/wagmi.ts'],
+  
 
   // CSS configuration
   css: ['~/assets/css/main.css'],
