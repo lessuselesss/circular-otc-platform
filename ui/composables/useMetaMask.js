@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, readonly } from 'vue'
 
 export function useMetaMask() {
   // Reactive state

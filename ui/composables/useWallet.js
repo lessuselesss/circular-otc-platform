@@ -42,22 +42,33 @@ export const useWallet = () => {
   const getTokenBalance = (token) => {
     if (!isConnected.value) return '0.0'
     
-    // Adjust token based on connected wallet
-    if (connectedWallet.value === 'phantom') {
-      if (token === 'ETH') token = 'SOL'
-      if (token === 'USDC') token = 'USDC_SOL'
+    // Use MetaMask balance if available
+    if (connectedWallet.value === 'metamask' && walletStore.metaMaskWallet) {
+      return walletStore.metaMaskWallet.getTokenBalance(token)
     }
     
+    // Fallback to mock balances
     return mockBalances[token] || '0.0'
   }
   
   // Execute swap (mock implementation)
   const executeSwap = async (fromToken, amount, toToken, isOTC = false) => {
     try {
-      // Simulate transaction delay
+      // Use MetaMask swap if available
+      if (connectedWallet.value === 'metamask' && walletStore.metaMaskWallet) {
+        const result = await walletStore.metaMaskWallet.executeSwap(fromToken, amount, toToken, isOTC)
+        return {
+          success: true,
+          hash: result.hash,
+          amount: amount,
+          toToken: toToken,
+          isOTC: isOTC
+        }
+      }
+      
+      // Fallback to mock implementation
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // Mock success
       return {
         success: true,
         hash: '0x' + Math.random().toString(16).substr(2, 64),
