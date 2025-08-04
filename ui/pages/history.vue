@@ -382,7 +382,7 @@ const {
   isConnected, 
   getTokenBalance,
   address
-} = useMultiWallet()
+} = useWallet()
 
 // Transaction History API integration
 const {

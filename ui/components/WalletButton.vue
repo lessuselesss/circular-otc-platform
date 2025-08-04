@@ -144,7 +144,7 @@ const {
   balances,
   connectWallet, 
   disconnectWallet 
-} = useWalletConnection()
+} = useWallet()
 
 // Local state
 const showConnectModal = ref(false)

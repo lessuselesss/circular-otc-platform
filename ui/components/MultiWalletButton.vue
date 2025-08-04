@@ -221,7 +221,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useWallet } from '~/composables/useWallet'
 
 // Use proper wallet integration
@@ -329,9 +329,12 @@ const closeModal = (event) => {
 onMounted(async () => {
   await autoReconnect()
 })
+// Fix race condition - use nextTick to prevent UI disappearance
 watch(isConnected, (connected) => {
   if (connected) {
-    showConnectModal.value = false
+    nextTick(() => {
+      showConnectModal.value = false
+    })
   }
 })
 </script>

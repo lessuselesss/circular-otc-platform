@@ -205,7 +205,7 @@ const {
   executeSwap,
   updateBalance,
   switchToMainnet
-} = useMultiWallet()
+} = useWallet()
 
 // Local state
 const isSwapping = ref(false)

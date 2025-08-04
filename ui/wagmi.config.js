@@ -39,5 +39,5 @@ export const config = createConfig({
     [base.id]: http(),
     [arbitrum.id]: http(),
   },
-  ssr: false,
+  ssr: true,
 })
