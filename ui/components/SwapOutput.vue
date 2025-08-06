@@ -5,10 +5,26 @@
     </div>
     
     <div class="relative">
-      <div :class="[
-        'w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white transition-all duration-300',
-        'border-gray-600/50'
-      ]">
+      <input
+        v-if="editable"
+        :value="cirxAmount"
+        @input="$emit('update:cirxAmount', $event.target.value)"
+        type="number"
+        step="any"
+        placeholder="0.0"
+        :class="[
+          'w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300',
+          'border-gray-600/50 focus:border-circular-primary/50 focus:outline-none',
+          loading && 'opacity-50'
+        ]"
+      />
+      <div 
+        v-else
+        :class="[
+          'w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white transition-all duration-300',
+          'border-gray-600/50'
+        ]"
+      >
         <span :class="[
           'transition-all duration-300',
           loading ? 'opacity-50' : 'opacity-100'
@@ -69,8 +85,14 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
+  },
+  editable: {
+    type: Boolean,
+    default: false
   }
 })
+
+const emit = defineEmits(['update:cirxAmount'])
 
 // Format USD value
 const formatUsdValue = (amount) => {

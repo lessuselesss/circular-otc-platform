@@ -61,10 +61,29 @@ export function useSwapLogic() {
   }
 
   /**
+   * Normalize token symbol for price lookup
+   */
+  const normalizeTokenSymbol = (tokenSymbol) => {
+    // Handle Solana-specific token naming
+    if (tokenSymbol === 'USDC_SOL') return 'USDC'
+    if (tokenSymbol === 'USDT_SOL') return 'USDT'
+    return tokenSymbol
+  }
+
+  /**
    * Get token price in USD
    */
   const getTokenPrice = (tokenSymbol) => {
-    return tokenPrices.value[tokenSymbol] || 0
+    const normalizedSymbol = normalizeTokenSymbol(tokenSymbol)
+    const price = tokenPrices.value[normalizedSymbol]
+    
+    // Add validation to prevent NaN
+    if (typeof price !== 'number' || isNaN(price) || price <= 0) {
+      console.warn(`Invalid price for token ${tokenSymbol}:`, price)
+      return 0
+    }
+    
+    return price
   }
 
   /**
@@ -81,7 +100,21 @@ export function useSwapLogic() {
     if (!inputAmount || parseFloat(inputAmount) <= 0) return null
     
     const inputValue = parseFloat(inputAmount)
+    
+    // Add validation for inputValue
+    if (isNaN(inputValue) || inputValue <= 0) {
+      console.warn('Invalid input amount:', inputAmount)
+      return null
+    }
+    
     const tokenPrice = getTokenPrice(inputToken)
+    
+    // Prevent calculations with invalid token prices
+    if (tokenPrice <= 0) {
+      console.warn(`Cannot calculate quote: invalid price for ${inputToken}`)
+      return null
+    }
+    
     const totalUsdValue = inputValue * tokenPrice
     
     // Calculate fee
@@ -100,6 +133,12 @@ export function useSwapLogic() {
       cirxReceived = usdAfterFee * (1 + discount / 100)
     }
     
+    // Validate final calculations
+    if (isNaN(cirxReceived) || cirxReceived < 0) {
+      console.error('Invalid CIRX calculation result:', cirxReceived)
+      return null
+    }
+    
     return {
       inputAmount: inputValue,
       inputToken,
@@ -116,6 +155,71 @@ export function useSwapLogic() {
       priceImpact: 0, // Could be calculated based on liquidity
       minimumReceived: (cirxReceived * 0.995).toFixed(6), // 0.5% slippage
       vestingPeriod: isOTC ? '6 months' : null
+    }
+  }
+
+  /**
+   * Calculate reverse quote (CIRX amount -> input token amount)
+   */
+  const calculateReverseQuote = (cirxAmount, targetToken, isOTC = false) => {
+    if (!cirxAmount || parseFloat(cirxAmount) <= 0) return null
+    
+    const cirxValue = parseFloat(cirxAmount)
+    
+    // Add validation for cirxValue
+    if (isNaN(cirxValue) || cirxValue <= 0) {
+      console.warn('Invalid CIRX amount:', cirxAmount)
+      return null
+    }
+    
+    const tokenPrice = getTokenPrice(targetToken)
+    
+    // Prevent calculations with invalid token prices
+    if (tokenPrice <= 0) {
+      console.warn(`Cannot calculate reverse quote: invalid price for ${targetToken}`)
+      return null
+    }
+    
+    // Reverse the OTC discount calculation
+    let usdAfterFee = cirxValue
+    let discount = 0
+    
+    if (isOTC) {
+      // We need to estimate the discount tier based on the final amount
+      // This is an approximation since we don't know the original USD amount
+      const estimatedUsdValue = cirxValue // Starting estimate
+      discount = calculateDiscount(estimatedUsdValue)
+      
+      // Reverse the discount: cirxReceived = usdAfterFee * (1 + discount / 100)
+      usdAfterFee = cirxValue / (1 + discount / 100)
+    }
+    
+    // Reverse the fee calculation: amountAfterFee = inputValue - feeAmount
+    const feeRate = isOTC ? fees.otc : fees.liquid
+    // usdAfterFee = amountAfterFee * tokenPrice
+    const amountAfterFee = usdAfterFee / tokenPrice
+    
+    // amountAfterFee = inputValue * (1 - feeRate/100)
+    const inputValue = amountAfterFee / (1 - feeRate / 100)
+    
+    // Validate final calculations
+    if (isNaN(inputValue) || inputValue < 0) {
+      console.error('Invalid reverse calculation result:', inputValue)
+      return null
+    }
+    
+    // Calculate the forward quote for verification and additional data
+    const forwardQuote = calculateQuote(inputValue.toString(), targetToken, isOTC)
+    
+    return {
+      inputAmount: inputValue,
+      inputToken: targetToken,
+      cirxAmount: cirxValue,
+      tokenPrice,
+      feeRate,
+      discount,
+      isReverse: true,
+      forwardQuote // Include forward calculation for verification
     }
   }
 
@@ -251,6 +355,7 @@ export function useSwapLogic() {
     
     // Core functions
     calculateQuote,
+    calculateReverseQuote,
     calculateDiscount,
     validateSwap,
     calculateMaxAmount,
@@ -260,6 +365,7 @@ export function useSwapLogic() {
     formatNumber,
     formatUsd,
     getTokenPrice,
+    normalizeTokenSymbol,
     getAvailableTokens,
     qualifiesForOTC,
     getEstimatedTime

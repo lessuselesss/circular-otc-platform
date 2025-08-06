@@ -44,6 +44,7 @@
           :quote="quote"
           :active-tab="activeTab"
           :loading="loading"
+          :editable="true"
         />
 
         <!-- Recipient Address (for non-connected users) -->

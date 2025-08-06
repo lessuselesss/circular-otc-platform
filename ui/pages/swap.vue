@@ -228,19 +228,22 @@
                 </span>
               </div>
               <div class="relative">
-                <div :class="[
-                  'w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white transition-all duration-300',
-                  activeTab === 'liquid' 
-                    ? 'border-circular-primary/40' 
-                    : 'border-circular-purple/40'
-                ]">
-                  <span v-if="quoteLoading" class="opacity-50 animate-pulse">
-                    Calculating...
-                  </span>
-                  <span v-else class="opacity-75">
-                    {{ cirxAmount || '0.0' }}
-                  </span>
-                </div>
+                <input
+                  v-model="cirxAmount"
+                  @input="handleCirxAmountChange"
+                  type="number"
+                  step="any"
+                  placeholder="0.0"
+                  :disabled="quoteLoading || reverseQuoteLoading"
+                  :class="[
+                    'w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300',
+                    activeTab === 'liquid' 
+                      ? 'border-circular-primary/40 focus:border-circular-primary' 
+                      : 'border-circular-purple/40 focus:border-circular-purple',
+                    'focus:outline-none',
+                    (quoteLoading || reverseQuoteLoading) && 'opacity-50'
+                  ]"
+                />
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
                   <div class="flex items-center gap-2 px-3 py-2 rounded-full border border-circular-primary/30 bg-circular-primary/10">
                     
@@ -257,13 +260,14 @@
               </div>
               
               <!-- Loading indicator for quote calculation -->
-              <div v-if="quoteLoading" class="mt-2 flex items-center justify-center">
+              <div v-if="quoteLoading || reverseQuoteLoading" class="mt-2 flex items-center justify-center">
                 <div class="flex items-center gap-2 text-sm text-gray-400">
                   <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span>Getting best quote...</span>
+                  <span v-if="reverseQuoteLoading">Calculating input amount...</span>
+                  <span v-else>Getting best quote...</span>
                 </div>
               </div>
             </div>
@@ -360,17 +364,19 @@
             
             <button
               type="submit"
-              :disabled="!canPurchase || loading || quoteLoading"
+              :disabled="!canPurchase || loading || quoteLoading || reverseQuoteLoading"
               :class="[
                 'w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300',
                 activeTab === 'liquid' 
                   ? 'bg-circular-primary text-gray-900 hover:bg-circular-primary-hover' 
                   : 'bg-circular-purple text-white hover:bg-purple-700',
-                (!canPurchase || loading || quoteLoading) && 'opacity-50 cursor-not-allowed'
+                (!canPurchase || loading || quoteLoading || reverseQuoteLoading) && 'opacity-50 cursor-not-allowed'
               ]"
             >
               <span v-if="loading">{{ loadingText || 'Processing...' }}</span>
-              <span v-else-if="quoteLoading">Getting Quote...</span>
+              <span v-else-if="quoteLoading || reverseQuoteLoading">
+                {{ reverseQuoteLoading ? 'Calculating...' : 'Getting Quote...' }}
+              </span>
               <span v-else-if="!inputAmount">Enter an amount</span>
               <span v-else-if="!isConnected && !recipientAddress">Connect Wallet or Enter Address</span>
               <span v-else-if="recipientAddress && recipientAddressError">Invalid Address</span>
@@ -460,6 +466,11 @@ const showTokenDropdown = ref(false)
 // Quote calculation loading state
 const quoteLoading = ref(false)
 const lastQuoteRequestId = ref(0)
+
+// Bidirectional field tracking
+const lastEditedField = ref('input') // 'input' or 'output'
+const reverseQuoteLoading = ref(false)
+const lastReverseQuoteRequestId = ref(0)
 
 // Use wallet balances when connected, otherwise show placeholders
 const inputBalance = computed(() => {
@@ -562,7 +573,7 @@ const discountTiers = computed(() => otcConfig.value.discountTiers)
 const canPurchase = computed(() => {
   // Basic requirements
   const hasAmount = inputAmount.value && parseFloat(inputAmount.value) > 0
-  const notLoading = !loading.value && !quoteLoading.value
+  const notLoading = !loading.value && !quoteLoading.value && !reverseQuoteLoading.value
   
   // Address validation
   const addressValid = validateRecipientAddress(recipientAddress.value)
@@ -735,6 +746,9 @@ const setMaxAmount = () => {
   } else {
     inputAmount.value = '1.0' // Fallback for demo
   }
+  
+  // Set edit state to input when using max amount
+  lastEditedField.value = 'input'
 }
 
 const selectToken = (token) => {
