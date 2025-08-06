@@ -40,7 +40,7 @@
         <div class="bg-gray-800 border border-gray-700 rounded-xl p-8 max-w-md mx-auto">
           <div class="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24" class="text-gray-400">
-              <path d="M21 6h-2V4a2 2 0 00-2-2H5a2 2 0 00-2 2v2H1v14a2 2 0 002 2h18a2 2 0 002-2V6zM5 4h12v2H5V4zm14 16H3V8h2v2h2V8h10v2h2V8h2v12z"/>
+              <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2M21 9V7L15 1L13.5 2.5L16.17 5.33C15.24 5.1 14.25 5 13.17 5H10.83C9.75 5 8.76 5.1 7.83 5.33L10.5 2.5L9 1L3 7V9C3 10.66 4.34 12 6 12H8L8 21C8 21.6 8.4 22 9 22H15C15.6 22 16 21.6 16 21L16 12H18C19.66 12 21 10.66 21 9Z"/>
             </svg>
           </div>
           <h3 class="text-xl font-semibold text-white mb-2">Connect Your Wallet</h3>

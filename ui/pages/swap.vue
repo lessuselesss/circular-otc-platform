@@ -4,12 +4,8 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <div class="flex items-center gap-2 sm:gap-4">
-            <img 
-              src="/circular-logo.svg" 
-              alt="Circular Protocol" 
-              class="h-8 w-auto"
-            />
-            <span class="text-xs sm:text-sm hidden sm:block text-gray-400">Swap</span>
+            <span class="text-lg font-semibold text-white">Circular</span>
+            <span class="text-xs sm:text-sm text-gray-400">Swap</span>
           </div>
           <div class="flex items-center gap-2 sm:gap-4">
             
@@ -37,19 +33,19 @@
           (showChart || showStaking) ? 'flex-col lg:flex-row' : 'justify-center'
         ]">
           
-          <div v-if="showChart && !showStaking" class="w-full lg:w-2/3 xl:w-3/4 h-[80vh]">
+          <div v-if="showChart && !showStaking" class="w-full lg:w-3/5 xl:w-2/3 h-[80vh]">
             <CirxPriceChart @close="showChart = false" />
           </div>
           
           
-          <div v-if="showStaking && !showChart" class="w-full lg:w-2/3 xl:w-3/4 h-[80vh]">
+          <div v-if="showStaking && !showChart" class="w-full lg:w-3/5 xl:w-2/3 h-[80vh]">
             <CirxStakingPanel @close="showStaking = false" />
           </div>
           
           
           <div :class="[
             'transition-all duration-500',
-            (showChart || showStaking) ? 'w-full lg:w-1/3 xl:w-1/4 lg:min-w-[350px]' : 'w-full max-w-lg'
+            (showChart || showStaking) ? 'w-full lg:w-2/5 xl:w-1/3 lg:min-w-[400px]' : 'w-full max-w-lg'
           ]">
         
         <div class="relative">
@@ -399,6 +395,15 @@
         </div>
           </div>
         </div>
+        
+        <!-- Logo moved below the form -->
+        <div class="mt-8 flex justify-center">
+          <img 
+            src="/circular-logo.svg" 
+            alt="Circular Protocol" 
+            class="h-12 w-auto opacity-60 hover:opacity-80 transition-opacity"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -436,8 +441,6 @@ const recipientAddress = ref('')
 const recipientAddressError = ref('')
 const recipientAddressType = ref('')
 const showTokenDropdown = ref(false)
-const showSlider = ref(false)
-const sliderPercentage = ref(0)
 
 // Use wallet balances when connected, otherwise show placeholders
 const inputBalance = computed(() => {
@@ -677,50 +680,10 @@ const setMaxAmount = () => {
 const selectToken = (token) => {
   inputToken.value = token
   showTokenDropdown.value = false
-  // Reset slider when token changes
-  sliderPercentage.value = 0
+  // Reset input when token changes
   inputAmount.value = ''
 }
 
-// Slider functions temporarily commented out
-// const updateAmountFromSlider = () => {
-//   const balance = parseFloat(inputBalance.value) || 0
-//   const amount = (balance * sliderPercentage.value) / 100
-//   inputAmount.value = amount.toFixed(6).replace(/\.?0+$/, '') // Remove trailing zeros
-//   
-//   // Update CSS custom property for slider fill
-//   nextTick(() => {
-//     const slider = document.querySelector('.slider')
-//     if (slider) {
-//       slider.style.setProperty('--progress', `${sliderPercentage.value}%`)
-//     }
-//   })
-// }
-
-// const updateSliderFromAmount = () => {
-//   const balance = parseFloat(inputBalance.value) || 0
-//   const amount = parseFloat(inputAmount.value) || 0
-//   
-//   if (balance > 0) {
-//     const percentage = Math.min(100, Math.max(0, (amount / balance) * 100))
-//     sliderPercentage.value = Math.round(percentage * 10) / 10 // Round to 1 decimal place
-//     
-//     // Update CSS custom property for slider fill
-//     nextTick(() => {
-//       const slider = document.querySelector('.slider')
-//       if (slider) {
-//         slider.style.setProperty('--progress', `${sliderPercentage.value}%`)
-//       }
-//     })
-//   } else {
-//     sliderPercentage.value = 0
-//   }
-// }
-
-// const setSliderPercentage = (percent) => {
-//   sliderPercentage.value = percent
-//   updateAmountFromSlider()
-// }
 
 const validateNumberInput = (event) => {
   const char = event.key
@@ -855,9 +818,6 @@ onMounted(async () => {
     if (showTokenDropdown.value && !event.target.closest('.token-dropdown-container')) {
       showTokenDropdown.value = false
     }
-    if (showSlider.value && !event.target.closest('.slider-container') && !event.target.closest('.token-input-container')) {
-      showSlider.value = false
-    }
   }
   
   document.addEventListener('click', handleClickOutside)
@@ -896,66 +856,4 @@ useHead({
   animation: gradient-rotate 12s ease infinite;
 }
 
-/* Custom slider styles (temporarily commented out) */
-/* .slider {
-  background: #374151;
-  outline: none;
-}
-
-.slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.slider-green {
-  background: linear-gradient(to right, #374151 0%, #10b981 100%);
-}
-
-.slider-green::-webkit-slider-thumb {
-  background: #10b981;
-}
-
-.slider-green::-moz-range-thumb {
-  background: #10b981;
-}
-
-.slider-purple {
-  background: linear-gradient(to right, #374151 0%, #8b5cf6 100%);
-}
-
-.slider-purple::-webkit-slider-thumb {
-  background: #8b5cf6;
-}
-
-.slider-purple::-moz-range-thumb {
-  background: #8b5cf6;
-}
-
-.slider-green {
-  background: #374151;
-  background-image: linear-gradient(#10b981, #10b981);
-  background-repeat: no-repeat;
-  background-size: var(--progress, 0%) 100%;
-}
-
-.slider-purple {
-  background: #374151;
-  background-image: linear-gradient(#8b5cf6, #8b5cf6);
-  background-repeat: no-repeat;
-  background-size: var(--progress, 0%) 100%;
-} */
 </style>

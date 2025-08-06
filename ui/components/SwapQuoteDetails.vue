@@ -9,6 +9,12 @@
         <span class="text-white">1 {{ inputToken }} = {{ formatRate() }} CIRX</span>
       </div>
       
+      <!-- Inverse Rate -->
+      <div class="flex justify-between">
+        <span class="text-gray-400">CIRX Price</span>
+        <span class="text-white">1 CIRX = {{ formatInverseRate() }} {{ inputToken }}</span>
+      </div>
+      
       <!-- Fee -->
       <div class="flex justify-between">
         <span class="text-gray-400">Platform Fee ({{ quote.feeRate || '0.3' }}%)</span>
@@ -86,6 +92,16 @@ const formatRate = () => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   }).format(props.quote.tokenPrice)
+}
+
+// Format inverse rate (1 CIRX = X token)
+const formatInverseRate = () => {
+  if (!props.quote.tokenPrice || props.quote.tokenPrice === 0) return '0'
+  const inverseRate = 1 / props.quote.tokenPrice
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 6
+  }).format(inverseRate)
 }
 
 // Format fee amount
