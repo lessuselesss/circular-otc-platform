@@ -145,16 +145,30 @@ const fetchCIRXPrice = async () => {
     } else if (prices.length === 2) {
       // Average two sources with validation
       const [price1, price2] = sortedPrices
-      const diff = Math.abs(price1 - price2) / Math.min(price1, price2)
+      const minPrice = Math.min(price1, price2)
       
-      if (diff < 0.05) { // Less than 5% difference
-        finalPrice = (price1 + price2) / 2
-        console.log(`📊 Using average CIRX/USDT price: $${finalPrice} from 2 exchanges (${diff.toFixed(2)}% difference)`)
+      // Prevent division by zero
+      if (minPrice <= 0) {
+        console.error('Invalid prices for comparison:', { price1, price2 })
+        finalPrice = prices[0].price // Use first price as fallback
+        console.log(`📊 Using fallback price due to invalid comparison: $${finalPrice}`)
       } else {
-        // Large difference - use the more recent/reliable source (Gate.io first in list)
-        const gatePrice = prices.find(p => p.exchange === 'gate.io')
-        finalPrice = gatePrice ? gatePrice.price : prices[0].price
-        console.log(`📊 Using primary source CIRX/USDT price: $${finalPrice} (${diff.toFixed(2)}% spread detected)`)
+        const diff = Math.abs(price1 - price2) / minPrice
+        
+        // Validate diff result
+        if (!isFinite(diff)) {
+          console.error('Invalid price difference calculation:', { price1, price2, minPrice, diff })
+          finalPrice = prices[0].price
+          console.log(`📊 Using first price due to calculation error: $${finalPrice}`)
+        } else if (diff < 0.05) { // Less than 5% difference
+          finalPrice = (price1 + price2) / 2
+          console.log(`📊 Using average CIRX/USDT price: $${finalPrice} from 2 exchanges (${diff.toFixed(2)}% difference)`)
+        } else {
+          // Large difference - use the more recent/reliable source (Gate.io first in list)
+          const gatePrice = prices.find(p => p.exchange === 'gate.io')
+          finalPrice = gatePrice ? gatePrice.price : prices[0].price
+          console.log(`📊 Using primary source CIRX/USDT price: $${finalPrice} (${diff.toFixed(2)}% spread detected)`)
+        }
       }
       
     } else {
@@ -261,10 +275,25 @@ export const getTokenPrices = async () => {
     console.log('🔄 Fetching CIRX/USDT price from exchanges...')
     const cirxPriceInUsdt = await fetchCIRXPrice()
     
-    // Step 3: Convert CIRX price to USD using USDT rate
+    // Step 3: Convert CIRX price to USD using USDT rate with NaN protection
     // CIRX/USD = CIRX/USDT × USDT/USD
     const usdtPrice = majorTokenPrices.USDT || 1.0
+    
+    // Validate conversion inputs
+    if (typeof cirxPriceInUsdt !== 'number' || typeof usdtPrice !== 'number' ||
+        isNaN(cirxPriceInUsdt) || isNaN(usdtPrice) || 
+        cirxPriceInUsdt <= 0 || usdtPrice <= 0) {
+      console.error('Invalid price conversion inputs:', { cirxPriceInUsdt, usdtPrice })
+      throw new Error('Invalid CIRX or USDT price for conversion')
+    }
+    
     const cirxPriceInUsd = cirxPriceInUsdt * usdtPrice
+    
+    // Validate conversion result
+    if (!isFinite(cirxPriceInUsd) || cirxPriceInUsd <= 0) {
+      console.error('Invalid CIRX USD price result:', { cirxPriceInUsdt, usdtPrice, cirxPriceInUsd })
+      throw new Error('CIRX price conversion resulted in invalid value')
+    }
     
     console.log(`💱 Price conversion: CIRX ${cirxPriceInUsdt} USDT × ${usdtPrice} USDT/USD = ${cirxPriceInUsd} USD`)
     

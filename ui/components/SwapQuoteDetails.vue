@@ -85,37 +85,83 @@ const props = defineProps({
   }
 })
 
-// Format exchange rate
+// Format exchange rate with NaN protection
 const formatRate = () => {
-  if (!props.quote.tokenPrice) return '1'
+  if (!props.quote.tokenPrice || typeof props.quote.tokenPrice !== 'number' || 
+      isNaN(props.quote.tokenPrice) || props.quote.tokenPrice <= 0) {
+    return '0'
+  }
+  
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   }).format(props.quote.tokenPrice)
 }
 
-// Format inverse rate (1 CIRX = X token)
+// Format inverse rate (1 CIRX = X token) using actual CIRX price with NaN protection
 const formatInverseRate = () => {
-  if (!props.quote.tokenPrice || props.quote.tokenPrice === 0) return '0'
-  const inverseRate = 1 / props.quote.tokenPrice
+  // Comprehensive validation to prevent NaN
+  if (!props.quote.tokenPrice || !props.quote.cirxPrice || 
+      typeof props.quote.tokenPrice !== 'number' || typeof props.quote.cirxPrice !== 'number' ||
+      isNaN(props.quote.tokenPrice) || isNaN(props.quote.cirxPrice) ||
+      props.quote.tokenPrice <= 0 || props.quote.cirxPrice <= 0) {
+    return '0'
+  }
+  
+  // Safe division calculation
+  const inverseRate = props.quote.cirxPrice / props.quote.tokenPrice
+  
+  // Validate result before formatting
+  if (!isFinite(inverseRate) || inverseRate <= 0) {
+    console.warn('Invalid inverse rate calculation:', { 
+      cirxPrice: props.quote.cirxPrice, 
+      tokenPrice: props.quote.tokenPrice, 
+      result: inverseRate 
+    })
+    return '0'
+  }
+  
   return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 4,
-    maximumFractionDigits: 6
+    minimumFractionDigits: 6,
+    maximumFractionDigits: 8
   }).format(inverseRate)
 }
 
-// Format fee amount
+// Format fee amount with NaN protection
 const formatFee = () => {
-  if (!props.quote.feeAmount) return '0'
-  return parseFloat(props.quote.feeAmount).toFixed(6).replace(/\.?0+$/, '')
+  if (!props.quote.feeAmount || typeof props.quote.feeAmount !== 'number' || 
+      isNaN(props.quote.feeAmount) || props.quote.feeAmount < 0) {
+    return '0'
+  }
+  
+  const fee = parseFloat(props.quote.feeAmount)
+  if (!isFinite(fee)) return '0'
+  
+  return fee.toFixed(6).replace(/\.?0+$/, '') || '0'
 }
 
-// Format bonus amount for OTC
+// Format bonus amount for OTC with comprehensive NaN protection
 const formatBonus = () => {
-  if (!props.quote.discount || props.quote.discount === 0) return '0'
+  // Validate all required values
+  if (!props.quote.discount || !props.inputAmount || !props.quote.tokenPrice ||
+      typeof props.quote.discount !== 'number' || typeof props.quote.tokenPrice !== 'number' ||
+      isNaN(props.quote.discount) || isNaN(props.quote.tokenPrice) ||
+      props.quote.discount <= 0 || props.quote.tokenPrice <= 0) {
+    return '0'
+  }
   
-  const baseAmount = parseFloat(props.inputAmount) * props.quote.tokenPrice
-  const bonusAmount = baseAmount * (props.quote.discount / 100)
+  const inputAmount = parseFloat(props.inputAmount)
+  if (isNaN(inputAmount) || inputAmount <= 0) return '0'
+  
+  // Safe calculation with validation
+  const baseAmount = inputAmount * props.quote.tokenPrice
+  if (!isFinite(baseAmount) || baseAmount <= 0) return '0'
+  
+  const discountRate = props.quote.discount / 100
+  if (!isFinite(discountRate) || discountRate <= 0) return '0'
+  
+  const bonusAmount = baseAmount * discountRate
+  if (!isFinite(bonusAmount) || bonusAmount <= 0) return '0'
   
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,

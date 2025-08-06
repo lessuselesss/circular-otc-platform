@@ -8,6 +8,37 @@ import { getTokenPrices, getTokenPrice } from '../services/priceService.js'
  */
 export function useSwapLogic() {
   
+  // Safe arithmetic utilities to prevent NaN issues
+  const safeDiv = (a, b, fallback = 0) => {
+    if (typeof a !== 'number' || typeof b !== 'number' || isNaN(a) || isNaN(b) || b === 0) {
+      return fallback
+    }
+    const result = a / b
+    return isFinite(result) ? result : fallback
+  }
+  
+  const safeMul = (a, b, fallback = 0) => {
+    if (typeof a !== 'number' || typeof b !== 'number' || isNaN(a) || isNaN(b)) {
+      return fallback
+    }
+    const result = a * b
+    return isFinite(result) ? result : fallback
+  }
+  
+  const safePercentage = (value, defaultValue = 0) => {
+    const num = parseFloat(value)
+    return (isNaN(num) || !isFinite(num)) ? defaultValue : num
+  }
+  
+  const validateNumber = (value, name = 'value') => {
+    const num = parseFloat(value)
+    if (isNaN(num) || !isFinite(num) || num < 0) {
+      console.warn(`Invalid ${name}:`, value)
+      return null
+    }
+    return num
+  }
+  
   // Real-time token prices (fetched from live APIs)
   const tokenPrices = ref({
     ETH: 2500,   // Will be updated with live prices
@@ -94,117 +125,145 @@ export function useSwapLogic() {
   }
 
   /**
-   * Calculate swap quote
+   * Calculate swap quote with proper CIRX/USDT conversion
+   * Enhanced with comprehensive NaN prevention
    */
   const calculateQuote = (inputAmount, inputToken, isOTC = false) => {
-    if (!inputAmount || parseFloat(inputAmount) <= 0) return null
-    
-    const inputValue = parseFloat(inputAmount)
-    
-    // Add validation for inputValue
-    if (isNaN(inputValue) || inputValue <= 0) {
-      console.warn('Invalid input amount:', inputAmount)
+    // Validate input amount
+    const inputValue = validateNumber(inputAmount, 'input amount')
+    if (inputValue === null || inputValue <= 0) {
       return null
     }
     
-    const tokenPrice = getTokenPrice(inputToken)
+    // Get token prices with validation
+    const inputTokenPrice = getTokenPrice(inputToken) // Price in USD
+    const cirxPrice = getTokenPrice('CIRX') // CIRX price in USD (via USDT)
     
-    // Prevent calculations with invalid token prices
-    if (tokenPrice <= 0) {
-      console.warn(`Cannot calculate quote: invalid price for ${inputToken}`)
+    // Comprehensive price validation
+    if (inputTokenPrice <= 0 || cirxPrice <= 0) {
+      console.warn(`Cannot calculate quote: invalid prices - ${inputToken}: $${inputTokenPrice}, CIRX: $${cirxPrice}`)
       return null
     }
     
-    const totalUsdValue = inputValue * tokenPrice
+    // Safe calculation of total USD value
+    const totalUsdValue = safeMul(inputValue, inputTokenPrice)
+    if (totalUsdValue <= 0) {
+      console.error('Invalid total USD value calculation:', { inputValue, inputTokenPrice, totalUsdValue })
+      return null
+    }
     
-    // Calculate fee
-    const feeRate = isOTC ? fees.otc : fees.liquid
-    const feeAmount = (inputValue * feeRate) / 100
-    const amountAfterFee = inputValue - feeAmount
-    const usdAfterFee = amountAfterFee * tokenPrice
+    // Calculate fee with safe percentage handling
+    const feeRate = safePercentage(isOTC ? fees.otc : fees.liquid)
+    const feeAmount = safeMul(inputValue, safeDiv(feeRate, 100))
+    const amountAfterFee = Math.max(0, inputValue - feeAmount)
+    const usdAfterFee = safeMul(amountAfterFee, inputTokenPrice)
     
-    // Base CIRX amount (1:1 with USD)
-    let cirxReceived = usdAfterFee
+    // Calculate CIRX amount with safe division
+    let cirxReceived = safeDiv(usdAfterFee, cirxPrice)
+    if (cirxReceived <= 0) {
+      console.error('Invalid CIRX calculation:', { usdAfterFee, cirxPrice, cirxReceived })
+      return null
+    }
+    
+    // Apply OTC discount with safe calculations
     let discount = 0
-    
-    // Apply OTC discount
     if (isOTC) {
-      discount = calculateDiscount(totalUsdValue)
-      cirxReceived = usdAfterFee * (1 + discount / 100)
+      discount = safePercentage(calculateDiscount(totalUsdValue))
+      if (discount > 0) {
+        const multiplier = 1 + safeDiv(discount, 100)
+        cirxReceived = safeMul(cirxReceived, multiplier)
+      }
     }
     
-    // Validate final calculations
-    if (isNaN(cirxReceived) || cirxReceived < 0) {
-      console.error('Invalid CIRX calculation result:', cirxReceived)
+    // Final validation of CIRX amount
+    if (!isFinite(cirxReceived) || cirxReceived <= 0) {
+      console.error('Final CIRX validation failed:', cirxReceived)
       return null
     }
+    
+    // Calculate exchange rate with safe division
+    const exchangeRate = safeDiv(inputTokenPrice, cirxPrice)
     
     return {
       inputAmount: inputValue,
       inputToken,
       inputUsdValue: totalUsdValue,
-      tokenPrice,
+      tokenPrice: inputTokenPrice,
+      cirxPrice,
       feeRate,
-      feeAmount,
-      feeUsd: feeAmount * tokenPrice,
+      feeAmount: parseFloat(feeAmount.toFixed(8)),
+      feeUsd: safeMul(feeAmount, inputTokenPrice),
       discount,
-      cirxAmount: cirxReceived.toFixed(6),
+      cirxAmount: parseFloat(cirxReceived.toFixed(6)),
       cirxAmountFormatted: formatNumber(cirxReceived),
-      exchangeRate: `1 ${inputToken} = ${tokenPrice.toLocaleString()} CIRX`,
+      exchangeRate: `1 ${inputToken} = ${exchangeRate.toFixed(2)} CIRX`,
       isOTC,
       priceImpact: 0, // Could be calculated based on liquidity
-      minimumReceived: (cirxReceived * 0.995).toFixed(6), // 0.5% slippage
+      minimumReceived: parseFloat(safeMul(cirxReceived, 0.995).toFixed(6)),
       vestingPeriod: isOTC ? '6 months' : null
     }
   }
 
   /**
-   * Calculate reverse quote (CIRX amount -> input token amount)
+   * Calculate reverse quote (CIRX amount -> input token amount) with proper price conversion
+   * Enhanced with comprehensive NaN prevention
    */
   const calculateReverseQuote = (cirxAmount, targetToken, isOTC = false) => {
-    if (!cirxAmount || parseFloat(cirxAmount) <= 0) return null
-    
-    const cirxValue = parseFloat(cirxAmount)
-    
-    // Add validation for cirxValue
-    if (isNaN(cirxValue) || cirxValue <= 0) {
-      console.warn('Invalid CIRX amount:', cirxAmount)
+    // Validate CIRX amount
+    const cirxValue = validateNumber(cirxAmount, 'CIRX amount')
+    if (cirxValue === null || cirxValue <= 0) {
       return null
     }
     
-    const tokenPrice = getTokenPrice(targetToken)
+    // Get token prices with validation
+    const targetTokenPrice = getTokenPrice(targetToken) // Price in USD
+    const cirxPrice = getTokenPrice('CIRX') // CIRX price in USD (via USDT)
     
-    // Prevent calculations with invalid token prices
-    if (tokenPrice <= 0) {
-      console.warn(`Cannot calculate reverse quote: invalid price for ${targetToken}`)
+    // Comprehensive price validation
+    if (targetTokenPrice <= 0 || cirxPrice <= 0) {
+      console.warn(`Cannot calculate reverse quote: invalid prices - ${targetToken}: $${targetTokenPrice}, CIRX: $${cirxPrice}`)
       return null
     }
     
-    // Reverse the OTC discount calculation
-    let usdAfterFee = cirxValue
+    // Convert CIRX to USD with safe multiplication
+    let usdValue = safeMul(cirxValue, cirxPrice)
+    if (usdValue <= 0) {
+      console.error('Invalid USD value from CIRX conversion:', { cirxValue, cirxPrice, usdValue })
+      return null
+    }
+    
     let discount = 0
     
+    // Reverse the OTC discount calculation with safe operations
     if (isOTC) {
-      // We need to estimate the discount tier based on the final amount
-      // This is an approximation since we don't know the original USD amount
-      const estimatedUsdValue = cirxValue // Starting estimate
-      discount = calculateDiscount(estimatedUsdValue)
-      
-      // Reverse the discount: cirxReceived = usdAfterFee * (1 + discount / 100)
-      usdAfterFee = cirxValue / (1 + discount / 100)
+      discount = safePercentage(calculateDiscount(usdValue))
+      if (discount > 0) {
+        const discountMultiplier = 1 + safeDiv(discount, 100)
+        if (discountMultiplier <= 0) {
+          console.error('Invalid discount multiplier:', { discount, discountMultiplier })
+          return null
+        }
+        usdValue = safeDiv(usdValue, discountMultiplier)
+      }
     }
     
-    // Reverse the fee calculation: amountAfterFee = inputValue - feeAmount
-    const feeRate = isOTC ? fees.otc : fees.liquid
-    // usdAfterFee = amountAfterFee * tokenPrice
-    const amountAfterFee = usdAfterFee / tokenPrice
+    // Reverse the fee calculation with safe operations
+    const feeRate = safePercentage(isOTC ? fees.otc : fees.liquid)
+    const feeMultiplier = 1 - safeDiv(feeRate, 100)
     
-    // amountAfterFee = inputValue * (1 - feeRate/100)
-    const inputValue = amountAfterFee / (1 - feeRate / 100)
+    // Validate fee multiplier to prevent division by zero
+    if (feeMultiplier <= 0 || feeMultiplier > 1) {
+      console.error('Invalid fee multiplier:', { feeRate, feeMultiplier })
+      return null
+    }
     
-    // Validate final calculations
-    if (isNaN(inputValue) || inputValue < 0) {
-      console.error('Invalid reverse calculation result:', inputValue)
+    // Calculate input amount with safe division
+    const denominator = safeMul(targetTokenPrice, feeMultiplier)
+    const inputValue = safeDiv(usdValue, denominator)
+    
+    // Validate final result
+    if (inputValue <= 0 || !isFinite(inputValue)) {
+      console.error('Invalid reverse calculation result:', { usdValue, denominator, inputValue })
       return null
     }
     
@@ -215,7 +274,8 @@ export function useSwapLogic() {
       inputAmount: inputValue,
       inputToken: targetToken,
       cirxAmount: cirxValue,
-      tokenPrice,
+      tokenPrice: targetTokenPrice,
+      cirxPrice,
       feeRate,
       discount,
       isReverse: true,
