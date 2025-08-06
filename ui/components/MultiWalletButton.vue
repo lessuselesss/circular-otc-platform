@@ -61,11 +61,11 @@
     <!-- Wallet Selection Modal -->
     <div
       v-if="showWalletModal"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 min-h-screen"
       @click="closeWalletModal"
     >
       <div
-        class="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md mx-4"
+        class="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md mx-4 my-8"
         @click.stop
       >
         <!-- Modal Header -->
