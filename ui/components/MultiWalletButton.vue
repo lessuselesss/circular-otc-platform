@@ -406,11 +406,11 @@ const enforceeSingleWallet = () => {
   }
 }
 
-// Initialize wallet store on mount
+// Initialize wallet store on mount (without auto-reconnect)
 onMounted(async () => {
   try {
     await walletStore.initialize()
-    await walletStore.attemptAutoReconnect()
+    // Removed attemptAutoReconnect() to prevent unwanted popups
     
     // Enforce single wallet connection on initialization
     enforceeSingleWallet()
