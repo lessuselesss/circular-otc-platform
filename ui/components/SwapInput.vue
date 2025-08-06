@@ -14,7 +14,7 @@
     <div class="relative token-input-container">
       <input
         :value="amount"
-        @input="$emit('update:amount', $event.target.value)"
+        @input="handleAmountInput($event.target.value)"
         type="text"
         inputmode="decimal"
         pattern="[0-9]*\.?[0-9]*"
@@ -65,7 +65,13 @@ defineProps({
   }
 })
 
-defineEmits(['update:amount', 'update:token', 'set-max'])
+const emit = defineEmits(['update:amount', 'update:token', 'set-max', 'input-changed'])
+
+// Handle amount input changes
+const handleAmountInput = (value) => {
+  emit('update:amount', value)
+  emit('input-changed')
+}
 
 // Input validation
 const validateNumberInput = (event) => {

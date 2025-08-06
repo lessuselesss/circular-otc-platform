@@ -8,7 +8,7 @@
       <input
         v-if="editable"
         :value="cirxAmount"
-        @input="$emit('update:cirxAmount', $event.target.value)"
+        @input="handleCirxInput($event.target.value)"
         type="number"
         step="any"
         placeholder="0.0"
@@ -92,7 +92,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:cirxAmount'])
+const emit = defineEmits(['update:cirxAmount', 'cirx-changed'])
 
 // Format USD value
 const formatUsdValue = (amount) => {
@@ -113,5 +113,11 @@ const handleImageError = (event) => {
   fallback.className = 'w-5 h-5 rounded-full bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center text-white text-xs font-bold'
   fallback.textContent = 'C'
   event.target.parentNode.replaceChild(fallback, event.target)
+}
+
+// Handle CIRX amount input changes
+const handleCirxInput = (value) => {
+  emit('update:cirxAmount', value)
+  emit('cirx-changed')
 }
 </script>

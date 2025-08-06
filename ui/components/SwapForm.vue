@@ -27,6 +27,7 @@
           :loading="loading"
           :active-tab="activeTab"
           @set-max="setMaxAmount"
+          @input-changed="handleInputAmountChange"
         />
 
         <!-- Arrow -->
@@ -40,11 +41,12 @@
 
         <!-- Output Section -->
         <SwapOutput
-          :cirx-amount="quote?.cirxAmount || '0'"
+          v-model:cirx-amount="cirxAmount"
           :quote="quote"
           :active-tab="activeTab"
           :loading="loading"
           :editable="true"
+          @cirx-changed="handleCirxAmountChange"
         />
 
         <!-- Recipient Address (for non-connected users) -->
@@ -173,11 +175,15 @@ defineEmits(['show-chart', 'show-staking'])
 const activeTab = ref('liquid')
 const inputAmount = ref('')
 const inputToken = ref('ETH')
+const cirxAmount = ref('')
 const recipientAddress = ref('')
 const recipientAddressError = ref('')
 const loading = ref(false)
 const loadingText = ref('')
 const error = ref(null)
+
+// Track which field was last updated to prevent circular updates
+const lastUpdatedField = ref('input') // 'input' or 'cirx'
 
 // OTC Configuration
 const { otcConfig } = useOtcConfig()
@@ -196,13 +202,48 @@ const inputBalance = computed(() => {
 })
 
 const quote = computed(() => {
-  if (!inputAmount.value || parseFloat(inputAmount.value) <= 0) return null
+  // Calculate quote based on which field was last updated
+  if (lastUpdatedField.value === 'input') {
+    // Forward calculation: input amount -> CIRX amount
+    if (!inputAmount.value || parseFloat(inputAmount.value) <= 0) return null
+    
+    const quote = swapLogic.calculateQuote(
+      inputAmount.value,
+      inputToken.value,
+      activeTab.value === 'otc'
+    )
+    
+    // Update CIRX amount without triggering reverse calculation
+    if (quote && quote.cirxAmount !== cirxAmount.value) {
+      cirxAmount.value = quote.cirxAmount
+    }
+    
+    return quote
+    
+  } else if (lastUpdatedField.value === 'cirx') {
+    // Reverse calculation: CIRX amount -> input amount
+    if (!cirxAmount.value || parseFloat(cirxAmount.value) <= 0) return null
+    
+    const reverseQuote = swapLogic.calculateReverseQuote(
+      cirxAmount.value,
+      inputToken.value,
+      activeTab.value === 'otc'
+    )
+    
+    if (reverseQuote) {
+      // Update input amount without triggering forward calculation
+      if (reverseQuote.inputAmount.toString() !== inputAmount.value) {
+        inputAmount.value = reverseQuote.inputAmount.toFixed(6).replace(/\.?0+$/, '')
+      }
+      
+      // Return the forward quote for consistency
+      return reverseQuote.forwardQuote
+    }
+    
+    return null
+  }
   
-  return swapLogic.calculateQuote(
-    inputAmount.value,
-    inputToken.value,
-    activeTab.value === 'otc'
-  )
+  return null
 })
 
 const canPurchase = computed(() => {
@@ -383,6 +424,35 @@ const clearError = () => {
   error.value = null
   errorHandler.clearError()
 }
+
+// Handle input amount changes
+const handleInputAmountChange = () => {
+  lastUpdatedField.value = 'input'
+}
+
+// Handle CIRX amount changes from SwapOutput component
+const handleCirxAmountChange = () => {
+  lastUpdatedField.value = 'cirx'
+}
+
+// Watch for tab or token changes to reset field tracking and recalculate
+watch([activeTab, inputToken], () => {
+  // Reset to input field priority when tab/token changes
+  lastUpdatedField.value = 'input'
+  
+  // Recalculate quote if we have an input amount
+  if (inputAmount.value && parseFloat(inputAmount.value) > 0) {
+    const newQuote = swapLogic.calculateQuote(
+      inputAmount.value,
+      inputToken.value,
+      activeTab.value === 'otc'
+    )
+    
+    if (newQuote) {
+      cirxAmount.value = newQuote.cirxAmount
+    }
+  }
+})
 
 // Watch for token changes to validate wallet compatibility
 watch([inputToken, () => walletStore.activeChain], () => {
