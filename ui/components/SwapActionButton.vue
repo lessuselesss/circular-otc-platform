@@ -47,6 +47,18 @@ const props = defineProps({
   quote: {
     type: Object,
     default: null
+  },
+  inputAmount: {
+    type: String,
+    default: ''
+  },
+  inputBalance: {
+    type: String,
+    default: '0'
+  },
+  inputToken: {
+    type: String,
+    default: 'ETH'
   }
 })
 
@@ -72,6 +84,27 @@ const getButtonText = () => {
   }
 
   if (!props.canPurchase) {
+    // Check specific reasons why purchase is disabled
+    const hasAmount = props.inputAmount && parseFloat(props.inputAmount) > 0
+    
+    if (!hasAmount) {
+      return 'Enter Amount'
+    }
+    
+    // Check for insufficient balance (only if wallet connected and has amount)
+    if (props.walletConnected && hasAmount) {
+      const inputAmountNum = parseFloat(props.inputAmount) || 0
+      const balanceNum = parseFloat(props.inputBalance) || 0
+      
+      // For ETH, reserve gas fees (0.01 ETH)
+      const gasReserve = props.inputToken === 'ETH' ? 0.01 : 0
+      const availableBalance = Math.max(0, balanceNum - gasReserve)
+      
+      if (inputAmountNum > availableBalance) {
+        return 'Insufficient Balance'
+      }
+    }
+    
     return 'Enter Amount'
   }
 

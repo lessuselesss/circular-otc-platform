@@ -122,6 +122,7 @@
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
                   <div class="relative token-dropdown-container">
                     <button
+                      type="button"
                       @click="showTokenDropdown = !showTokenDropdown"
                       :class="[
                         'flex items-center gap-2 px-3 py-2 rounded-full border transition-all duration-300',
@@ -165,6 +166,7 @@
                         <button
                           v-for="token in [{ value: 'SOL', label: 'SOL' }, { value: 'USDC_SOL', label: 'USDC' }]"
                           :key="token.value"
+                          type="button"
                           @click="selectToken(token.value)"
                           class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors first:rounded-t-xl last:rounded-b-xl"
                         >
@@ -180,6 +182,7 @@
                         <button
                           v-for="token in [{ value: 'ETH', label: 'ETH' }, { value: 'USDC', label: 'USDC' }, { value: 'USDT', label: 'USDT' }]"
                           :key="token.value"
+                          type="button"
                           @click="selectToken(token.value)"
                           class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors first:rounded-t-xl last:rounded-b-xl"
                         >
@@ -225,19 +228,19 @@
                 </span>
               </div>
               <div class="relative">
-                <input
-                  v-model="cirxAmount"
-                  type="number"
-                  step="any"
-                  placeholder="0.0"
-                  :class="[
-                    'w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 opacity-75 transition-all duration-300',
-                    activeTab === 'liquid' 
-                      ? 'border-circular-primary/40' 
-                      : 'border-circular-purple/40'
-                  ]"
-                  readonly
-                />
+                <div :class="[
+                  'w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white transition-all duration-300',
+                  activeTab === 'liquid' 
+                    ? 'border-circular-primary/40' 
+                    : 'border-circular-purple/40'
+                ]">
+                  <span v-if="quoteLoading" class="opacity-50 animate-pulse">
+                    Calculating...
+                  </span>
+                  <span v-else class="opacity-75">
+                    {{ cirxAmount || '0.0' }}
+                  </span>
+                </div>
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
                   <div class="flex items-center gap-2 px-3 py-2 rounded-full border border-circular-primary/30 bg-circular-primary/10">
                     
@@ -250,6 +253,17 @@
                     
                     <span class="font-medium text-circular-primary text-sm">CIRX</span>
                   </div>
+                </div>
+              </div>
+              
+              <!-- Loading indicator for quote calculation -->
+              <div v-if="quoteLoading" class="mt-2 flex items-center justify-center">
+                <div class="flex items-center gap-2 text-sm text-gray-400">
+                  <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Getting best quote...</span>
                 </div>
               </div>
             </div>
@@ -346,16 +360,17 @@
             
             <button
               type="submit"
-              :disabled="!canPurchase || loading"
+              :disabled="!canPurchase || loading || quoteLoading"
               :class="[
                 'w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300',
                 activeTab === 'liquid' 
                   ? 'bg-circular-primary text-gray-900 hover:bg-circular-primary-hover' 
                   : 'bg-circular-purple text-white hover:bg-purple-700',
-                (!canPurchase || loading) && 'opacity-50 cursor-not-allowed'
+                (!canPurchase || loading || quoteLoading) && 'opacity-50 cursor-not-allowed'
               ]"
             >
               <span v-if="loading">{{ loadingText || 'Processing...' }}</span>
+              <span v-else-if="quoteLoading">Getting Quote...</span>
               <span v-else-if="!inputAmount">Enter an amount</span>
               <span v-else-if="!isConnected && !recipientAddress">Connect Wallet or Enter Address</span>
               <span v-else-if="recipientAddress && recipientAddressError">Invalid Address</span>
@@ -441,6 +456,10 @@ const recipientAddress = ref('')
 const recipientAddressError = ref('')
 const recipientAddressType = ref('')
 const showTokenDropdown = ref(false)
+
+// Quote calculation loading state
+const quoteLoading = ref(false)
+const lastQuoteRequestId = ref(0)
 
 // Use wallet balances when connected, otherwise show placeholders
 const inputBalance = computed(() => {
@@ -543,7 +562,7 @@ const discountTiers = computed(() => otcConfig.value.discountTiers)
 const canPurchase = computed(() => {
   // Basic requirements
   const hasAmount = inputAmount.value && parseFloat(inputAmount.value) > 0
-  const notLoading = !loading.value
+  const notLoading = !loading.value && !quoteLoading.value
   
   // Address validation
   const addressValid = validateRecipientAddress(recipientAddress.value)
@@ -551,7 +570,19 @@ const canPurchase = computed(() => {
   // Either connected wallet OR valid recipient address required
   const hasValidRecipient = isConnected.value || (recipientAddress.value && addressValid)
   
-  return hasAmount && notLoading && hasValidRecipient
+  // Balance validation - only check if wallet is connected
+  const hasSufficientBalance = !isConnected.value || (() => {
+    const inputAmountNum = parseFloat(inputAmount.value) || 0
+    const balanceNum = parseFloat(inputBalance.value) || 0
+    
+    // For ETH, reserve gas fees (0.01 ETH)
+    const gasReserve = inputToken.value === 'ETH' ? 0.01 : 0
+    const availableBalance = Math.max(0, balanceNum - gasReserve)
+    
+    return inputAmountNum <= availableBalance
+  })()
+  
+  return hasAmount && notLoading && hasValidRecipient && hasSufficientBalance
 })
 
 // Calculate discount based on USD amount
@@ -593,6 +624,35 @@ const calculateQuote = (amount, token, isOTC = false) => {
     discount: discount,
     cirxAmount: cirxReceived.toFixed(2),
     usdValue: totalUsdValue.toFixed(2)
+  }
+}
+
+// Async quote calculation with loading states
+const calculateQuoteAsync = async (amount, token, isOTC = false) => {
+  if (!amount || parseFloat(amount) <= 0) return null
+  
+  // Generate unique request ID to handle race conditions
+  const requestId = ++lastQuoteRequestId.value
+  quoteLoading.value = true
+  
+  try {
+    // Simulate API call delay (like Uniswap loading behavior)
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
+    // Check if this request is still the most recent
+    if (requestId !== lastQuoteRequestId.value) {
+      return null // Ignore outdated requests
+    }
+    
+    // Use existing quote calculation logic
+    const result = calculateQuote(amount, token, isOTC)
+    
+    return result
+  } finally {
+    // Only clear loading if this is still the most recent request
+    if (requestId === lastQuoteRequestId.value) {
+      quoteLoading.value = false
+    }
   }
 }
 
@@ -785,23 +845,39 @@ const handleSwap = async () => {
   }
 }
 
+// Debounced quote calculation for better UX
+let quoteTimeout = null
+
 // Watch for amount and tab changes to update quote
 watch([inputAmount, inputToken, activeTab], async () => {
+  // Clear existing timeout for debouncing
+  if (quoteTimeout) {
+    clearTimeout(quoteTimeout)
+  }
+  
   if (!inputAmount.value || parseFloat(inputAmount.value) <= 0) {
     cirxAmount.value = ''
     quote.value = null
+    quoteLoading.value = false
     return
   }
   
-  const isOTC = activeTab.value === 'otc'
-  
-  // Always use mock quote for now (will be replaced with real contract calls)
-  const newQuote = calculateQuote(inputAmount.value, inputToken.value, isOTC)
-  
-  if (newQuote) {
-    quote.value = newQuote
-    cirxAmount.value = newQuote.cirxAmount
-  }
+  // Debounce quote calculation (wait 200ms after user stops typing)
+  quoteTimeout = setTimeout(async () => {
+    const isOTC = activeTab.value === 'otc'
+    
+    try {
+      const newQuote = await calculateQuoteAsync(inputAmount.value, inputToken.value, isOTC)
+      
+      if (newQuote) {
+        quote.value = newQuote
+        cirxAmount.value = newQuote.cirxAmount
+      }
+    } catch (error) {
+      console.error('Quote calculation failed:', error)
+      quoteLoading.value = false
+    }
+  }, 200)
 }, { immediate: true })
 
 // Watch recipient address for validation

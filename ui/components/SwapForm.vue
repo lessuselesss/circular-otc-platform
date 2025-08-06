@@ -71,6 +71,9 @@
           :active-tab="activeTab"
           :wallet-connected="walletStore.isConnected"
           :quote="quote"
+          :input-amount="inputAmount"
+          :input-balance="inputBalance"
+          :input-token="inputToken"
           @connect-wallet="handleConnectWallet"
         />
 
@@ -207,7 +210,19 @@ const canPurchase = computed(() => {
   const hasValidRecipient = walletStore.isConnected || 
     (recipientAddress.value && !recipientAddressError.value)
   
-  return hasAmount && notLoading && hasValidRecipient
+  // Balance validation - only check if wallet is connected
+  const hasSufficientBalance = !walletStore.isConnected || (() => {
+    const inputAmountNum = parseFloat(inputAmount.value) || 0
+    const balanceNum = parseFloat(inputBalance.value) || 0
+    
+    // For ETH, reserve gas fees (0.01 ETH)
+    const gasReserve = inputToken.value === 'ETH' ? 0.01 : 0
+    const availableBalance = Math.max(0, balanceNum - gasReserve)
+    
+    return inputAmountNum <= availableBalance
+  })()
+  
+  return hasAmount && notLoading && hasValidRecipient && hasSufficientBalance
 })
 
 // Methods
