@@ -85,17 +85,33 @@ const props = defineProps({
   }
 })
 
-// Format exchange rate with NaN protection
+// Format exchange rate with NaN protection  
+// Shows how many CIRX tokens you get for 1 input token (e.g., "1 ETH = 16,667 CIRX")
 const formatRate = () => {
-  if (!props.quote.tokenPrice || typeof props.quote.tokenPrice !== 'number' || 
-      isNaN(props.quote.tokenPrice) || props.quote.tokenPrice <= 0) {
+  if (!props.quote.tokenPrice || !props.quote.cirxPrice || 
+      typeof props.quote.tokenPrice !== 'number' || typeof props.quote.cirxPrice !== 'number' ||
+      isNaN(props.quote.tokenPrice) || isNaN(props.quote.cirxPrice) ||
+      props.quote.tokenPrice <= 0 || props.quote.cirxPrice <= 0) {
+    return '0'
+  }
+  
+  // Calculate actual exchange rate: inputTokenPrice / cirxPrice
+  // If ETH = $2500 and CIRX = $0.15, then 1 ETH = 16,667 CIRX
+  const exchangeRate = props.quote.tokenPrice / props.quote.cirxPrice
+  
+  if (!isFinite(exchangeRate) || exchangeRate <= 0) {
+    console.warn('Invalid exchange rate calculation:', { 
+      tokenPrice: props.quote.tokenPrice, 
+      cirxPrice: props.quote.cirxPrice, 
+      result: exchangeRate 
+    })
     return '0'
   }
   
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
-  }).format(props.quote.tokenPrice)
+  }).format(exchangeRate)
 }
 
 // Format inverse rate (1 CIRX = X token) using actual CIRX price with NaN protection
