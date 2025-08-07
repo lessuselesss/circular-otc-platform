@@ -34,7 +34,20 @@
       </div>
       
       <div class="absolute inset-y-0 right-0 flex items-center pr-4">
-        <div class="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-700/50">
+        <!-- OTC Mode: Discount Tier Dropdown -->
+        <OtcDiscountDropdown
+          v-if="activeTab === 'otc'"
+          :discount-tiers="discountTiers"
+          :selected-tier="selectedTier"
+          :current-amount="quote?.usdValue || 0"
+          @tier-changed="handleTierChange"
+        />
+        
+        <!-- Liquid Mode: Standard CIRX Token Display -->
+        <div 
+          v-else
+          class="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-700/50"
+        >
           <img 
             src="/cirx-icon.svg" 
             alt="CIRX"
@@ -68,6 +81,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import OtcDiscountDropdown from './OtcDiscountDropdown.vue'
 
 const props = defineProps({
   cirxAmount: {
@@ -89,10 +103,18 @@ const props = defineProps({
   editable: {
     type: Boolean,
     default: false
+  },
+  discountTiers: {
+    type: Array,
+    default: () => []
+  },
+  selectedTier: {
+    type: Object,
+    default: null
   }
 })
 
-const emit = defineEmits(['update:cirxAmount', 'cirx-changed'])
+const emit = defineEmits(['update:cirxAmount', 'cirx-changed', 'tier-changed'])
 
 // Format USD value
 const formatUsdValue = (amount) => {
@@ -119,5 +141,10 @@ const handleImageError = (event) => {
 const handleCirxInput = (value) => {
   emit('update:cirxAmount', value)
   emit('cirx-changed')
+}
+
+// Handle tier selection changes
+const handleTierChange = (tier) => {
+  emit('tier-changed', tier)
 }
 </script>
