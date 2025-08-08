@@ -238,6 +238,7 @@
                   step="any"
                   placeholder="0.0"
                   :disabled="quoteLoading || reverseQuoteLoading"
+                  style="-webkit-appearance: none; -moz-appearance: textfield;"
                   :class="[
                     'w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300',
                     activeTab === 'liquid' 
@@ -1264,4 +1265,16 @@ useHead({
   animation: gradient-rotate 12s ease infinite;
 }
 
+/* Hide number input spinner arrows */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+  display: none !important;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield !important;
+}
 </style>

@@ -17,6 +17,7 @@
           'border-gray-600/50 focus:border-circular-primary/50 focus:outline-none',
           loading && 'opacity-50'
         ]"
+        style="-webkit-appearance: none; -moz-appearance: textfield;"
       />
       <div 
         v-else
@@ -210,3 +211,25 @@ const handleTokenClick = () => {
   emit('token-click', 'CIRX')
 }
 </script>
+
+<style scoped>
+/* Hide number input spinner arrows for all number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+  display: none !important;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield !important;
+}
+
+/* Additional fallback for stubborn browsers */
+input[type="number"]:hover::-webkit-outer-spin-button,
+input[type="number"]:hover::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  display: none !important;
+}
+</style>
