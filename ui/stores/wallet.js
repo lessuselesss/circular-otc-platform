@@ -341,6 +341,11 @@ export const useWalletStore = defineStore('wallet', () => {
         } catch {}
       } else if (pref?.walletType === 'phantom' && typeof window !== 'undefined' && window.solana?.isPhantom) {
         try {
+          // Only attempt a silent reconnect if the site is already trusted by Phantom
+          if (window.solana?.isTrusted !== true) {
+            // Skip to avoid any popup; user must click to reconnect
+            throw new Error('Phantom not trusted; skipping silent reconnect')
+          }
           const response = await window.solana.connect({ onlyIfTrusted: true })
           if (response.publicKey) {
             const phantom = {

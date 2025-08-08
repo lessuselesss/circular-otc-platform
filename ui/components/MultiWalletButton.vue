@@ -219,8 +219,24 @@ const shortAddress = computed(() => {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`
 })
 
-// Selected token balance for header
-const selectedTokenForHeader = computed(() => walletStore.selectedToken || 'ETH')
+// Auto-set selected token based on connected wallet
+const selectedTokenForHeader = computed(() => {
+  // If user manually selected a token, use that
+  if (walletStore.selectedToken) {
+    return walletStore.selectedToken
+  }
+  
+  // Auto-select based on wallet type
+  if (connectedWallet.value === 'phantom') {
+    return 'SOL'
+  } else if (connectedWallet.value === 'metamask') {
+    return 'ETH'
+  }
+  
+  // Default fallback
+  return 'ETH'
+})
+
 const headerBalance = computed(() => {
   try {
     return wallet.getTokenBalance(selectedTokenForHeader.value)

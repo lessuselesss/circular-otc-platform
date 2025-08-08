@@ -3,14 +3,19 @@
  * Provides a unified interface for Ethereum and Solana wallets
  */
 
-import { computed } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { useWalletStore } from '~/stores/wallet'
 
 export const useWallet = () => {
   // Use the wallet store
   const walletStore = useWalletStore()
   
-  // Mock balances for development (will be replaced with real contract calls)
+  // Live balance state
+  const liveBalance = ref(null)
+  const isLoadingBalance = ref(false)
+  let balanceInterval = null
+  
+  // Mock balances for development (fallback when live data unavailable)
   const mockBalances = {
     ETH: '2.5234',
     USDC: '1500.00',
@@ -29,13 +34,81 @@ export const useWallet = () => {
     return `${account.value.slice(0, 6)}...${account.value.slice(-4)}`
   })
   
-  // Mock balance based on connected wallet
+  // Live balance fetching for Phantom wallet
+  const fetchLiveBalance = async () => {
+    if (!isConnected.value || connectedWallet.value !== 'phantom') return
+    
+    try {
+      isLoadingBalance.value = true
+      
+      // Check if Phantom wallet is available and connected
+      if (typeof window !== 'undefined' && window.solana?.isPhantom && window.solana.isConnected) {
+        // Create connection to Solana RPC
+        const { Connection, PublicKey, LAMPORTS_PER_SOL } = await import('@solana/web3.js')
+        
+        // Use Phantom's connection or fallback to public RPC
+        const connection = new Connection('https://api.mainnet-beta.solana.com')
+        const publicKey = new PublicKey(account.value)
+        
+        // Get balance in lamports and convert to SOL
+        const balanceInLamports = await connection.getBalance(publicKey)
+        const balanceInSol = balanceInLamports / LAMPORTS_PER_SOL
+        
+        liveBalance.value = balanceInSol.toFixed(4)
+        console.log(`✅ Live SOL balance: ${balanceInSol.toFixed(4)}`)
+      }
+    } catch (error) {
+      console.warn('Failed to fetch live SOL balance:', error)
+      liveBalance.value = null
+    } finally {
+      isLoadingBalance.value = false
+    }
+  }
+  
+  // Watch for wallet connection changes
+  watch([isConnected, connectedWallet], async ([connected, wallet]) => {
+    // Clear existing interval
+    if (balanceInterval) {
+      clearInterval(balanceInterval)
+      balanceInterval = null
+    }
+    
+    // Reset balance when disconnected
+    if (!connected) {
+      liveBalance.value = null
+      return
+    }
+    
+    // Fetch balance and start interval for Phantom wallet
+    if (wallet === 'phantom') {
+      await fetchLiveBalance()
+      
+      // Set up periodic balance updates every 30 seconds
+      balanceInterval = setInterval(async () => {
+        if (isConnected.value && connectedWallet.value === 'phantom') {
+          await fetchLiveBalance()
+        }
+      }, 30000)
+    } else {
+      // Clear live balance for other wallets
+      liveBalance.value = null
+    }
+  }, { immediate: true })
+  
+  // Cleanup on unmount
+  onUnmounted(() => {
+    if (balanceInterval) {
+      clearInterval(balanceInterval)
+    }
+  })
+  
+  // Balance with live data priority
   const balance = computed(() => {
     if (!isConnected.value) return '0.0'
     
-    // Return different balance based on wallet type
+    // For Phantom wallet, use live balance if available
     if (connectedWallet.value === 'phantom') {
-      return mockBalances.SOL
+      return liveBalance.value || mockBalances.SOL
     } else {
       return mockBalances.ETH
     }
@@ -48,6 +121,15 @@ export const useWallet = () => {
     // Use MetaMask balance if available
     if (connectedWallet.value === 'metamask' && walletStore.metaMaskWallet) {
       return walletStore.metaMaskWallet.getTokenBalance(token)
+    }
+    
+    // For Phantom wallet, handle SOL specially with live balance
+    if (connectedWallet.value === 'phantom') {
+      if (token === 'SOL') {
+        return liveBalance.value || mockBalances.SOL
+      }
+      // For other tokens, Phantom doesn't support them yet
+      return '0.0'
     }
     
     // Fallback to mock balances
@@ -95,10 +177,12 @@ export const useWallet = () => {
     balance,
     connectedWallet,
     shortAddress,
+    isLoadingBalance,
     
     // Methods
     getTokenBalance,
     executeSwap,
+    fetchLiveBalance,
     
     // Store methods
     connectWallet: walletStore.connectWallet,

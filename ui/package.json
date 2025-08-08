@@ -16,6 +16,7 @@
   "dependencies": {
     "@pinia/nuxt": "^0.5.5",
     "@playwright/test": "^1.54.2",
+    "@solana/web3.js": "^1.98.4",
     "@tanstack/vue-query": "^5.61.6",
     "lightweight-charts": "^5.0.8",
     "nuxt": "^3.17.7",
