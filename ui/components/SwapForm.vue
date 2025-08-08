@@ -1,3 +1,4 @@
+
 <template>
   <div class="relative">
     <div class="relative bg-circular-bg-primary/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8">
@@ -46,7 +47,10 @@
           :active-tab="activeTab"
           :loading="loading"
           :editable="true"
+          :discount-tiers="discountTiers"
+          :selected-tier="selectedTier"
           @cirx-changed="handleCirxAmountChange"
+          @tier-changed="handleTierChange"
         />
 
         <!-- Recipient Address (for non-connected users) -->
@@ -77,6 +81,8 @@
           :input-amount="inputAmount"
           :input-balance="inputBalance"
           :input-token="inputToken"
+          :eth-balance="awaitedEthBalance"
+          :network-fee-eth="networkFee.eth"
           @connect-wallet="handleConnectWallet"
         />
 
@@ -112,6 +118,8 @@
 </template>
 
 <script setup>
+import { ref, computed, watch, inject } from 'vue'
+
 // Composables and stores with defensive initialization
 let walletStore, contracts, swapLogic, errorHandler
 
@@ -126,7 +134,8 @@ try {
     isConnecting: ref(false),
     activeWallet: ref(null),
     connectWallet: () => Promise.reject(new Error('Wallet store not available')),
-    clearError: () => {}
+    clearError: () => {},
+    setSelectedToken: () => {} // Mock for testing
   }
 }
 
@@ -181,12 +190,13 @@ const recipientAddressError = ref('')
 const loading = ref(false)
 const loadingText = ref('')
 const error = ref(null)
+const selectedTier = ref(null)
 
 // Track which field was last updated to prevent circular updates
 const lastUpdatedField = ref('input') // 'input' or 'cirx'
 
 // OTC Configuration
-const { otcConfig } = useOtcConfig()
+const { otcConfig, discountTiers } = useOtcConfig()
 
 // Computed properties
 const inputBalance = computed(() => {
@@ -210,7 +220,8 @@ const quote = computed(() => {
     const quote = swapLogic.calculateQuote(
       inputAmount.value,
       inputToken.value,
-      activeTab.value === 'otc'
+      activeTab.value === 'otc',
+      selectedTier.value
     )
     
     // Update CIRX amount without triggering reverse calculation
@@ -227,7 +238,8 @@ const quote = computed(() => {
     const reverseQuote = swapLogic.calculateReverseQuote(
       cirxAmount.value,
       inputToken.value,
-      activeTab.value === 'otc'
+      activeTab.value === 'otc',
+      selectedTier.value
     )
     
     if (reverseQuote) {
@@ -298,22 +310,10 @@ const handleConnectWallet = async () => {
   try {
     error.value = null
     
-    // Show user-friendly message explaining wallet connection options
-    toast?.info('To connect your wallet, please choose from the available options below. MetaMask is recommended for Ethereum tokens.', {
-      title: 'Connect Your Wallet',
-      autoTimeoutMs: 6000,
-      actions: [
-        {
-          label: 'Install MetaMask',
-          handler: () => window.open('https://metamask.io/download/', '_blank'),
-          primary: false
-        }
-      ]
-    })
-    
-    // For now, don't automatically try to connect
-    // Let the user explicitly choose their wallet through a proper modal
-    // This prevents the critical error from occurring
+    // Open centralized wallet modal
+    try { useWalletStore().openWalletModal() } catch {}
+    // Optional: keep a small hint
+    toast?.info('Select a wallet to connect.', { title: 'Connect Wallet', autoTimeoutMs: 3000 })
     
   } catch (err) {
     console.error('Wallet connection preparation failed:', err)
@@ -435,17 +435,53 @@ const handleCirxAmountChange = () => {
   lastUpdatedField.value = 'cirx'
 }
 
+// Handle discount tier selection changes
+const handleTierChange = (tier) => {
+  selectedTier.value = tier
+  
+  // Recalculate quote with new tier if we have an input amount
+  if (inputAmount.value && parseFloat(inputAmount.value) > 0) {
+    lastUpdatedField.value = 'input'
+    
+    const newQuote = swapLogic.calculateQuote(
+      inputAmount.value,
+      inputToken.value,
+      activeTab.value === 'otc',
+      tier // Pass the selected tier
+    )
+    
+    if (newQuote) {
+      cirxAmount.value = newQuote.cirxAmount
+    }
+  }
+}
+
 // Watch for tab or token changes to reset field tracking and recalculate
 watch([activeTab, inputToken], () => {
   // Reset to input field priority when tab/token changes
   lastUpdatedField.value = 'input'
+  
+  // Sync selected token to wallet store for header balance display
+  try { useWalletStore().setSelectedToken(inputToken.value) } catch {}
+  
+  // Handle tier selection based on tab
+  if (activeTab.value === 'otc') {
+    // Set default tier if none selected
+    if (!selectedTier.value && discountTiers.value.length > 0) {
+      selectedTier.value = discountTiers.value[0]
+    }
+  } else {
+    // Clear tier selection for liquid tab
+    selectedTier.value = null
+  }
   
   // Recalculate quote if we have an input amount
   if (inputAmount.value && parseFloat(inputAmount.value) > 0) {
     const newQuote = swapLogic.calculateQuote(
       inputAmount.value,
       inputToken.value,
-      activeTab.value === 'otc'
+      activeTab.value === 'otc',
+      selectedTier.value
     )
     
     if (newQuote) {

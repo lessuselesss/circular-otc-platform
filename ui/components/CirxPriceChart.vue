@@ -7,7 +7,7 @@
           <span class="text-circular-primary font-bold text-sm">C</span>
         </div>
         <div>
-          <h3 class="text-lg font-semibold text-white">CIRX/USD</h3>
+          <h3 class="text-lg font-semibold text-white">CIRX / USD</h3>
           <p class="text-sm text-gray-400">Circular Protocol</p>
         </div>
       </div>
@@ -90,8 +90,8 @@
       <!-- TradingView Chart Container -->
       <div 
         ref="chartContainer" 
-        class="flex-1 w-full rounded-lg overflow-hidden min-h-[300px]"
-        style="background: #1a1a1a;"
+        class="flex-1 w-full rounded-lg overflow-hidden min-h-[360px]"
+        style="background: #0f1115;"
       ></div>
       
       <div class="text-center text-sm text-gray-400 mt-3 px-2">
@@ -122,23 +122,14 @@
 </template>
 
 <script setup>
-import { createChart, CandlestickSeries } from 'lightweight-charts';
-import { onMounted, onUnmounted, ref, nextTick, watch } from 'vue';
-import { useFetch } from '#imports';
-
-// Chart type configuration
-const chartTypes = [
-  { value: 'candlestick', label: 'Candlestick' },
-  { value: 'line', label: 'Line' },
-  { value: 'area', label: 'Area' }
-]
-const selectedChartType = ref('line')
-let areaSeries = null
+import { createChart, LineStyle } from 'lightweight-charts'
+import { onMounted, onUnmounted, ref, nextTick, watch } from 'vue'
+import { useFetch } from '#imports'
 
 // Props and emits
 defineEmits(['close'])
 
-// CIRX market data (from CoinMarketCap)
+// CIRX market data (static placeholders; price auto-updated from last candle)
 const currentPrice = ref('0.004663')
 const priceChange24h = ref(0.81)
 const dayLow = ref('0.004615')
@@ -148,295 +139,165 @@ const volume24h = ref('1.4M')
 const circulatingSupply = ref('1.52B CIRX')
 const totalSupply = ref('1T CIRX')
 
-// Chart controls
+// Chart controls (Jupiter-like chips)
 const selectedTimeframe = ref('24H')
 const timeframes = [
-  { label: '1H', value: '1H' },
-  { label: '24H', value: '24H' },
-  { label: '7D', value: '7D' },
-  { label: '30D', value: '30D' },
-  { label: '1Y', value: '1Y' }
+  { label: '15m', value: '15M' },
+  { label: '1h', value: '1H' },
+  { label: '24h', value: '24H' },
+  { label: '7d', value: '7D' },
+  { label: '30d', value: '30D' }
 ]
 
-// Chart references
+// Chart refs
 const chartContainer = ref(null)
 let chart = null
-let lineSeries = null
+let candleSeries = null
+let volumeSeries = null
+let highLine = null
+let lowLine = null
 
-// Generate realistic OHLC data for the chart
-const processGeckoData = (apiData, timeframe) => {
-  // Transform CoinGecko API response to TradingView format
-  return apiData.map(item => ({
-    time: item[0] / 1000, // Convert ms to seconds
-    open: item[1],
-    high: item[2],
-    low: item[3],
-    close: item[4]
-  }))
-}
-
-const fetchOHLC = async (timeframe) => {
-  const days = {
-    '1H': 1, '24H': 1, '7D': 7, '30D': 30, '1Y': 365 
-  }[timeframe]
-
-  const { data, error } = await useFetch(
-    `https://api.coingecko.com/api/v3/coins/circular-protocol/ohlc?vs_currency=usd&days=${days}`
-  )
-
-  if (error.value) {
-    console.error('Failed to fetch OHLC data:', error.value)
-    throw error.value
-  }
-
-  return processGeckoData(data.value, timeframe)
-}
-
-// Get accurate chart width accounting for padding and borders
-const getChartWidth = () => {
-  if (!chartContainer.value) return 800
-  const rect = chartContainer.value.getBoundingClientRect()
-  return Math.floor(rect.width) || 800
-}
-
-// Initialize the chart
-const initChart = () => {
-  console.log('initChart called, chartContainer.value:', chartContainer.value)
-  if (!chartContainer.value) {
-    console.error('chartContainer.value is null, cannot initialize chart')
-    return
-  }
-  
-  const chartWidth = chartContainer.value.offsetWidth
-  console.log('Creating chart with dimensions:', chartWidth, 'x', 256)
-  chart = createChart(chartContainer.value, {
-    layout: {
-      background: { color: '#1a1a1a' },
-      textColor: '#d1d5db',
-    },
-    grid: {
-      vertLines: { color: '#374151' },
-      horzLines: { color: '#374151' },
-    },
-    crosshair: {
-      mode: 1,
-    },
-    rightPriceScale: {
-      borderColor: '#4b5563',
-    },
-    timeScale: {
-      borderColor: '#4b5563',
-      timeVisible: true,
-      secondsVisible: false,
-    },
-    width: chartWidth,
-    height: 256,
-  })
-  
-  // Set up crosshair subscription
-  chart.subscribeCrosshairMove(param => {
-    if (param.time && param.point && lineSeries) {
-      const price = param.seriesPrices.get(lineSeries)
-      if (price) {
-        // For candlestick data, price will be an object with {open, high, low, close}
-        const displayPrice = typeof price === 'object' ? price.close : price
-        crosshairPrice.value = displayPrice.toFixed(6)
-        crosshairTime.value = new Date(param.time * 1000).toLocaleString()
-      }
-    } else {
-      // Reset to last price when not hovering - get last data point
-      const chartData = lineSeries.data()
-      if (chartData && chartData.length > 0) {
-        const last = chartData[chartData.length - 1]
-        crosshairPrice.value = last.close.toFixed(6)
-        crosshairTime.value = new Date(last.time * 1000).toLocaleString()
-      }
-    }
-  })
-
-  // Use candlestick series (which we know works) with line-like styling
-  try {
-    lineSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#22c55e',
-      downColor: '#22c55e',
-      borderDownColor: '#22c55e',
-      borderUpColor: '#22c55e',
-      wickDownColor: '#22c55e',
-      wickUpColor: '#22c55e',
-    })
-    console.log('Candlestick series created successfully:', lineSeries)
-  } catch (error) {
-    console.error('Error adding candlestick series:', error)
-    return
-  }
-
-  // Load initial data
-  updateChartData()
-  
-  // Use ResizeObserver for proper responsive handling
-  let resizeObserver = null
-  if (window.ResizeObserver) {
-    resizeObserver = new ResizeObserver(entries => {
-      if (entries.length === 0 || entries[0].target !== chartContainer.value) {
-        return
-      }
-      const newRect = entries[0].contentRect
-      chart.applyOptions({
-        width: newRect.width,
-        height: 256 // Keep height fixed
-      })
-      console.log('ResizeObserver updated chart width to:', newRect.width)
-      
-      // Fit content after resize
-      setTimeout(() => {
-        chart.timeScale().fitContent()
-      }, 50)
-    })
-    resizeObserver.observe(chartContainer.value)
-  }
-  
-  // Cleanup function
-  onUnmounted(() => {
-    if (resizeObserver) {
-      resizeObserver.disconnect()
-    }
-    if (chart) {
-      chart.remove()
-    }
-  })
-}
-
-// Update chart data based on timeframe
+// Crosshair readout
 const crosshairPrice = ref('')
 const crosshairTime = ref('')
 
-const updateChartData = async () => {
-  if (!lineSeries) return
-  
-  try {
-    // Use fallback data for now (API integration can be added later)
-    const fallbackData = generateFallbackData()
-    console.log('Generated fallback data:', fallbackData.length, 'points')
-    console.log('First few data points:', fallbackData.slice(0, 3))
-    
-    lineSeries.setData(fallbackData)
-    console.log('Set data to line series')
-    
-    // Simple approach: just use fitContent
-    setTimeout(() => {
+// Map timeframe to CoinGecko OHLC "days" parameter
+const timeframeToDays = (tf) => ({
+  '15M': 1,
+  '1H': 1,
+  '24H': 1,
+  '7D': 7,
+  '30D': 30,
+  '1Y': 365
+}[tf] || 1)
+
+// Fetch OHLC data from CoinGecko and transform
+const fetchOHLC = async (tf) => {
+  const days = timeframeToDays(tf)
+  const { data, error } = await useFetch(
+    `https://api.coingecko.com/api/v3/coins/circular-protocol/ohlc?vs_currency=usd&days=${days}`
+  )
+  if (error.value) throw error.value
+  const raw = data.value || []
+  // raw: [timestamp, open, high, low, close]
+  const candles = raw.map((r) => ({
+    time: Math.floor(r[0] / 1000),
+    open: r[1],
+    high: r[2],
+    low: r[3],
+    close: r[4]
+  }))
+  return candles
+}
+
+const computeVolumeProxy = (candles) => {
+  // Use body size as a rough proxy for volume coloring and height
+  return candles.map((c) => ({
+    time: c.time,
+    value: Math.max(0.00000001, Math.abs(c.close - c.open)),
+    color: c.close >= c.open ? '#10b981' : '#ef4444'
+  }))
+}
+
+const initChart = () => {
+  if (!chartContainer.value) return
+  chart = createChart(chartContainer.value, {
+    layout: { background: { color: '#0f1115' }, textColor: '#cbd5e1' },
+    grid: {
+      vertLines: { color: '#1f2937' },
+      horzLines: { color: '#1f2937' }
+    },
+    crosshair: { mode: 1 },
+    rightPriceScale: { borderColor: '#30363d' },
+    timeScale: { borderColor: '#30363d', timeVisible: true, secondsVisible: false },
+    width: chartContainer.value.offsetWidth,
+    height: 360
+  })
+
+  candleSeries = chart.addCandlestickSeries({
+    upColor: '#10b981',
+    downColor: '#ef4444',
+    borderUpColor: '#10b981',
+    borderDownColor: '#ef4444',
+    wickUpColor: '#10b981',
+    wickDownColor: '#ef4444'
+  })
+
+  volumeSeries = chart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: '',
+    scaleMargins: { top: 0.85, bottom: 0 },
+    color: '#64748b'
+  })
+
+  chart.subscribeCrosshairMove((param) => {
+    if (!param.time) return
+    const price = param.seriesPrices.get(candleSeries)
+    if (!price) return
+    const close = price.close ?? price
+    crosshairPrice.value = Number(close).toFixed(6)
+    crosshairTime.value = new Date(Number(param.time) * 1000).toLocaleString()
+  })
+
+  // Responsive
+  let ro = null
+  if (window.ResizeObserver) {
+    ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width
+      if (!w) return
+      chart.applyOptions({ width: Math.floor(w) })
       chart.timeScale().fitContent()
-      console.log('Applied fitContent() - should fill chart width')
-    }, 200)
-    
-    const latest = fallbackData[fallbackData.length - 1]
-    currentPrice.value = latest.close.toFixed(6)
-    
-    // Set default crosshair to latest price
-    crosshairPrice.value = latest.close.toFixed(6)
-    crosshairTime.value = new Date(latest.time * 1000).toLocaleString()
-    
-  } catch (error) {
-    console.error('Error updating chart data:', error)
-  }
-}
-
-// Generate fallback data for candlestick chart (will look like a line when all green)
-const generateFallbackData = () => {
-  const basePrice = 0.004663
-  const data = []
-  const now = Math.floor(Date.now() / 1000)
-  
-  // Generate more data points to ensure chart can fill full width
-  const timeframes = {
-    '1H': { points: 60, interval: 60 },     // 1 minute intervals for 1 hour
-    '24H': { points: 96, interval: 900 },   // 15 minute intervals for 24 hours  
-    '7D': { points: 112, interval: 5400 },  // 1.5 hour intervals for 7 days
-    '30D': { points: 120, interval: 21600 }, // 6 hour intervals for 30 days
-    '1Y': { points: 104, interval: 302400 }  // 3.5 day intervals for 1 year
-  }
-  
-  const config = timeframes[selectedTimeframe.value] || timeframes['24H']
-  
-  for (let i = config.points - 1; i >= 0; i--) {
-    const time = now - (i * config.interval)
-    const variation = (Math.random() - 0.5) * 0.02 // ±1% variation
-    const price = basePrice * (1 + variation)
-    
-    // Make very thin candlesticks that look like a line
-    const tinyVariation = price * 0.001 // 0.1% variation for OHLC
-    data.push({
-      time: time,
-      open: price,
-      high: price + tinyVariation,
-      low: price - tinyVariation,
-      close: price
     })
+    ro.observe(chartContainer.value)
   }
-  
-  return data
+  onUnmounted(() => { ro?.disconnect(); chart?.remove() })
 }
 
-// Change timeframe
-const changeTimeframe = (newTimeframe) => {
-  selectedTimeframe.value = newTimeframe
-  updateChartData()
+const drawHighLowLines = (candles) => {
+  try { highLine && candleSeries.removePriceLine(highLine) } catch {}
+  try { lowLine && candleSeries.removePriceLine(lowLine) } catch {}
+  if (!candles?.length) return
+  const highs = candles.map((c) => c.high)
+  const lows = candles.map((c) => c.low)
+  const hi = Math.max(...highs)
+  const lo = Math.min(...lows)
+  highLine = candleSeries.createPriceLine({ price: hi, color: '#3b82f6', lineStyle: LineStyle.Dotted, axisLabelVisible: true, title: 'High' })
+  lowLine = candleSeries.createPriceLine({ price: lo, color: '#94a3b8', lineStyle: LineStyle.Dotted, axisLabelVisible: true, title: 'Low' })
 }
 
-// Real-time data simulation (since CIRX is not on major exchanges yet)
-let priceUpdateInterval = null;
+const updateChartData = async () => {
+  if (!candleSeries) return
+  try {
+    const candles = await fetchOHLC(selectedTimeframe.value)
+    candleSeries.setData(candles)
+    volumeSeries.setData(computeVolumeProxy(candles))
+    chart.timeScale().fitContent()
 
-const simulateRealTimeData = () => {
-  // Simulate price updates every 30 seconds
-  priceUpdateInterval = setInterval(() => {
-    if (!lineSeries) return;
-    
-    try {
-      // Get the last data point
-      const currentData = lineSeries.data();
-      if (!currentData || currentData.length === 0) return;
-      
-      const lastPoint = currentData[currentData.length - 1];
-      const now = Math.floor(Date.now() / 1000);
-      
-      // Create a new data point with slight price variation (±0.5%)
-      const variation = (Math.random() - 0.5) * 0.01; // ±0.5%
-      const newPrice = lastPoint.close * (1 + variation);
-      
-      // Create OHLC data for candlestick series (thin line-like candle)
-      const tinyVariation = newPrice * 0.001 // 0.1% variation for OHLC
-      const newPoint = {
-        time: now,
-        open: newPrice,
-        high: newPrice + tinyVariation,
-        low: newPrice - tinyVariation,
-        close: newPrice
-      };
-      
-      // Update the chart with new data
-      lineSeries.update(newPoint);
-      
-      // Update current price display
-      currentPrice.value = newPrice.toFixed(6);
-      
-      console.log('Simulated price update:', newPoint);
-    } catch (error) {
-      console.error('Error in price simulation:', error);
-    }
-  }, 30000); // Update every 30 seconds
-};
+    const last = candles[candles.length - 1]
+    currentPrice.value = Number(last.close).toFixed(6)
+    dayHigh.value = Number(Math.max(...candles.slice(-96).map((c) => c.high))).toFixed(6)
+    dayLow.value = Number(Math.min(...candles.slice(-96).map((c) => c.low))).toFixed(6)
 
-// Initialize chart when component mounts
-onMounted(() => {
-  nextTick(() => {
-    initChart();
-    simulateRealTimeData(); // Start price simulation
+    drawHighLowLines(candles)
+  } catch (e) {
+    console.warn('Chart data load failed, falling back to no-op:', e)
+  }
+}
 
-    // ResizeObserver will handle width automatically
-    console.log('Chart initialized - ResizeObserver will handle responsive width')
+const changeTimeframe = (tf) => {
+  selectedTimeframe.value = tf
+}
 
-    onUnmounted(() => {
-      clearInterval(priceUpdateInterval);
-    });
-  });
-});
+// React when timeframe changes
+watch(selectedTimeframe, async () => {
+  await updateChartData()
+})
+
+// Initialize
+onMounted(async () => {
+  nextTick(async () => {
+    initChart()
+    await updateChartData()
+  })
+})
 </script>

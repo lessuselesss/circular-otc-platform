@@ -284,22 +284,29 @@
                 </div>
               </div>
 
-              <!-- OTC Discount Tier Info (moved from bottom of form) -->
-              <div v-if="activeTab === 'otc'" class="mt-3">
-                <div v-if="selectedTier" class="bg-purple-500/5 border border-purple-500/20 rounded-lg p-3 hover:border-purple-500/40 transition-all duration-300">
-                  <h4 class="text-xs font-medium mb-2 text-purple-400">Active OTC Discount Tier</h4>
-                  <div class="flex justify-between items-center text-xs">
-                    <span class="text-gray-400">
-                      Min: ${{ formatAmount(selectedTier.minAmount) }}
-                    </span>
-                    <div class="text-right">
-                      <span class="font-medium text-purple-400">{{ selectedTier.discount }}%</span>
-                      <span class="text-gray-500 ml-1">{{ selectedTier.vestingMonths || otcConfig.vestingPeriod.months }}mo</span>
+              <!-- OTC Discount Tiers (show full range, highlight active) -->
+              <div v-if="activeTab === 'otc'" class="mt-3 space-y-2">
+                <h4 class="text-xs font-medium text-purple-300">OTC Discount Tiers</h4>
+                <div class="grid grid-cols-1 gap-2">
+                  <div
+                    v-for="tier in discountTiers"
+                    :key="tier.minAmount"
+                    :class="[
+                      'flex items-center justify-between p-3 rounded-lg border transition-all duration-200',
+                      selectedTier && selectedTier.minAmount === tier.minAmount
+                        ? 'border-purple-500/60 bg-purple-500/5'
+                        : 'border-gray-600/30 hover:border-gray-500/40'
+                    ]"
+                  >
+                    <div class="text-xs text-gray-400">Min: ${{ formatAmount(tier.minAmount) }}</div>
+                    <div class="text-right text-xs">
+                      <span :class="selectedTier && selectedTier.minAmount === tier.minAmount ? 'text-purple-400 font-medium' : 'text-gray-300 font-medium'">{{ tier.discount }}%</span>
+                      <span class="text-gray-500 ml-1">{{ tier.vestingMonths || otcConfig.vestingPeriod.months }}mo</span>
                     </div>
                   </div>
                 </div>
-                <div v-else-if="inputAmount && parseFloat(inputAmount) > 0" class="bg-gray-800/30 border border-gray-600/30 rounded-lg p-3 text-center">
-                  <p class="text-xs text-gray-400">Please enter a valid amount to see discount tier</p>
+                <div v-if="currentUsd > 0 && (!selectedTier || currentUsd < lowestTierMin)" class="bg-gray-800/30 border border-gray-600/30 rounded-lg p-3 text-center">
+                  <p class="text-xs text-gray-400">Below the minimum for the lowest tier. Minimum: ${{ formatAmount(lowestTierMin) }}</p>
                 </div>
               </div>
             </div>
@@ -479,6 +486,10 @@ const {
   executeSwap
 } = useWallet()
 
+const walletStore = useWalletStore()
+onMounted(async () => {
+  try { await walletStore.initialize() } catch {}
+})
 
 // Reactive state
 const activeTab = ref('liquid')
@@ -609,6 +620,11 @@ const inputBalance = computed(() => {
   return getTokenBalance(tokenSymbol)
 })
 
+// ETH balance for gas gating (0 when not connected)
+const awaitedEthBalance = computed(() => {
+  try { return getTokenBalance('ETH') } catch { return '0.0' }
+})
+
 const displayCirxBalance = computed(() => {
   return isConnected.value ? getTokenBalance('CIRX') : '0.0'
 })
@@ -689,6 +705,18 @@ const fetchOtcConfig = async () => {
 // Use dynamic discount tiers
 const discountTiers = computed(() => otcConfig.value.discountTiers)
 
+// Helpers for tier UI
+const currentUsd = computed(() => {
+  const amt = parseFloat(inputAmount.value) || 0
+  const px = livePrices.value[inputToken.value] || 0
+  return +(amt * px).toFixed(2)
+})
+const lowestTierMin = computed(() => {
+  const tiers = discountTiers.value || []
+  if (!tiers.length) return 0
+  return Math.min(...tiers.map(t => t.minAmount))
+})
+
 // Computed properties  
 const canPurchase = computed(() => {
   // Basic requirements
@@ -713,7 +741,21 @@ const canPurchase = computed(() => {
     return inputAmountNum <= availableBalance
   })()
   
-  return hasAmount && notLoading && hasValidRecipient && hasSufficientBalance
+  // Network fee gating
+  const ethBal = parseFloat(awaitedEthBalance.value)
+  const feeEth = parseFloat(networkFee.value.eth)
+  const tokenBal = parseFloat(inputBalance.value)
+
+  let hasSufficientForFees = true
+  if (walletStore.isConnected) {
+    if (inputToken.value === 'ETH') {
+      hasSufficientForFees = ethBal >= ((parseFloat(inputAmount.value) || 0) + (feeEth || 0))
+    } else {
+      hasSufficientForFees = tokenBal >= (parseFloat(inputAmount.value) || 0) && ethBal >= (feeEth || 0)
+    }
+  }
+
+  return hasAmount && notLoading && hasValidRecipient && hasSufficientBalance && hasSufficientForFees
 })
 
 // Calculate discount based on USD amount and return both percent and tier
@@ -961,6 +1003,7 @@ const setMaxAmount = () => {
 
 const selectToken = (token) => {
   inputToken.value = token
+  try { useWalletStore().setSelectedToken(token) } catch {}
   showTokenDropdown.value = false
   // Reset input when token changes
   inputAmount.value = ''
@@ -1007,9 +1050,9 @@ const formatAmount = (amount) => {
 const handleSwap = async () => {
   if (!canPurchase.value) return
   
-  // Check wallet connection
-  if (!isConnected.value) {
-    alert('Please connect your wallet first')
+  // Check wallet connection or recipient fallback
+  if (!isConnected.value && !recipientAddress.value) {
+    try { useWalletStore().openWalletModal() } catch {}
     return
   }
   

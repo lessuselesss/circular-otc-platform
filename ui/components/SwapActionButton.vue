@@ -24,42 +24,18 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  canPurchase: {
-    type: Boolean,
-    required: true
-  },
-  loading: {
-    type: Boolean,
-    default: false
-  },
-  loadingText: {
-    type: String,
-    default: ''
-  },
-  activeTab: {
-    type: String,
-    required: true
-  },
-  walletConnected: {
-    type: Boolean,
-    required: true
-  },
-  quote: {
-    type: Object,
-    default: null
-  },
-  inputAmount: {
-    type: String,
-    default: ''
-  },
-  inputBalance: {
-    type: String,
-    default: '0'
-  },
-  inputToken: {
-    type: String,
-    default: 'ETH'
-  }
+  canPurchase: { type: Boolean, required: true },
+  loading: { type: Boolean, default: false },
+  loadingText: { type: String, default: '' },
+  activeTab: { type: String, required: true },
+  walletConnected: { type: Boolean, required: true },
+  quote: { type: Object, default: null },
+  inputAmount: { type: String, default: '' },
+  inputBalance: { type: String, default: '0' },
+  inputToken: { type: String, default: 'ETH' },
+  // New: balances for gating messages
+  ethBalance: { type: String, default: '0' },
+  networkFeeEth: { type: String, default: '0' }
 })
 
 const emit = defineEmits(['connect-wallet'])
@@ -79,43 +55,30 @@ const getButtonClasses = () => {
 
 // Button text based on state
 const getButtonText = () => {
-  if (!props.walletConnected) {
-    return 'Connect Wallet'
-  }
+  if (!props.walletConnected) return 'Connect Wallet'
 
   if (!props.canPurchase) {
-    // Check specific reasons why purchase is disabled
     const hasAmount = props.inputAmount && parseFloat(props.inputAmount) > 0
-    
-    if (!hasAmount) {
-      return 'Enter Amount'
+    if (!hasAmount) return 'Enter Amount'
+
+    // Show specific insufficient messages
+    const amountNum = parseFloat(props.inputAmount) || 0
+    const tokenBal = parseFloat(props.inputBalance) || 0
+    const ethBal = parseFloat(props.ethBalance) || 0
+    const feeEth = parseFloat(props.networkFeeEth) || 0
+
+    if (props.inputToken === 'ETH') {
+      if (ethBal < amountNum + feeEth) return 'Insufficient ETH (incl. gas)'
+    } else {
+      if (tokenBal < amountNum) return `Insufficient ${props.inputToken}`
+      if (ethBal < feeEth) return 'Insufficient ETH for gas'
     }
-    
-    // Check for insufficient balance (only if wallet connected and has amount)
-    if (props.walletConnected && hasAmount) {
-      const inputAmountNum = parseFloat(props.inputAmount) || 0
-      const balanceNum = parseFloat(props.inputBalance) || 0
-      
-      // For ETH, reserve gas fees (0.01 ETH)
-      const gasReserve = props.inputToken === 'ETH' ? 0.01 : 0
-      const availableBalance = Math.max(0, balanceNum - gasReserve)
-      
-      if (inputAmountNum > availableBalance) {
-        return 'Insufficient Balance'
-      }
-    }
-    
+
     return 'Enter Amount'
   }
 
-  if (props.activeTab === 'liquid') {
-    return 'Buy Liquid CIRX'
-  } else {
-    const discount = props.quote?.discount
-    if (discount && discount > 0) {
-      return `Buy OTC CIRX (${discount}% Bonus)`
-    }
-    return 'Buy OTC CIRX'
-  }
+  if (props.activeTab === 'liquid') return 'Buy Liquid CIRX'
+  const discount = props.quote?.discount
+  return discount && discount > 0 ? `Buy OTC CIRX (${discount}% Bonus)` : 'Buy OTC CIRX'
 }
 </script>

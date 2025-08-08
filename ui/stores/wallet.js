@@ -11,6 +11,12 @@ export const useWalletStore = defineStore('wallet', () => {
   const globalError = ref(null)
   const lastActivity = ref(Date.now())
 
+  // Selected token for balance display (header & elsewhere)
+  const selectedToken = ref('ETH')
+
+  // Wallet modal visibility (central control)
+  const isWalletModalOpen = ref(false)
+
   // MetaMask state
   const metaMaskWallet = ref(null)
   const metaMaskConnected = ref(false)
@@ -22,6 +28,17 @@ export const useWalletStore = defineStore('wallet', () => {
   // Connection states
   const isConnecting = ref(false)
   const isConnected = computed(() => metaMaskConnected.value || phantomConnected.value)
+
+  // Connection control
+  const connectTimeoutMs = 15000
+  let connectCancelled = false
+  const cancelConnect = () => {
+    connectCancelled = true
+    isConnecting.value = false
+    if (!isConnected.value) {
+      globalError.value = 'Connection cancelled'
+    }
+  }
 
   // Active wallet information
   const activeWallet = computed(() => {
@@ -68,6 +85,36 @@ export const useWalletStore = defineStore('wallet', () => {
   // Error aggregation
   const currentError = computed(() => globalError.value)
 
+  // Persistence helpers (localStorage)
+  const STORAGE_KEY = 'walletPreference'
+  const saveConnectionPreference = (walletType, chain) => {
+    try {
+      const pref = JSON.stringify({ walletType, chain })
+      if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, pref)
+    } catch {}
+  }
+  const getConnectionPreference = () => {
+    try {
+      if (typeof window === 'undefined') return null
+      const raw = localStorage.getItem(STORAGE_KEY)
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  }
+  const clearConnectionPreference = () => {
+    try {
+      if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEY)
+    } catch {}
+  }
+
+  const withTimeout = (promise, ms, label = 'operation') => {
+    return new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error(`${label} timed out`)), ms)
+      promise.then((v) => { clearTimeout(t); resolve(v) }).catch((e) => { clearTimeout(t); reject(e) })
+    })
+  }
+
   // Connection methods
   const connectWallet = async (walletType, chain = 'ethereum') => {
     if (walletType === 'metamask' && chain === 'ethereum') {
@@ -85,20 +132,21 @@ export const useWalletStore = defineStore('wallet', () => {
   const connectMetaMask = async () => {
     try {
       isConnecting.value = true
+      connectCancelled = false
       globalError.value = null
 
-      // Import MetaMask composable dynamically
       const { useMetaMask } = await import('../composables/useMetaMask.js')
       const metaMask = useMetaMask()
       
-      const success = await metaMask.connect()
+      const success = await withTimeout(metaMask.connect(), connectTimeoutMs, 'MetaMask connection')
+      if (connectCancelled) throw new Error('Connection cancelled')
       
       if (success) {
         metaMaskWallet.value = metaMask
         metaMaskConnected.value = true
         activeChain.value = 'ethereum'
         updateActivity()
-        
+        saveConnectionPreference('metamask', 'ethereum')
         console.log('✅ MetaMask connected successfully')
         return { success: true, wallet: metaMask }
       } else {
@@ -117,9 +165,9 @@ export const useWalletStore = defineStore('wallet', () => {
   const connectPhantom = async () => {
     try {
       isConnecting.value = true
+      connectCancelled = false
       globalError.value = null
 
-      // Create Phantom composable (simplified for now)
       const phantom = {
         account: ref(null),
         isConnected: ref(false),
@@ -127,29 +175,27 @@ export const useWalletStore = defineStore('wallet', () => {
           if (typeof window === 'undefined' || !window.solana?.isPhantom) {
             throw new Error('Phantom wallet not found')
           }
-          
           const response = await window.solana.connect()
           phantom.account.value = response.publicKey.toString()
           phantom.isConnected.value = true
           return true
         },
         disconnect: async () => {
-          if (window.solana) {
-            await window.solana.disconnect()
-          }
+          if (window.solana) { await window.solana.disconnect() }
           phantom.account.value = null
           phantom.isConnected.value = false
         }
       }
       
-      const success = await phantom.connect()
+      const success = await withTimeout(phantom.connect(), connectTimeoutMs, 'Phantom connection')
+      if (connectCancelled) throw new Error('Connection cancelled')
       
       if (success) {
         phantomWallet.value = phantom
         phantomConnected.value = true
         activeChain.value = 'solana'
         updateActivity()
-        
+        saveConnectionPreference('phantom', 'solana')
         console.log('✅ Phantom connected successfully')
         return { success: true, wallet: phantom }
       } else {
@@ -180,23 +226,27 @@ export const useWalletStore = defineStore('wallet', () => {
         console.log('✅ Phantom disconnected successfully')
       }
       
-      // Reset active chain only if no wallets are connected
       if (!metaMaskConnected.value && !phantomConnected.value) {
         activeChain.value = null
       }
       
       globalError.value = null
-      
-      if (clearPreference) {
-        clearConnectionPreference()
-      }
+      if (clearPreference) clearConnectionPreference()
     } catch (error) {
       console.error('❌ Failed to disconnect wallet:', error)
       globalError.value = error.message || 'Failed to disconnect wallet'
       throw error
     }
   }
-  
+
+  // Hard reset (disconnect, clear pref, cleanup state)
+  const hardReset = async () => {
+    try {
+      await disconnectWallet(true)
+    } catch {}
+    cleanup()
+  }
+
   // Disconnect specific wallet type
   const disconnectSpecificWallet = async (walletType) => {
     try {
@@ -212,7 +262,6 @@ export const useWalletStore = defineStore('wallet', () => {
         console.log('✅ Phantom disconnected specifically')
       }
       
-      // Update active chain if current wallet was disconnected
       if (activeWallet.value?.type === walletType) {
         if (metaMaskConnected.value) {
           activeChain.value = 'ethereum'
@@ -270,15 +319,45 @@ export const useWalletStore = defineStore('wallet', () => {
   const attemptAutoReconnect = async () => {
     try {
       let reconnected = false
-      
-      // Check if MetaMask was previously connected
-      if (typeof window !== 'undefined' && window.ethereum) {
+
+      const pref = getConnectionPreference()
+      if (pref?.walletType === 'metamask' && typeof window !== 'undefined' && window.ethereum) {
+        try {
+          const { useMetaMask } = await import('../composables/useMetaMask.js')
+          const metaMask = useMetaMask()
+          await metaMask.checkConnection()
+          if (metaMask.isConnected.value) {
+            metaMaskWallet.value = metaMask
+            metaMaskConnected.value = true
+            activeChain.value = 'ethereum'
+            updateActivity()
+            console.log('✅ MetaMask auto-reconnected via preference')
+            reconnected = true
+          }
+        } catch {}
+      } else if (pref?.walletType === 'phantom' && typeof window !== 'undefined' && window.solana?.isPhantom) {
+        try {
+          const response = await window.solana.connect({ onlyIfTrusted: true })
+          if (response.publicKey) {
+            const phantom = {
+              account: ref(response.publicKey.toString()),
+              isConnected: ref(true),
+              disconnect: async () => { await window.solana.disconnect() }
+            }
+            phantomWallet.value = phantom
+            phantomConnected.value = true
+            activeChain.value = 'solana'
+            updateActivity()
+            console.log('✅ Phantom auto-reconnected via preference')
+            reconnected = true
+          }
+        } catch {}
+      }
+
+      if (!reconnected && typeof window !== 'undefined' && window.ethereum) {
         const { useMetaMask } = await import('../composables/useMetaMask.js')
         const metaMask = useMetaMask()
-        
-        // Check if already connected
         await metaMask.checkConnection()
-        
         if (metaMask.isConnected.value) {
           metaMaskWallet.value = metaMask
           metaMaskConnected.value = true
@@ -288,36 +367,26 @@ export const useWalletStore = defineStore('wallet', () => {
           reconnected = true
         }
       }
-      
-      // Check if Phantom was previously connected
-      if (typeof window !== 'undefined' && window.solana?.isPhantom) {
+
+      if (!reconnected && typeof window !== 'undefined' && window.solana?.isPhantom) {
         try {
-          // Phantom auto-connects if previously authorized
           const response = await window.solana.connect({ onlyIfTrusted: true })
           if (response.publicKey) {
             const phantom = {
               account: ref(response.publicKey.toString()),
               isConnected: ref(true),
-              disconnect: async () => {
-                await window.solana.disconnect()
-              }
+              disconnect: async () => { await window.solana.disconnect() }
             }
-            
             phantomWallet.value = phantom
             phantomConnected.value = true
-            if (!reconnected) { // Don't override MetaMask if it's already connected
-              activeChain.value = 'solana'
-            }
+            if (!reconnected) activeChain.value = 'solana'
             updateActivity()
             console.log('✅ Phantom auto-reconnected')
             reconnected = true
           }
-        } catch (error) {
-          // Phantom auto-connect failed, which is normal if user hasn't previously connected
-          console.log('Phantom auto-connect not available (user not previously connected)')
-        }
+        } catch {}
       }
-      
+
       return reconnected
     } catch (error) {
       console.error('❌ Auto-reconnect failed:', error)
@@ -327,63 +396,48 @@ export const useWalletStore = defineStore('wallet', () => {
 
   // Initialization (simplified)
   const initialize = async () => {
-    if (isInitialized.value) {
-      return
-    }
-    console.log('✅ Wallet store initialized (wallet functionality disabled)')
+    if (isInitialized.value) return
+    console.log('✅ Wallet store initialized')
     isInitialized.value = true
+    try { await attemptAutoReconnect() } catch {}
   }
 
   // Error management
-  const clearErrors = () => {
-    globalError.value = null
-  }
-
-  const clearError = () => {
-    clearErrors()
-  }
+  const clearErrors = () => { globalError.value = null }
+  const clearError = () => { clearErrors() }
 
   // Activity tracking
-  const updateActivity = () => {
-    lastActivity.value = Date.now()
-  }
+  const updateActivity = () => { lastActivity.value = Date.now() }
 
-  // Persistence helpers (simplified to no-ops)
-  const saveConnectionPreference = (walletType, chain) => {}
-  const getConnectionPreference = () => null
-  const clearConnectionPreference = () => {}
+  // Modal controls
+  const openWalletModal = () => { isWalletModalOpen.value = true }
+  const closeWalletModal = () => { isWalletModalOpen.value = false }
+
+  // Token selection setter
+  const setSelectedToken = (tokenSymbol) => { selectedToken.value = tokenSymbol }
 
   // Utility functions (simplified)
   const getWalletIcon = (walletType, chain) => '/icons/wallet-generic.svg'
 
   const validateWalletForToken = (tokenSymbol) => {
-    // Ethereum tokens require MetaMask
     const ethereumTokens = ['ETH', 'USDC', 'USDT', 'CIRX']
-    
     if (ethereumTokens.includes(tokenSymbol)) {
       if (!metaMaskConnected.value) {
         throw new Error(`${tokenSymbol} requires MetaMask wallet connection`)
       }
       return true
     }
-    
-    // Solana tokens are disabled for now
     const solanaTokens = ['SOL', 'USDC_SOL']
     if (solanaTokens.includes(tokenSymbol)) {
       throw new Error(`${tokenSymbol} trading is currently disabled`)
     }
-    
     throw new Error(`Unsupported token: ${tokenSymbol}`)
   }
 
   // Cleanup
   const cleanup = () => {
-    if (metaMaskWallet.value) {
-      metaMaskWallet.value.cleanup?.()
-    }
-    if (phantomWallet.value) {
-      phantomWallet.value.disconnect?.()
-    }
+    if (metaMaskWallet.value) { metaMaskWallet.value.cleanup?.() }
+    if (phantomWallet.value) { phantomWallet.value.disconnect?.() }
     metaMaskWallet.value = null
     metaMaskConnected.value = false
     phantomWallet.value = null
@@ -391,6 +445,7 @@ export const useWalletStore = defineStore('wallet', () => {
     activeChain.value = null
     globalError.value = null
     isInitialized.value = false
+    isConnecting.value = false
   }
 
   // Return store interface
@@ -404,6 +459,13 @@ export const useWalletStore = defineStore('wallet', () => {
     availableWallets,
     currentError,
     lastActivity,
+
+    // Selected token & modal
+    selectedToken,
+    setSelectedToken,
+    isWalletModalOpen,
+    openWalletModal,
+    closeWalletModal,
 
     // Wallet instances
     metaMaskWallet,
@@ -421,6 +483,8 @@ export const useWalletStore = defineStore('wallet', () => {
     clearError,
     validateWalletForToken,
     cleanup,
+    cancelConnect,
+    hardReset,
 
     // Utilities
     updateActivity,

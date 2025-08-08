@@ -3,7 +3,7 @@
     <!-- Generic Connect Wallet Button -->
     <button
       v-if="!isConnected"
-      @click="openWalletModal"
+      @click="openModal"
       class="px-4 py-2 bg-circular-primary text-gray-900 rounded-lg font-medium hover:bg-circular-primary-hover transition-colors flex items-center gap-2"
       :disabled="isConnecting"
     >
@@ -42,7 +42,7 @@
           <span class="text-sm font-medium text-white">{{ shortAddress }}</span>
         </div>
         <div class="text-xs text-gray-400">
-          {{ balance }} {{ connectedWallet === 'phantom' ? 'SOL' : 'ETH' }}
+          {{ headerBalance }} {{ selectedTokenForHeader }}
         </div>
       </div>
       
@@ -60,9 +60,9 @@
 
     <!-- Wallet Selection Modal -->
     <div
-      v-if="showWalletModal"
+      v-if="walletStore.isWalletModalOpen"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 min-h-screen"
-      @click="closeWalletModal"
+      @click="closeModal"
     >
       <div
         class="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md mx-4 my-8"
@@ -72,7 +72,7 @@
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-xl font-semibold text-white">Connect Wallet</h3>
           <button
-            @click="closeWalletModal"
+            @click="closeModal"
             class="text-gray-400 hover:text-white transition-colors"
           >
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
@@ -81,7 +81,16 @@
           </button>
         </div>
 
-        <!-- Wallet Options -->
+        <!-- Status / Controls -->
+        <div v-if="isConnecting" class="mb-4 flex items-center justify-between text-sm">
+          <span class="text-gray-400">Connecting...</span>
+          <div class="flex gap-2">
+            <button class="px-2 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 text-white" @click="walletStore.cancelConnect()">Cancel</button>
+            <button class="px-2 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 text-white" @click="walletStore.hardReset()">Reset</button>
+          </div>
+        </div>
+
+        <!-- Wallet Options (MetaMask & Phantom) -->
         <div class="space-y-3">
           <!-- MetaMask Option -->
           <div 
@@ -93,27 +102,18 @@
             @click="handleWalletClick('metamask')"
           >
             <div class="flex items-center gap-3">
-              <!-- MetaMask Icon -->
               <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                  <path d="M22.46 12.58l-.86-2.89L20.05 4.47l-5.87 4.34 2.25 1.67 1.96-1.45.78 2.62L22.46 12.58zM9.59 8.81l-5.87-4.34L2.14 9.69l-.86 2.89 3.29-.93.78-2.62 1.96 1.45L9.59 8.81z"/>
-                </svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M22.46 12.58l-.86-2.89L20.05 4.47l-5.87 4.34 2.25 1.67 1.96-1.45.78 2.62L22.46 12.58zM9.59 8.81l-5.87-4.34L2.14 9.69l-.86 2.89 3.29-.93.78-2.62 1.96 1.45L9.59 8.81z"/></svg>
               </div>
               <div>
                 <div class="font-medium text-white">MetaMask</div>
-                <div class="text-sm text-gray-400">
-                  {{ isMetaMaskAvailable ? 'Available' : 'Not installed' }}
-                </div>
+                <div class="text-sm text-gray-400">{{ isMetaMaskAvailable ? 'Available' : 'Not installed' }}</div>
               </div>
             </div>
             <div class="flex items-center">
               <div v-if="isConnecting && connectingWallet === 'metamask'" class="w-4 h-4 border-2 border-circular-primary border-t-transparent rounded-full animate-spin"></div>
-              <svg v-else-if="isMetaMaskAvailable" width="16" height="16" fill="currentColor" class="text-green-400" viewBox="0 0 24 24">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-              </svg>
-              <svg v-else width="16" height="16" fill="currentColor" class="text-gray-500" viewBox="0 0 24 24">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-              </svg>
+              <svg v-else-if="isMetaMaskAvailable" width="16" height="16" fill="currentColor" class="text-green-400" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <svg v-else width="16" height="16" fill="currentColor" class="text-gray-500" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
             </div>
           </div>
 
@@ -127,72 +127,42 @@
             @click="handleWalletClick('phantom')"
           >
             <div class="flex items-center gap-3">
-              <!-- Phantom Icon -->
               <div class="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
               </div>
               <div>
                 <div class="font-medium text-white">Phantom</div>
-                <div class="text-sm text-gray-400">
-                  {{ isPhantomAvailable ? 'Available' : 'Not installed' }}
-                </div>
+                <div class="text-sm text-gray-400">{{ isPhantomAvailable ? 'Available' : 'Not installed' }}</div>
               </div>
             </div>
             <div class="flex items-center">
               <div v-if="isConnecting && connectingWallet === 'phantom'" class="w-4 h-4 border-2 border-circular-primary border-t-transparent rounded-full animate-spin"></div>
-              <svg v-else-if="isPhantomAvailable" width="16" height="16" fill="currentColor" class="text-green-400" viewBox="0 0 24 24">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-              </svg>
-              <svg v-else width="16" height="16" fill="currentColor" class="text-gray-500" viewBox="0 0 24 24">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-              </svg>
+              <svg v-else-if="isPhantomAvailable" width="16" height="16" fill="currentColor" class="text-green-400" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <svg v-else width="16" height="16" fill="currentColor" class="text-gray-500" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
             </div>
           </div>
 
-          <!-- WalletConnect Option -->
-          <div 
-            class="flex items-center justify-between p-4 border border-gray-700 rounded-lg hover:border-gray-600 transition-colors cursor-pointer"
-            :class="{
-              'bg-gray-800/50': isConnecting && connectingWallet === 'walletconnect'
-            }"
-            @click="handleWalletClick('walletconnect')"
-          >
+          <!-- WalletConnect (disabled/coming soon) -->
+          <div class="p-4 border border-gray-800 rounded-lg flex items-center justify-between opacity-50 cursor-not-allowed">
             <div class="flex items-center gap-3">
-              <!-- WalletConnect Icon -->
-              <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
+              <div class="w-8 h-8 rounded-lg bg-blue-500/40 flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
               </div>
               <div>
                 <div class="font-medium text-white">WalletConnect</div>
-                <div class="text-sm text-gray-400">Connect via QR code</div>
+                <div class="text-sm text-gray-500">Coming soon</div>
               </div>
-            </div>
-            <div class="flex items-center">
-              <div v-if="isConnecting && connectingWallet === 'walletconnect'" class="w-4 h-4 border-2 border-circular-primary border-t-transparent rounded-full animate-spin"></div>
-              <svg v-else width="16" height="16" fill="currentColor" class="text-blue-400" viewBox="0 0 24 24">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-              </svg>
             </div>
           </div>
         </div>
 
         <!-- Modal Footer -->
-        <div class="mt-6 text-center">
-          <p class="text-sm text-gray-400">
-            New to Ethereum wallets? 
-            <a 
-              href="https://ethereum.org/en/wallets/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              class="text-circular-primary hover:text-circular-primary-hover transition-colors"
-            >
-              Learn more
-            </a>
-          </p>
+        <div class="mt-6 flex items-center justify-between">
+          <p class="text-sm text-gray-400">New to wallets? <a href="https://ethereum.org/en/wallets/" target="_blank" rel="noopener" class="text-circular-primary hover:text-circular-primary-hover">Learn more</a></p>
+          <div class="flex gap-2">
+            <button class="px-3 py-1.5 text-xs rounded bg-gray-800 hover:bg-gray-700 text-white" @click="walletStore.hardReset()">Hard Reset</button>
+            <button class="px-3 py-1.5 text-xs rounded bg-gray-800 hover:bg-gray-700 text-white" @click="walletStore.clearError()" v-if="error">Clear Error</button>
+          </div>
         </div>
       </div>
     </div>
@@ -248,11 +218,15 @@ const shortAddress = computed(() => {
   const addr = walletStore.activeWallet.address
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`
 })
-const balance = computed(() => {
-  if (connectedWallet.value === 'metamask' && walletStore.metaMaskWallet) {
-    return walletStore.metaMaskWallet.balance?.value || '0.0000'
+
+// Selected token balance for header
+const selectedTokenForHeader = computed(() => walletStore.selectedToken || 'ETH')
+const headerBalance = computed(() => {
+  try {
+    return wallet.getTokenBalance(selectedTokenForHeader.value)
+  } catch {
+    return '0.0'
   }
-  return '0.0000'
 })
 
 // Check wallet availability
@@ -273,70 +247,37 @@ const isOnSupportedChain = computed(() => {
   return true
 })
 
-// Modal state
-const showWalletModal = ref(false)
+// Modal state (centralized)
 const connectingWallet = ref(null)
-
-// Modal handlers
-const openWalletModal = () => {
-  showWalletModal.value = true
-}
-
-const closeWalletModal = () => {
-  showWalletModal.value = false
-  connectingWallet.value = null
-}
+const openModal = () => walletStore.openWalletModal()
+const closeModal = () => walletStore.closeWalletModal()
 
 // Wallet connection handlers
 const handleWalletClick = async (walletType) => {
-  // Check if wallet is available
   const isAvailable = getWalletAvailability(walletType)
-  
   if (!isAvailable.available) {
-    // Open installation page if wallet is not available
     window.open(isAvailable.installUrl, '_blank')
     return
   }
-  
   try {
     connectingWallet.value = walletType
-    
-    // Ensure single wallet connection - disconnect others first
-    if (isConnected.value) {
-      await walletStore.disconnectWallet()
-    }
-    
-    // Connect to the selected wallet
+    if (isConnected.value) await walletStore.disconnectWallet(false)
     await connectWallet(walletType)
-    
-    // Close modal on successful connection
-    closeWalletModal()
+    closeModal()
   } catch (error) {
     console.error(`${walletType} connection failed:`, error)
-    // Error is already stored in walletStore.currentError
   } finally {
     connectingWallet.value = null
   }
 }
 
-// Get wallet availability and installation URL
+// Availability metadata
 const getWalletAvailability = (walletType) => {
   switch (walletType) {
     case 'metamask':
-      return {
-        available: isMetaMaskAvailable.value,
-        installUrl: 'https://metamask.io/download/'
-      }
+      return { available: isMetaMaskAvailable.value, installUrl: 'https://metamask.io/download/' }
     case 'phantom':
-      return {
-        available: isPhantomAvailable.value,
-        installUrl: 'https://phantom.app/download'
-      }
-    case 'walletconnect':
-      return {
-        available: true, // WalletConnect is always "available" as it's a protocol
-        installUrl: 'https://walletconnect.com/'
-      }
+      return { available: isPhantomAvailable.value, installUrl: 'https://phantom.app/download' }
     default:
       return { available: false, installUrl: '' }
   }
@@ -351,76 +292,39 @@ const connectWallet = async (walletType) => {
     case 'phantom':
       await walletStore.connectWallet('phantom', 'solana')
       break
-    case 'walletconnect':
-      // WalletConnect implementation (placeholder for now)
-      console.log('WalletConnect integration coming soon')
-      throw new Error('WalletConnect not yet implemented')
     default:
       throw new Error(`Unknown wallet type: ${walletType}`)
   }
 }
 
 const handleDisconnect = async () => {
-  try {
-    await walletStore.disconnectWallet()
-  } catch (error) {
-    console.error('Disconnect failed:', error)
-  }
+  try { await walletStore.disconnectWallet() } catch (e) { console.error('Disconnect failed:', e) }
 }
 
 const switchToMainnet = async () => {
-  try {
-    await walletStore.switchChain(1) // Ethereum mainnet
-  } catch (error) {
-    console.error('Network switch failed:', error)
-  }
+  try { await walletStore.switchChain(1) } catch (e) { console.error('Network switch failed:', e) }
 }
 
 const clearError = () => {
   walletStore.clearError()
 }
 
-// State change monitoring for single wallet enforcement
+// Single wallet enforcement remains
 const enforceeSingleWallet = () => {
-  // Watch for wallet state changes and ensure only one is connected
   const connectedWallets = []
-  
-  if (walletStore.metaMaskWallet?.isConnected?.value) {
-    connectedWallets.push('metamask')
-  }
-  if (walletStore.phantomWallet?.isConnected?.value) {
-    connectedWallets.push('phantom')
-  }
-  
-  // If multiple wallets are connected, disconnect all but the most recent
+  if (walletStore.metaMaskWallet?.isConnected?.value) connectedWallets.push('metamask')
+  if (walletStore.phantomWallet?.isConnected?.value) connectedWallets.push('phantom')
   if (connectedWallets.length > 1) {
-    console.warn('Multiple wallets detected, enforcing single wallet policy')
-    // Keep the active wallet, disconnect others
     const activeWalletType = walletStore.activeWallet?.type
-    connectedWallets.forEach(async (walletType) => {
-      if (walletType !== activeWalletType) {
-        console.log(`Disconnecting ${walletType} to maintain single wallet connection`)
-        await walletStore.disconnectSpecificWallet(walletType)
-      }
-    })
+    connectedWallets.forEach(async (wt) => { if (wt !== activeWalletType) await walletStore.disconnectSpecificWallet(wt) })
   }
 }
 
-// Initialize wallet store on mount (without auto-reconnect)
 onMounted(async () => {
   try {
     await walletStore.initialize()
-    // Removed attemptAutoReconnect() to prevent unwanted popups
-    
-    // Enforce single wallet connection on initialization
     enforceeSingleWallet()
-    
-    // Set up watchers for state changes
-    watch([() => walletStore.metaMaskWallet?.isConnected?.value, () => walletStore.phantomWallet?.isConnected?.value], () => {
-      enforceeSingleWallet()
-    })
-  } catch (error) {
-    console.error('Wallet initialization failed:', error)
-  }
+    watch([() => walletStore.metaMaskWallet?.isConnected?.value, () => walletStore.phantomWallet?.isConnected?.value], () => enforceeSingleWallet())
+  } catch (e) { console.error('Wallet init failed:', e) }
 })
 </script>

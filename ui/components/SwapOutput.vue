@@ -34,29 +34,64 @@
       </div>
       
       <div class="absolute inset-y-0 right-0 flex items-center pr-4">
-        <!-- OTC Mode: Discount Tier Dropdown -->
+        <!-- Debug Info (dev mode only) -->
+        <div v-if="$nuxt.isDevMode" class="text-xs text-gray-500 mr-2">
+          Tab: {{ activeTab }}, Tiers: {{ discountTiers?.length || 0 }}
+        </div>
+        
+
+        <!-- OTC Mode: Discount Tier Dropdown (if available) -->
         <OtcDiscountDropdown
-          v-if="activeTab === 'otc'"
+          v-if="activeTab === 'otc' && discountTiers && discountTiers.length > 0"
           :discount-tiers="discountTiers"
           :selected-tier="selectedTier"
           :current-amount="quote?.usdValue || 0"
           @tier-changed="handleTierChange"
         />
         
-        <!-- Liquid Mode: Standard CIRX Token Display -->
+        <!-- Standard CIRX Token Display (always visible when dropdown is not shown) -->
         <div 
           v-else
-          class="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-700/50"
+          class="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-700/50 hover:bg-gray-700/70 transition-colors cursor-pointer"
+          role="button"
+          tabindex="0"
+          aria-label="CIRX token selector"
+          @click="handleTokenClick"
+          @keydown.enter="handleTokenClick"
+          @keydown.space.prevent="handleTokenClick"
         >
           <img 
             src="/cirx-icon.svg" 
             alt="CIRX"
-            class="w-5 h-5 rounded-full"
+            class="w-5 h-5 rounded-full flex-shrink-0"
             @error="handleImageError"
+            style="display: block;"
           />
           <span class="font-medium text-white text-sm">CIRX</span>
+          
+          <!-- Debug indicator to show when this element is visible -->
+          <div 
+            v-if="$nuxt.isDevMode"
+            class="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"
+            title="CIRX display is visible"
+          ></div>
+        </div>
+        
+        <!-- Fallback message if both conditions fail (dev mode) -->
+        <div 
+          v-if="$nuxt.isDevMode && activeTab === 'otc' && (!discountTiers || discountTiers.length === 0)"
+          class="text-xs text-yellow-400 px-2 py-1 bg-yellow-900/20 rounded"
+        >
+          OTC tiers loading...
         </div>
       </div>
+    </div>
+
+    <!-- OTC Discount Tier Summary -->
+    <div v-if="activeTab === 'otc' && selectedTier && quote && quote.cirxAmount && quote.cirxAmount !== '0'" class="mt-2">
+      <span class="text-sm text-gray-400">
+        {{ formatCirxAmount(quote.cirxAmount) }} CIRX @ -{{ selectedTier.discount }}%/{{ selectedTier.vestingMonths || 6 }}mo vest
+      </span>
     </div>
 
     <!-- Estimated USD Value -->
@@ -114,7 +149,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:cirxAmount', 'cirx-changed', 'tier-changed'])
+const emit = defineEmits(['update:cirxAmount', 'cirx-changed', 'tier-changed', 'token-click'])
 
 // Format USD value
 const formatUsdValue = (amount) => {
@@ -125,6 +160,27 @@ const formatUsdValue = (amount) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(numAmount)
+}
+
+// Format CIRX amount with appropriate precision
+const formatCirxAmount = (amount) => {
+  const numAmount = parseFloat(amount)
+  if (isNaN(numAmount)) return '0'
+  
+  // Use different precision based on amount size
+  if (numAmount >= 1000) {
+    return new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 0
+    }).format(numAmount)
+  } else if (numAmount >= 100) {
+    return new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 1
+    }).format(numAmount)
+  } else {
+    return new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 2
+    }).format(numAmount)
+  }
 }
 
 const handleImageError = (event) => {
@@ -146,5 +202,11 @@ const handleCirxInput = (value) => {
 // Handle tier selection changes
 const handleTierChange = (tier) => {
   emit('tier-changed', tier)
+}
+
+// Handle token click (for future token selection)
+const handleTokenClick = () => {
+  console.log('CIRX token clicked - token selector could be implemented here')
+  emit('token-click', 'CIRX')
 }
 </script>

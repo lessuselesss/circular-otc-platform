@@ -239,6 +239,16 @@ export function useOtcConfig() {
     await fetchConfig()
   }
 
+  // Auto-initialize when composable is first used
+  // This ensures discountTiers are immediately available
+  if (process.client) {
+    // Only fetch on client-side to avoid SSR issues
+    initialize().catch(() => {
+      // Silently fall back to default config if fetch fails
+      console.log('Using default OTC configuration')
+    })
+  }
+
   return {
     // Reactive state
     otcConfig,

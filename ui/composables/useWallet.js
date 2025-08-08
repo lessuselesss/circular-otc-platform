@@ -3,6 +3,9 @@
  * Provides a unified interface for Ethereum and Solana wallets
  */
 
+import { computed } from 'vue'
+import { useWalletStore } from '~/stores/wallet'
+
 export const useWallet = () => {
   // Use the wallet store
   const walletStore = useWalletStore()

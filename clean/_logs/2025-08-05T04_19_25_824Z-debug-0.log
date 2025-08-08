@@ -1,0 +1,17 @@
+0 verbose cli /nix/store/pjr8jcds298brhwy1d3rmym9vayxhbfs-nodejs-22.16.0/bin/node /etc/profiles/per-user/lessuseless/bin/npm
+1 info using npm@10.9.2
+2 info using node@v22.16.0
+3 silly config load:file:/nix/store/pjr8jcds298brhwy1d3rmym9vayxhbfs-nodejs-22.16.0/lib/node_modules/npm/npmrc
+4 silly config load:file:/home/lessuseless/Projects/Orgs/Circular-Protocol/Autoswap/cirx-swap/.npmrc
+5 silly config load:file:/home/lessuseless/.npmrc
+6 silly config load:file:/nix/store/pjr8jcds298brhwy1d3rmym9vayxhbfs-nodejs-22.16.0/etc/npmrc
+7 verbose title npm
+8 verbose argv "--cache" "clean"
+9 verbose logfile logs-max:10 dir:/home/lessuseless/Projects/Orgs/Circular-Protocol/Autoswap/cirx-swap/clean/_logs/2025-08-05T04_19_25_824Z-
+10 verbose logfile /home/lessuseless/Projects/Orgs/Circular-Protocol/Autoswap/cirx-swap/clean/_logs/2025-08-05T04_19_25_824Z-debug-0.log
+11 verbose cwd /home/lessuseless/Projects/Orgs/Circular-Protocol/Autoswap/cirx-swap
+12 verbose os Linux 6.12.35
+13 verbose node v22.16.0
+14 verbose npm  v10.9.2
+15 verbose exit 1
+16 verbose code 1

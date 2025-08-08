@@ -128,7 +128,7 @@ export function useSwapLogic() {
    * Calculate swap quote with proper CIRX/USDT conversion
    * Enhanced with comprehensive NaN prevention
    */
-  const calculateQuote = (inputAmount, inputToken, isOTC = false) => {
+  const calculateQuote = (inputAmount, inputToken, isOTC = false, selectedTier = null) => {
     // Validate input amount
     const inputValue = validateNumber(inputAmount, 'input amount')
     if (inputValue === null || inputValue <= 0) {
@@ -168,7 +168,13 @@ export function useSwapLogic() {
     // Apply OTC discount with safe calculations
     let discount = 0
     if (isOTC) {
-      discount = safePercentage(calculateDiscount(totalUsdValue))
+      // Use selected tier discount if provided, otherwise calculate based on amount
+      if (selectedTier && selectedTier.discount) {
+        discount = safePercentage(selectedTier.discount)
+      } else {
+        discount = safePercentage(calculateDiscount(totalUsdValue))
+      }
+      
       if (discount > 0) {
         const multiplier = 1 + safeDiv(discount, 100)
         cirxReceived = safeMul(cirxReceived, multiplier)
@@ -208,7 +214,7 @@ export function useSwapLogic() {
    * Calculate reverse quote (CIRX amount -> input token amount) with proper price conversion
    * Enhanced with comprehensive NaN prevention
    */
-  const calculateReverseQuote = (cirxAmount, targetToken, isOTC = false) => {
+  const calculateReverseQuote = (cirxAmount, targetToken, isOTC = false, selectedTier = null) => {
     // Validate CIRX amount
     const cirxValue = validateNumber(cirxAmount, 'CIRX amount')
     if (cirxValue === null || cirxValue <= 0) {
@@ -236,7 +242,13 @@ export function useSwapLogic() {
     
     // Reverse the OTC discount calculation with safe operations
     if (isOTC) {
-      discount = safePercentage(calculateDiscount(usdValue))
+      // Use selected tier discount if provided, otherwise calculate based on amount
+      if (selectedTier && selectedTier.discount) {
+        discount = safePercentage(selectedTier.discount)
+      } else {
+        discount = safePercentage(calculateDiscount(usdValue))
+      }
+      
       if (discount > 0) {
         const discountMultiplier = 1 + safeDiv(discount, 100)
         if (discountMultiplier <= 0) {
@@ -268,7 +280,7 @@ export function useSwapLogic() {
     }
     
     // Calculate the forward quote for verification and additional data
-    const forwardQuote = calculateQuote(inputValue.toString(), targetToken, isOTC)
+    const forwardQuote = calculateQuote(inputValue.toString(), targetToken, isOTC, selectedTier)
     
     return {
       inputAmount: inputValue,
