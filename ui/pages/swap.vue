@@ -454,8 +454,8 @@
         <!-- Logo moved below the form -->
         <div class="mt-8 flex justify-center">
           <img 
-            src="/circular-logo.svg" 
-            alt="Circular Protocol" 
+            src="https://cdn.prod.website-files.com/65e472c0cd2f1bebcd7fcf73/65e483ab69e2314b250ed7dc_imageedit_1_8961069084.png" 
+            alt="CIRX Token" 
             class="h-12 w-auto opacity-60 hover:opacity-80 transition-opacity"
           />
         </div>
