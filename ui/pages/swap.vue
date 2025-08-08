@@ -106,7 +106,8 @@
               </div>
               <div class="relative token-input-container">
                 <input
-                  v-model="inputAmount"
+                  :value="inputAmount"
+                  @input="handleInputAmountChange($event.target.value)"
                   type="text"
                   inputmode="decimal"
                   pattern="[0-9]*\.?[0-9]*"
@@ -232,10 +233,12 @@
               </div>
               <div class="relative">
                 <input
-                  v-model="cirxAmount"
-                  @input="handleCirxAmountChange"
-                  type="number"
-                  step="any"
+                  :value="cirxAmount"
+                  @input="handleCirxAmountChange($event.target.value)"
+                  @keypress="validateNumberInput"
+                  type="text"
+                  inputmode="decimal"
+                  pattern="[0-9]*\.?[0-9]*"
                   placeholder="0.0"
                   :disabled="quoteLoading || reverseQuoteLoading"
                   style="-webkit-appearance: none; -moz-appearance: textfield;"
@@ -986,8 +989,54 @@ const useConnectedWallet = () => {
   recipientAddress.value = ''
 }
 
-// Track manual edits
-const handleCirxAmountChange = () => {
+// Format number input to prevent invalid formats like "05", "00.5", etc.
+const formatNumberInput = (value) => {
+  if (!value || value === '') return ''
+  
+  // Remove any non-numeric characters except decimal point
+  let cleaned = value.replace(/[^0-9.]/g, '')
+  
+  // Handle multiple decimal points - keep only the first one
+  const decimalCount = (cleaned.match(/\./g) || []).length
+  if (decimalCount > 1) {
+    const firstDecimalIndex = cleaned.indexOf('.')
+    cleaned = cleaned.slice(0, firstDecimalIndex + 1) + cleaned.slice(firstDecimalIndex + 1).replace(/\./g, '')
+  }
+  
+  // Handle leading zeros
+  if (cleaned.length > 1 && cleaned[0] === '0' && cleaned[1] !== '.') {
+    // Remove leading zeros unless it's "0." 
+    cleaned = cleaned.replace(/^0+/, '')
+    if (cleaned === '' || cleaned[0] === '.') {
+      cleaned = '0' + cleaned
+    }
+  }
+  
+  // Ensure we don't start with a decimal point
+  if (cleaned.startsWith('.')) {
+    cleaned = '0' + cleaned
+  }
+  
+  // Limit decimal places to 8 (reasonable for token amounts)
+  const parts = cleaned.split('.')
+  if (parts.length === 2 && parts[1].length > 8) {
+    cleaned = parts[0] + '.' + parts[1].slice(0, 8)
+  }
+  
+  return cleaned
+}
+
+// Handle input amount changes with formatting
+const handleInputAmountChange = (value) => {
+  const formatted = formatNumberInput(value)
+  inputAmount.value = formatted
+  lastEditedField.value = 'input'
+}
+
+// Handle CIRX amount changes with formatting  
+const handleCirxAmountChange = (value) => {
+  const formatted = formatNumberInput(value)
+  cirxAmount.value = formatted
   lastEditedField.value = 'output'
 }
 
@@ -1015,9 +1064,11 @@ const selectToken = (token) => {
 }
 
 
+// Input validation for keypress events  
 const validateNumberInput = (event) => {
   const char = event.key
   const currentValue = event.target.value
+  const cursorPosition = event.target.selectionStart
   
   // Allow control keys (backspace, delete, tab, escape, enter, etc.)
   if (event.ctrlKey || event.metaKey || 
@@ -1025,19 +1076,25 @@ const validateNumberInput = (event) => {
     return true
   }
   
-  // Allow digits
-  if (/[0-9]/.test(char)) {
-    return true
+  // Allow only numbers and decimal point
+  if (!/[0-9.]/.test(char)) {
+    event.preventDefault()
+    return false
   }
   
-  // Allow decimal point, but only one
-  if (char === '.' && !currentValue.includes('.')) {
-    return true
+  // Prevent multiple decimal points
+  if (char === '.' && currentValue.includes('.')) {
+    event.preventDefault()
+    return false
   }
   
-  // Block everything else
-  event.preventDefault()
-  return false
+  // Prevent leading zeros followed by digits (but allow "0.")
+  if (char !== '.' && currentValue === '0' && cursorPosition === 1) {
+    event.preventDefault()
+    return false
+  }
+  
+  return true
 }
 
 const reverseSwap = () => {

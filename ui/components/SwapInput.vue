@@ -67,22 +67,73 @@ defineProps({
 
 const emit = defineEmits(['update:amount', 'update:token', 'set-max', 'input-changed'])
 
-// Handle amount input changes
+// Handle amount input changes with proper number formatting
 const handleAmountInput = (value) => {
-  emit('update:amount', value)
+  // Format the input to ensure valid number representation
+  const formattedValue = formatNumberInput(value)
+  emit('update:amount', formattedValue)
   emit('input-changed')
 }
 
-// Input validation
+// Format number input to prevent invalid formats like "05", "00.5", etc.
+const formatNumberInput = (value) => {
+  if (!value || value === '') return ''
+  
+  // Remove any non-numeric characters except decimal point
+  let cleaned = value.replace(/[^0-9.]/g, '')
+  
+  // Handle multiple decimal points - keep only the first one
+  const decimalCount = (cleaned.match(/\./g) || []).length
+  if (decimalCount > 1) {
+    const firstDecimalIndex = cleaned.indexOf('.')
+    cleaned = cleaned.slice(0, firstDecimalIndex + 1) + cleaned.slice(firstDecimalIndex + 1).replace(/\./g, '')
+  }
+  
+  // Handle leading zeros
+  if (cleaned.length > 1 && cleaned[0] === '0' && cleaned[1] !== '.') {
+    // Remove leading zeros unless it's "0." 
+    cleaned = cleaned.replace(/^0+/, '')
+    if (cleaned === '' || cleaned[0] === '.') {
+      cleaned = '0' + cleaned
+    }
+  }
+  
+  // Ensure we don't start with a decimal point
+  if (cleaned.startsWith('.')) {
+    cleaned = '0' + cleaned
+  }
+  
+  // Limit decimal places to 8 (reasonable for token amounts)
+  const parts = cleaned.split('.')
+  if (parts.length === 2 && parts[1].length > 8) {
+    cleaned = parts[0] + '.' + parts[1].slice(0, 8)
+  }
+  
+  return cleaned
+}
+
+// Input validation for keypress events
 const validateNumberInput = (event) => {
   const char = String.fromCharCode(event.which)
+  const currentValue = event.target.value
+  const cursorPosition = event.target.selectionStart
+  
+  // Allow only numbers and decimal point
   if (!/[0-9.]/.test(char)) {
     event.preventDefault()
+    return
   }
   
   // Prevent multiple decimal points
-  if (char === '.' && event.target.value.includes('.')) {
+  if (char === '.' && currentValue.includes('.')) {
     event.preventDefault()
+    return
+  }
+  
+  // Prevent leading zeros followed by digits (but allow "0.")
+  if (char !== '.' && currentValue === '0' && cursorPosition === 1) {
+    event.preventDefault()
+    return
   }
 }
 </script>
