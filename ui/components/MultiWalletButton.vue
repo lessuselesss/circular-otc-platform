@@ -324,7 +324,6 @@ const enforceeSingleWallet = () => {
 onMounted(async () => {
   try {
     await walletStore.initialize()
-    walletStore.promptConnectIfNoPreference()
     enforceeSingleWallet()
     watch([() => walletStore.metaMaskWallet?.isConnected?.value, () => walletStore.phantomWallet?.isConnected?.value], () => enforceeSingleWallet())
   } catch (e) { console.error('Wallet init failed:', e) }
