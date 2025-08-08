@@ -320,9 +320,11 @@ const enforceeSingleWallet = () => {
   }
 }
 
+// On mount, initialize and prompt for connection if no preference saved
 onMounted(async () => {
   try {
     await walletStore.initialize()
+    walletStore.promptConnectIfNoPreference()
     enforceeSingleWallet()
     watch([() => walletStore.metaMaskWallet?.isConnected?.value, () => walletStore.phantomWallet?.isConnected?.value], () => enforceeSingleWallet())
   } catch (e) { console.error('Wallet init failed:', e) }

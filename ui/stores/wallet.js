@@ -284,7 +284,11 @@ export const useWalletStore = defineStore('wallet', () => {
   const switchChain = async (chainId) => {
     if (metaMaskConnected.value && metaMaskWallet.value) {
       try {
-        await metaMaskWallet.value.switchToMainnet()
+        if (typeof metaMaskWallet.value.switchToChain === 'function') {
+          await metaMaskWallet.value.switchToChain(chainId)
+        } else {
+          await metaMaskWallet.value.switchToMainnet()
+        }
         console.log('✅ Chain switched successfully')
         return true
       } catch (error) {
@@ -354,38 +358,7 @@ export const useWalletStore = defineStore('wallet', () => {
         } catch {}
       }
 
-      if (!reconnected && typeof window !== 'undefined' && window.ethereum) {
-        const { useMetaMask } = await import('../composables/useMetaMask.js')
-        const metaMask = useMetaMask()
-        await metaMask.checkConnection()
-        if (metaMask.isConnected.value) {
-          metaMaskWallet.value = metaMask
-          metaMaskConnected.value = true
-          activeChain.value = 'ethereum'
-          updateActivity()
-          console.log('✅ MetaMask auto-reconnected')
-          reconnected = true
-        }
-      }
-
-      if (!reconnected && typeof window !== 'undefined' && window.solana?.isPhantom) {
-        try {
-          const response = await window.solana.connect({ onlyIfTrusted: true })
-          if (response.publicKey) {
-            const phantom = {
-              account: ref(response.publicKey.toString()),
-              isConnected: ref(true),
-              disconnect: async () => { await window.solana.disconnect() }
-            }
-            phantomWallet.value = phantom
-            phantomConnected.value = true
-            if (!reconnected) activeChain.value = 'solana'
-            updateActivity()
-            console.log('✅ Phantom auto-reconnected')
-            reconnected = true
-          }
-        } catch {}
-      }
+      // Removed auto-reconnect without preference to respect manual disconnect across reloads
 
       return reconnected
     } catch (error) {
@@ -400,6 +373,14 @@ export const useWalletStore = defineStore('wallet', () => {
     console.log('✅ Wallet store initialized')
     isInitialized.value = true
     try { await attemptAutoReconnect() } catch {}
+  }
+
+  // Helper to open modal if no saved preference and not connected
+  const promptConnectIfNoPreference = () => {
+    const pref = getConnectionPreference()
+    if (!pref && !isConnected.value) {
+      openWalletModal()
+    }
   }
 
   // Error management
@@ -485,6 +466,7 @@ export const useWalletStore = defineStore('wallet', () => {
     cleanup,
     cancelConnect,
     hardReset,
+    promptConnectIfNoPreference,
 
     // Utilities
     updateActivity,

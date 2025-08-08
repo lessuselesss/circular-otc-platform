@@ -23,8 +23,8 @@ export function useMetaMask() {
 
   // Check if on correct network (Ethereum mainnet or testnet)
   const isOnSupportedChain = computed(() => {
-    // 1 = Ethereum Mainnet, 11155111 = Sepolia, 31337 = Local
-    const supportedChains = [1, 11155111, 31337]
+    // 1 = Ethereum Mainnet, 11155111 = Sepolia, 31337/1337 = Local, 84532 = Base Sepolia, 421614 = Arbitrum Sepolia
+    const supportedChains = [1, 11155111, 31337, 1337, 84532, 421614]
     return supportedChains.includes(parseInt(chainId.value))
   })
 
@@ -108,21 +108,88 @@ export function useMetaMask() {
     }
   }
 
-  // Switch to Ethereum mainnet
-  const switchToMainnet = async () => {
+  // Switch to a specific EVM chain (by decimal chainId)
+  const switchToChain = async (targetChainId) => {
     if (!window.ethereum) return false
+
+    const hexChainId = '0x' + Number(targetChainId).toString(16)
+
+    // Known network params for addChain fallback
+    const knownChains = {
+      1: {
+        chainId: '0x1',
+        chainName: 'Ethereum Mainnet',
+        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+        rpcUrls: ['https://ethereum.publicnode.com'],
+        blockExplorerUrls: ['https://etherscan.io']
+      },
+      11155111: {
+        chainId: '0xaa36a7',
+        chainName: 'Sepolia Testnet',
+        nativeCurrency: { name: 'Sepolia ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: ['https://sepolia.infura.io/v3/'],
+        blockExplorerUrls: ['https://sepolia.etherscan.io']
+      },
+      84532: {
+        chainId: '0x14a34',
+        chainName: 'Base Sepolia',
+        nativeCurrency: { name: 'Base Sepolia ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: ['https://sepolia.base.org'],
+        blockExplorerUrls: ['https://sepolia.basescan.org']
+      },
+      421614: {
+        chainId: '0x66eee',
+        chainName: 'Arbitrum Sepolia',
+        nativeCurrency: { name: 'Arbitrum Sepolia ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: ['https://sepolia-rollup.arbitrum.io/rpc'],
+        blockExplorerUrls: ['https://sepolia.arbiscan.io']
+      },
+      31337: {
+        chainId: '0x7a69',
+        chainName: 'Localhost 31337',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: ['http://localhost:8545'],
+        blockExplorerUrls: []
+      },
+      1337: {
+        chainId: '0x539',
+        chainName: 'Localhost 1337',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: ['http://localhost:8545'],
+        blockExplorerUrls: []
+      }
+    }
 
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x1' }] // Ethereum mainnet
+        params: [{ chainId: hexChainId }]
       })
       return true
     } catch (err) {
+      // 4902: Unrecognized chain — try adding it if known
+      if (err?.code === 4902 && knownChains[targetChainId]) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [knownChains[targetChainId]]
+          })
+          return true
+        } catch (addErr) {
+          console.error('❌ Failed to add network:', addErr)
+          error.value = 'Failed to add the requested network'
+          return false
+        }
+      }
       console.error('❌ Failed to switch network:', err)
-      error.value = 'Failed to switch to Ethereum mainnet'
+      error.value = 'Failed to switch network'
       return false
     }
+  }
+
+  // Switch to Ethereum mainnet
+  const switchToMainnet = async () => {
+    return await switchToChain(1)
   }
 
   // Add Ethereum mainnet (if not already added)
@@ -350,6 +417,7 @@ export function useMetaMask() {
     updateBalance,
     updateTokenBalances,
     switchToMainnet,
+    switchToChain,
     addMainnetNetwork,
     sendTransaction,
     checkConnection,
