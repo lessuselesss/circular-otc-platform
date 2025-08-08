@@ -245,17 +245,30 @@
                   ]"
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center pr-4">
-                  <div class="flex items-center gap-2 px-3 py-2 rounded-full border border-circular-primary/30 bg-circular-primary/10">
-                    
+                  
+                  <!-- OTC Mode: Discount Tier Dropdown -->
+                  <OtcDiscountDropdown
+                    v-if="activeTab === 'otc' && discountTiers && discountTiers.length > 0"
+                    :discount-tiers="discountTiers"
+                    :selected-tier="selectedTier"
+                    :current-amount="quote?.usdValue || 0"
+                    @tier-changed="handleTierChange"
+                  />
+                  
+                  <!-- Liquid Mode: Standard CIRX Display -->
+                  <div 
+                    v-else
+                    class="flex items-center gap-2 px-3 py-2 rounded-full border border-circular-primary/30 bg-circular-primary/10"
+                  >
                     <img 
                       :src="getTokenLogo('CIRX')" 
                       alt="CIRX"
                       class="w-5 h-5 rounded-full"
                       @error="$event.target.src = 'https://cdn.prod.website-files.com/65e472c0cd2f1bebcd7fcf73/65e483ab69e2314b250ed7dc_imageedit_1_8961069084.png'"
                     />
-                    
                     <span class="font-medium text-circular-primary text-sm">CIRX</span>
                   </div>
+                  
                 </div>
               </div>
               
@@ -269,6 +282,60 @@
                   <span v-if="reverseQuoteLoading">Calculating input amount...</span>
                   <span v-else>Getting best quote...</span>
                 </div>
+              </div>
+
+              <!-- OTC Discount Tier Info (moved from bottom of form) -->
+              <div v-if="activeTab === 'otc'" class="mt-3">
+                <div v-if="selectedTier" class="bg-purple-500/5 border border-purple-500/20 rounded-lg p-3 hover:border-purple-500/40 transition-all duration-300">
+                  <h4 class="text-xs font-medium mb-2 text-purple-400">Active OTC Discount Tier</h4>
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-400">
+                      Min: ${{ formatAmount(selectedTier.minAmount) }}
+                    </span>
+                    <div class="text-right">
+                      <span class="font-medium text-purple-400">{{ selectedTier.discount }}%</span>
+                      <span class="text-gray-500 ml-1">{{ selectedTier.vestingMonths || otcConfig.vestingPeriod.months }}mo</span>
+                    </div>
+                  </div>
+                </div>
+                <div v-else-if="inputAmount && parseFloat(inputAmount) > 0" class="bg-gray-800/30 border border-gray-600/30 rounded-lg p-3 text-center">
+                  <p class="text-xs text-gray-400">Please enter a valid amount to see discount tier</p>
+                </div>
+              </div>
+            </div>
+
+            
+            <div v-if="quote" class="bg-transparent border border-gray-600/50 rounded-xl p-4 mb-6 hover:border-gray-500 transition-all duration-300">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-gray-400">Exchange Rate</span>
+                <span class="text-sm font-medium text-white" :class="isPriceRefreshing ? 'animate-pulse' : ''">1 {{ inputToken }} = {{ quote.rate }} CIRX</span>
+              </div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-xs text-gray-500" :class="isPriceRefreshing ? 'animate-pulse' : ''">
+                  Next price update in {{ priceCountdown }}s
+                </span>
+              </div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-gray-400">CIRX Price</span>
+                <span class="text-sm font-medium text-white">1 CIRX = {{ quote.inverseRate }} {{ inputToken }}</span>
+              </div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-gray-400">Platform Fee</span>
+                <span class="text-sm font-medium text-white">{{ quote.fee }}%</span>
+              </div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-gray-400">Est. Network Fee</span>
+                <span class="text-sm font-medium text-white">
+                  ~{{ networkFee.eth }} ETH (~${{ networkFee.usd }})
+                </span>
+              </div>
+              <div v-if="activeTab === 'otc' && quote.discount > 0" class="flex justify-between items-center mb-2">
+                <span class="text-sm text-gray-400">OTC Discount</span>
+                <span class="text-sm font-medium text-circular-primary">{{ quote.discount }}%</span>
+              </div>
+              <div v-if="activeTab === 'otc'" class="flex justify-between items-center">
+                <span class="text-sm text-gray-400">Vesting Period</span>
+                <span class="text-sm font-medium text-white">{{ otcConfig.vestingPeriod.months }} months ({{ otcConfig.vestingPeriod.type }})</span>
               </div>
             </div>
 
@@ -322,46 +389,6 @@
             </div>
 
             
-            <div v-if="quote" class="bg-transparent border border-gray-600/50 rounded-xl p-4 mb-6 hover:border-gray-500 transition-all duration-300">
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-sm text-gray-400">Exchange Rate</span>
-                <span class="text-sm font-medium text-white">1 {{ inputToken }} = ${{ quote.rate }}</span>
-              </div>
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-sm text-gray-400">Fee</span>
-                <span class="text-sm font-medium text-white">{{ quote.fee }}%</span>
-              </div>
-              <div v-if="activeTab === 'otc' && quote.discount > 0" class="flex justify-between items-center mb-2">
-                <span class="text-sm text-gray-400">OTC Discount</span>
-                <span class="text-sm font-medium text-circular-primary">{{ quote.discount }}%</span>
-              </div>
-              <div v-if="activeTab === 'otc'" class="flex justify-between items-center">
-                <span class="text-sm text-gray-400">Vesting Period</span>
-                <span class="text-sm font-medium text-white">{{ otcConfig.vestingPeriod.months }} months ({{ otcConfig.vestingPeriod.type }})</span>
-              </div>
-            </div>
-
-            
-            <div v-if="activeTab === 'otc' && otcConfig.enabled" class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 mb-4 hover:border-purple-500/40 transition-all duration-300">
-              <h4 class="text-xs font-medium mb-2 text-purple-400">OTC Discount Tiers</h4>
-              <div class="space-y-1 text-xs">
-                <div 
-                  v-for="(tier, index) in otcConfig.discountTiers.slice().reverse()" 
-                  :key="tier.minAmount"
-                  class="flex justify-between items-center"
-                >
-                  <span class="text-gray-400">
-                    {{ formatTierRange(tier, index, otcConfig.discountTiers.length) }}
-                  </span>
-                  <div class="text-right">
-                    <span class="font-medium text-purple-400">{{ tier.discount }}%</span>
-                    <span class="text-gray-500 ml-1">{{ tier.vestingMonths || otcConfig.vestingPeriod.months }}mo</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            
             <button
               type="submit"
               :disabled="!canPurchase || loading || quoteLoading || reverseQuoteLoading"
@@ -381,7 +408,7 @@
               <span v-else-if="!isConnected && !recipientAddress">Connect Wallet or Enter Address</span>
               <span v-else-if="recipientAddress && recipientAddressError">Invalid Address</span>
               <span v-else-if="activeTab === 'liquid'">Buy Liquid CIRX</span>
-              <span v-else>Buy OTC CIRX (6mo vest)</span>
+              <span v-else>Buy OTC CIRX</span>
             </button>
           </form>
           
@@ -431,6 +458,10 @@
 </template>
 
 <script setup>
+// Import components
+import OtcDiscountDropdown from '~/components/OtcDiscountDropdown.vue'
+import { getTokenPrices } from '~/services/priceService.js'
+
 // Page metadata
 definePageMeta({
   title: 'Circular Swap',
@@ -448,6 +479,7 @@ const {
   executeSwap
 } = useWallet()
 
+
 // Reactive state
 const activeTab = ref('liquid')
 const inputAmount = ref('')
@@ -462,6 +494,94 @@ const recipientAddress = ref('')
 const recipientAddressError = ref('')
 const recipientAddressType = ref('')
 const showTokenDropdown = ref(false)
+
+// Price refresh state (30s countdown)
+const livePrices = ref({ ETH: 2500, USDC: 1, USDT: 1, CIRX: 1 })
+const isPriceRefreshing = ref(false)
+const priceCountdown = ref(30)
+let countdownTimer = null
+
+// Gas price state
+const gasPriceWeiHex = ref('0x0')
+const isGasRefreshing = ref(false)
+
+const hexToBigInt = (hex) => {
+  try {
+    if (typeof hex !== 'string') return 0n
+    return BigInt(hex)
+  } catch { return 0n }
+}
+
+const fetchGasPrice = async () => {
+  try {
+    isGasRefreshing.value = true
+    // Prefer wallet provider if available
+    if (typeof window !== 'undefined' && window.ethereum?.request) {
+      const gp = await window.ethereum.request({ method: 'eth_gasPrice' })
+      if (gp) gasPriceWeiHex.value = gp
+    } else {
+      // Fallback to public RPC
+      const res = await fetch('https://ethereum.publicnode.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_gasPrice', params: [] })
+      })
+      const json = await res.json()
+      if (json?.result) gasPriceWeiHex.value = json.result
+    }
+  } catch (e) {
+    console.warn('Gas price fetch failed', e)
+  } finally {
+    isGasRefreshing.value = false
+  }
+}
+
+const startPriceCountdown = () => {
+  if (countdownTimer) clearInterval(countdownTimer)
+  priceCountdown.value = 30
+  countdownTimer = setInterval(async () => {
+    if (priceCountdown.value > 0) {
+      priceCountdown.value -= 1
+    } else {
+      await Promise.all([refreshPrices(), fetchGasPrice()])
+    }
+  }, 1000)
+}
+
+const refreshPrices = async () => {
+  try {
+    isPriceRefreshing.value = true
+    const prices = await getTokenPrices()
+    // Update tracked tokens if present
+    livePrices.value = {
+      ETH: prices.ETH ?? livePrices.value.ETH,
+      USDC: prices.USDC ?? livePrices.value.USDC,
+      USDT: prices.USDT ?? livePrices.value.USDT,
+      CIRX: prices.CIRX ?? livePrices.value.CIRX
+    }
+    // Recalculate quote if there is an input
+    if (inputAmount.value && parseFloat(inputAmount.value) > 0 && lastEditedField.value === 'input') {
+      const isOTC = activeTab.value === 'otc'
+      const newQuote = await calculateQuoteAsync(inputAmount.value, inputToken.value, isOTC)
+      if (newQuote) {
+        quote.value = newQuote
+        // keep cirxAmount consistent and numeric for the input field
+        const cirxRaw = parseFloat(String(newQuote.cirxAmount).replace(/,/g, ''))
+        if (isFinite(cirxRaw) && cirxRaw > 0) {
+          cirxAmount.value = cirxRaw.toString()
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Price refresh failed, keeping previous prices', e)
+  } finally {
+    isPriceRefreshing.value = false
+    priceCountdown.value = 30
+  }
+}
+
+// OTC specific state
+const selectedTier = ref(null)
 
 // Quote calculation loading state
 const quoteLoading = ref(false)
@@ -506,12 +626,12 @@ const formatSliderAmount = computed(() => {
   }
 })
 
-// Token prices (mock data)
-const tokenPrices = {
-  ETH: 2500,   // $2500 per ETH
-  USDC: 1,     // $1 per USDC  
-  USDT: 1      // $1 per USDT
-}
+// Token prices (live via price service, with sane defaults)
+// const tokenPrices = {
+//   ETH: 2500,
+//   USDC: 1,
+//   USDT: 1
+// }
 
 // Dynamic fee structure
 const fees = computed(() => otcConfig.value.fees)
@@ -596,44 +716,59 @@ const canPurchase = computed(() => {
   return hasAmount && notLoading && hasValidRecipient && hasSufficientBalance
 })
 
-// Calculate discount based on USD amount
-const calculateDiscount = (usdAmount) => {
-  for (const tier of discountTiers) {
-    if (usdAmount >= tier.minAmount) {
-      return tier.discount
-    }
+// Calculate discount based on USD amount and return both percent and tier
+const getTierForUsd = (usdAmount) => {
+  // Tiers are defined as minAmount thresholds (e.g., 1000, 10000, 50000)
+  // Choose the highest tier that the amount qualifies for
+  const tiers = [...discountTiers.value].sort((a, b) => b.minAmount - a.minAmount)
+  for (const t of tiers) {
+    if (usdAmount >= t.minAmount) return t
   }
-  return 0
+  return null
 }
 
-// Calculate quote for purchase
+const calculateDiscount = (usdAmount) => {
+  const tier = getTierForUsd(usdAmount)
+  return tier ? tier.discount : 0
+}
+
+// Calculate quote for purchase (forward: input token -> CIRX)
 const calculateQuote = (amount, token, isOTC = false) => {
   if (!amount || parseFloat(amount) <= 0) return null
-  
+
   const inputValue = parseFloat(amount)
-  const tokenPrice = tokenPrices[token]
-  const totalUsdValue = inputValue * tokenPrice
-  
+  const tokenPriceUsd = livePrices.value[token] || 0
+  const cirxPriceUsd = livePrices.value.CIRX || 0
+  if (tokenPriceUsd <= 0 || cirxPriceUsd <= 0) return null
+
+  const totalUsdValue = inputValue * tokenPriceUsd
+
   // Calculate fee
-  const feeRate = isOTC ? fees.otc : fees.liquid
+  const feeRate = isOTC ? fees.value.otc : fees.value.liquid
   const fee = (inputValue * feeRate) / 100
-  const amountAfterFee = inputValue - fee
-  const usdAfterFee = amountAfterFee * tokenPrice
-  
-  let cirxReceived = usdAfterFee // Assume CIRX = $1
+  const amountAfterFee = Math.max(0, inputValue - fee)
+  const usdAfterFee = amountAfterFee * tokenPriceUsd
+
+  // Convert USD to CIRX using live CIRX/USD price
+  let cirxReceived = usdAfterFee / cirxPriceUsd
   let discount = 0
-  
-  // Apply OTC discount
+
+  // Apply OTC discount as additional CIRX
   if (isOTC) {
     discount = calculateDiscount(totalUsdValue)
-    cirxReceived = usdAfterFee * (1 + discount / 100)
+    cirxReceived = cirxReceived * (1 + discount / 100)
   }
-  
+
+  // Rates for display (numeric strings, no grouping)
+  const rateCirxPerToken = tokenPriceUsd / cirxPriceUsd
+  const inverseRateTokenPerCirx = cirxPriceUsd / tokenPriceUsd
+
   return {
-    rate: tokenPrice.toFixed(2),
+    rate: rateCirxPerToken.toFixed(6),
+    inverseRate: inverseRateTokenPerCirx.toFixed(8),
     fee: feeRate,
     discount: discount,
-    cirxAmount: cirxReceived.toFixed(2),
+    cirxAmount: cirxReceived.toFixed(6),
     usdValue: totalUsdValue.toFixed(2)
   }
 }
@@ -641,31 +776,99 @@ const calculateQuote = (amount, token, isOTC = false) => {
 // Async quote calculation with loading states
 const calculateQuoteAsync = async (amount, token, isOTC = false) => {
   if (!amount || parseFloat(amount) <= 0) return null
-  
-  // Generate unique request ID to handle race conditions
   const requestId = ++lastQuoteRequestId.value
   quoteLoading.value = true
-  
   try {
-    // Simulate API call delay (like Uniswap loading behavior)
     await new Promise(resolve => setTimeout(resolve, 300))
-    
-    // Check if this request is still the most recent
-    if (requestId !== lastQuoteRequestId.value) {
-      return null // Ignore outdated requests
-    }
-    
-    // Use existing quote calculation logic
-    const result = calculateQuote(amount, token, isOTC)
-    
-    return result
+    if (requestId !== lastQuoteRequestId.value) return null
+    return calculateQuote(amount, token, isOTC)
   } finally {
-    // Only clear loading if this is still the most recent request
     if (requestId === lastQuoteRequestId.value) {
       quoteLoading.value = false
     }
   }
 }
+
+// Reverse quote (output CIRX -> required input token amount)
+const calculateReverseQuote = (cirxAmt, token, isOTC = false) => {
+  const cirxValue = parseFloat(cirxAmt)
+  if (!cirxValue || cirxValue <= 0) return null
+
+  const tokenPriceUsd = livePrices.value[token] || 0
+  const cirxPriceUsd = livePrices.value.CIRX || 0
+  if (tokenPriceUsd <= 0 || cirxPriceUsd <= 0) return null
+
+  // USD value of desired CIRX
+  let usdNeeded = cirxValue * cirxPriceUsd
+
+  // Remove OTC bonus to find base after-fee requirement
+  let discount = 0
+  if (isOTC) {
+    discount = calculateDiscount(usdNeeded)
+    const bonusMultiplier = 1 + discount / 100
+    usdNeeded = usdNeeded / bonusMultiplier
+  }
+
+  // amountAfterFee (in input token units)
+  const feeRate = isOTC ? fees.value.otc : fees.value.liquid
+  const feeMultiplier = 1 - feeRate / 100
+  if (feeMultiplier <= 0) return null
+
+  const amountAfterFeeTokens = usdNeeded / tokenPriceUsd
+  const inputAmountNeeded = amountAfterFeeTokens / feeMultiplier
+
+  // Build forward quote for UI consistency
+  const forward = calculateQuote(inputAmountNeeded.toString(), token, isOTC)
+
+  return {
+    inputAmount: inputAmountNeeded,
+    forwardQuote: forward
+  }
+}
+
+const calculateReverseQuoteAsync = async (cirxAmt, token, isOTC = false) => {
+  if (!cirxAmt || parseFloat(cirxAmt) <= 0) return null
+  const requestId = ++lastReverseQuoteRequestId.value
+  reverseQuoteLoading.value = true
+  try {
+    await new Promise(resolve => setTimeout(resolve, 300))
+    if (requestId !== lastReverseQuoteRequestId.value) return null
+    return calculateReverseQuote(cirxAmt, token, isOTC)
+  } finally {
+    if (requestId === lastReverseQuoteRequestId.value) {
+      reverseQuoteLoading.value = false
+    }
+  }
+}
+
+// Computed network fee estimation
+const GAS_ESTIMATES = {
+  approval: 50000,       // conservative ERC-20 approve
+  liquid: 180000,        // liquid swap placeholder
+  otc: 220000            // otc (mint + vesting) placeholder
+}
+
+const estimatedGasUnits = computed(() => {
+  const base = activeTab.value === 'otc' ? GAS_ESTIMATES.otc : GAS_ESTIMATES.liquid
+  // If paying with ERC-20 (non-ETH), add approval buffer
+  const needsApproval = ['USDC', 'USDT'].includes(inputToken.value)
+  return base + (needsApproval ? GAS_ESTIMATES.approval : 0)
+})
+
+const networkFee = computed(() => {
+  const gasPriceWei = hexToBigInt(gasPriceWeiHex.value)
+  if (gasPriceWei === 0n || !estimatedGasUnits.value) return { eth: '0.0000', usd: '0.00' }
+  const feeWei = gasPriceWei * BigInt(estimatedGasUnits.value)
+  // Convert wei to ETH: divide by 1e18 using number math safely for display
+  const feeEth = Number(feeWei) / 1e18
+  const feeEthSafe = isFinite(feeEth) ? feeEth : 0
+  const ethUsd = livePrices.value.ETH || 0
+  const feeUsd = feeEthSafe * ethUsd
+  return {
+    eth: feeEthSafe.toFixed(5),
+    usd: feeUsd.toFixed(2)
+  }
+})
 
 // Address validation functions
 const validateEthereumAddress = (address) => {
@@ -737,6 +940,11 @@ const useConnectedWallet = () => {
   recipientAddress.value = ''
 }
 
+// Track manual edits
+const handleCirxAmountChange = () => {
+  lastEditedField.value = 'output'
+}
+
 const setMaxAmount = () => {
   if (isConnected.value) {
     // Set to 95% of balance to account for gas fees
@@ -746,7 +954,7 @@ const setMaxAmount = () => {
   } else {
     inputAmount.value = '1.0' // Fallback for demo
   }
-  
+
   // Set edit state to input when using max amount
   lastEditedField.value = 'input'
 }
@@ -756,6 +964,7 @@ const selectToken = (token) => {
   showTokenDropdown.value = false
   // Reset input when token changes
   inputAmount.value = ''
+  lastEditedField.value = 'input'
 }
 
 
@@ -788,29 +997,11 @@ const reverseSwap = () => {
   console.log('Reverse swap not supported yet')
 }
 
-// Format tier range display (e.g., "$1K-10K", "$50K+")
-const formatTierRange = (tier, index, totalTiers) => {
-  const formatAmount = (amount) => {
-    if (amount >= 1000000) return `$${amount / 1000000}M`
-    if (amount >= 1000) return `$${amount / 1000}K`
-    return `$${amount}`
-  }
-  
-  // If it's the highest tier (first in reversed array), show as "50K+"
-  if (index === 0) {
-    return `${formatAmount(tier.minAmount)}+`
-  }
-  
-  // Find the next higher tier to create range
-  const sortedTiers = otcConfig.value.discountTiers.slice().sort((a, b) => a.minAmount - b.minAmount)
-  const currentIndex = sortedTiers.findIndex(t => t.minAmount === tier.minAmount)
-  const nextTier = sortedTiers[currentIndex + 1]
-  
-  if (nextTier) {
-    return `${formatAmount(tier.minAmount)}-${formatAmount(nextTier.minAmount)}`
-  }
-  
-  return `${formatAmount(tier.minAmount)}+`
+// Format amount for display (e.g., "$1K", "$50K", "$1M")
+const formatAmount = (amount) => {
+  if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`.replace('.0M', 'M')
+  if (amount >= 1000) return `${(amount / 1000).toFixed(0)}K`
+  return amount.toString()
 }
 
 const handleSwap = async () => {
@@ -859,33 +1050,72 @@ const handleSwap = async () => {
   }
 }
 
+// Handle OTC tier selection
+const handleTierChange = (tier) => {
+  selectedTier.value = tier
+
+  if (activeTab.value !== 'otc') return
+
+  // When user picks a tier, set the input amount to the minimum USD required for that tier
+  // Convert tier.minAmount USD into selected input token units
+  const tokenPriceUsd = livePrices.value[inputToken.value] || 0
+  if (tokenPriceUsd > 0 && tier?.minAmount) {
+    const feeRate = fees.value.otc
+    const feeMultiplier = 1 - feeRate / 100
+    if (feeMultiplier > 0) {
+      // We want amountAfterFee * tokenPriceUsd >= tier.minAmount
+      // amountAfterFee = inputAmount * feeMultiplier => inputAmount = minUsd / (tokenPriceUsd * feeMultiplier)
+      const requiredInput = tier.minAmount / (tokenPriceUsd * feeMultiplier)
+      inputAmount.value = requiredInput.toFixed(6)
+      lastEditedField.value = 'input'
+    }
+  }
+
+  // Recalculate quote with new tier
+  if (inputAmount.value && parseFloat(inputAmount.value) > 0) {
+    const newQuote = calculateQuote(inputAmount.value, inputToken.value, true)
+    if (newQuote) {
+      quote.value = newQuote
+      cirxAmount.value = newQuote.cirxAmount
+    }
+  }
+}
+
 // Debounced quote calculation for better UX
 let quoteTimeout = null
 
-// Watch for amount and tab changes to update quote
+// Watch for amount/token/tab changes (forward path)
 watch([inputAmount, inputToken, activeTab], async () => {
-  // Clear existing timeout for debouncing
-  if (quoteTimeout) {
-    clearTimeout(quoteTimeout)
-  }
-  
+  if (lastEditedField.value !== 'input') return
+  if (quoteTimeout) clearTimeout(quoteTimeout)
+
   if (!inputAmount.value || parseFloat(inputAmount.value) <= 0) {
     cirxAmount.value = ''
     quote.value = null
     quoteLoading.value = false
     return
   }
-  
-  // Debounce quote calculation (wait 200ms after user stops typing)
+
   quoteTimeout = setTimeout(async () => {
     const isOTC = activeTab.value === 'otc'
-    
     try {
+      // Auto-select tier when in OTC based on current USD
+      if (isOTC) {
+        const tokenPriceUsd = livePrices.value[inputToken.value] || 0
+        const inputVal = parseFloat(inputAmount.value) || 0
+        // Use gross USD amount (before fees) for tier selection to prevent tier dropping
+        const grossUsdAmount = tokenPriceUsd * inputVal
+        const autoTier = getTierForUsd(grossUsdAmount)
+        selectedTier.value = autoTier
+      } else {
+        selectedTier.value = null
+      }
+
       const newQuote = await calculateQuoteAsync(inputAmount.value, inputToken.value, isOTC)
-      
       if (newQuote) {
         quote.value = newQuote
-        cirxAmount.value = newQuote.cirxAmount
+        const cirxRaw = parseFloat(newQuote.cirxAmount.replace(/,/g, ''))
+        cirxAmount.value = isFinite(cirxRaw) ? cirxRaw.toString() : newQuote.cirxAmount
       }
     } catch (error) {
       console.error('Quote calculation failed:', error)
@@ -893,6 +1123,35 @@ watch([inputAmount, inputToken, activeTab], async () => {
     }
   }, 200)
 }, { immediate: true })
+
+// Watch for CIRX edits (reverse path)
+watch([cirxAmount, inputToken, activeTab], async () => {
+  if (lastEditedField.value !== 'output') return
+  if (quoteTimeout) clearTimeout(quoteTimeout)
+
+  if (!cirxAmount.value || parseFloat(cirxAmount.value) <= 0) {
+    inputAmount.value = ''
+    quote.value = null
+    reverseQuoteLoading.value = false
+    return
+  }
+
+  quoteTimeout = setTimeout(async () => {
+    const isOTC = activeTab.value === 'otc'
+    try {
+      const result = await calculateReverseQuoteAsync(cirxAmount.value, inputToken.value, isOTC)
+      if (result) {
+        inputAmount.value = parseFloat(result.inputAmount.toFixed(6)).toString()
+        if (result.forwardQuote) {
+          quote.value = result.forwardQuote
+        }
+      }
+    } catch (error) {
+      console.error('Reverse quote calculation failed:', error)
+      reverseQuoteLoading.value = false
+    }
+  }, 200)
+})
 
 // Watch recipient address for validation
 watch(recipientAddress, (newAddress) => {
@@ -915,6 +1174,19 @@ onMounted(async () => {
   onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside)
   })
+})
+
+// Initialize timers
+onMounted(async () => {
+  await Promise.all([refreshPrices(), fetchGasPrice()])
+  startPriceCountdown()
+
+  // Existing outside click handler setup remains below
+  // ... existing code ...
+})
+
+onUnmounted(() => {
+  if (countdownTimer) clearInterval(countdownTimer)
 })
 
 // Head configuration

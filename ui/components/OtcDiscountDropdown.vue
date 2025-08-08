@@ -15,7 +15,7 @@
       />
       <span class="font-medium text-white text-sm">CIRX</span>
       <span v-if="selectedTier" class="text-xs text-green-400 font-medium">
-        {{ selectedTier.discount }}%
+        -{{ selectedTier.discount }}%
       </span>
       <svg 
         :class="['w-4 h-4 text-gray-400 transition-transform', isOpen && 'rotate-180']" 
