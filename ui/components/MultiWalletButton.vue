@@ -7,9 +7,9 @@
       class="px-4 py-2 bg-circular-primary text-gray-900 rounded-lg font-medium hover:bg-circular-primary-hover transition-colors flex items-center gap-2"
       :disabled="isConnecting"
     >
-      <!-- Wallet Connect Icon -->
-      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2M21 9V7L15 1L13.5 2.5L16.17 5.33C15.24 5.1 14.25 5 13.17 5H10.83C9.75 5 8.76 5.1 7.83 5.33L10.5 2.5L9 1L3 7V9C3 10.66 4.34 12 6 12H8L8 21C8 21.6 8.4 22 9 22H15C15.6 22 16 21.6 16 21L16 12H18C19.66 12 21 10.66 21 9Z"/>
+      <!-- Connect Wallet Icon -->
+      <svg width="20" height="20" fill="currentColor" viewBox="0 0 640 640">
+        <path d="M482.4 221.9C517.7 213.6 544 181.9 544 144C544 99.8 508.2 64 464 64C420.6 64 385.3 98.5 384 141.5L200.2 215.1C185.7 200.8 165.9 192 144 192C99.8 192 64 227.8 64 272C64 316.2 99.8 352 144 352C156.2 352 167.8 349.3 178.1 344.4L323.7 471.8C321.3 479.4 320 487.6 320 496C320 540.2 355.8 576 400 576C444.2 576 480 540.2 480 496C480 468.3 466 443.9 444.6 429.6L482.4 221.9zM220.3 296.2C222.5 289.3 223.8 282 224 274.5L407.8 201C411.4 204.5 415.2 207.7 419.4 210.5L381.6 418.1C376.1 419.4 370.8 421.2 365.8 423.6L220.3 296.2z"/>
       </svg>
       
       <span v-if="isConnecting">Connecting...</span>
@@ -32,11 +32,13 @@
       <div class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2">
         <div class="flex items-center gap-2">
           <!-- Wallet Icon -->
-          <div class="w-4 h-4 flex items-center justify-center">
-            <div v-if="connectedWallet === 'metamask'" class="w-3 h-3 bg-orange-500 rounded-sm"></div>
-            <div v-else-if="connectedWallet === 'phantom'" class="w-3 h-3 bg-purple-500 rounded-sm"></div>
-            <div v-else-if="connectedWallet === 'walletconnect'" class="w-3 h-3 bg-blue-500 rounded-sm"></div>
-            <div v-else-if="connectedWallet === 'coinbase'" class="w-3 h-3 bg-blue-600 rounded-sm"></div>
+          <div class="w-4 h-4 flex items-center justify-center text-white">
+            <!-- MetaMask Fox Icon -->
+            <img v-if="connectedWallet === 'metamask'" src="/icons/wallets/metamask-fox.svg" alt="MetaMask" width="16" height="16" class="text-orange-500" />
+            <!-- Phantom Ghost Icon -->
+            <img v-else-if="connectedWallet === 'phantom'" src="/icons/wallets/phantom-icon.svg" alt="Phantom" width="16" height="16" class="text-purple-500" />
+            <!-- WalletConnect Icon -->
+            <img v-else-if="connectedWallet === 'walletconnect'" src="/icons/wallets/walletconnect.svg" alt="WalletConnect" width="16" height="16" class="text-blue-500" />
             <div v-else class="w-2 h-2 bg-green-400 rounded-full"></div>
           </div>
           <span class="text-sm font-medium text-white">{{ shortAddress }}</span>
@@ -102,8 +104,8 @@
             @click="handleWalletClick('metamask')"
           >
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M22.46 12.58l-.86-2.89L20.05 4.47l-5.87 4.34 2.25 1.67 1.96-1.45.78 2.62L22.46 12.58zM9.59 8.81l-5.87-4.34L2.14 9.69l-.86 2.89 3.29-.93.78-2.62 1.96 1.45L9.59 8.81z"/></svg>
+              <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
+                <img src="/icons/wallets/metamask-fox.svg" alt="MetaMask" width="20" height="20" />
               </div>
               <div>
                 <div class="font-medium text-white">MetaMask</div>
@@ -127,8 +129,8 @@
             @click="handleWalletClick('phantom')"
           >
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                <img src="/icons/wallets/phantom-icon.svg" alt="Phantom" width="20" height="20" />
               </div>
               <div>
                 <div class="font-medium text-white">Phantom</div>
@@ -145,8 +147,8 @@
           <!-- WalletConnect (disabled/coming soon) -->
           <div class="p-4 border border-gray-800 rounded-lg flex items-center justify-between opacity-50 cursor-not-allowed">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-blue-500/40 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                <img src="/icons/wallets/walletconnect.svg" alt="WalletConnect" width="20" height="20" />
               </div>
               <div>
                 <div class="font-medium text-white">WalletConnect</div>
@@ -201,7 +203,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
 // Use wallet store
 const walletStore = useWalletStore()
@@ -336,12 +338,27 @@ const enforceeSingleWallet = () => {
   }
 }
 
+// ESC key handler for modal
+const handleEscKey = (event) => {
+  if (event.key === 'Escape' && walletStore.isWalletModalOpen) {
+    closeModal()
+  }
+}
+
 // On mount, initialize and prompt for connection if no preference saved
 onMounted(async () => {
   try {
     await walletStore.initialize()
     enforceeSingleWallet()
     watch([() => walletStore.metaMaskWallet?.isConnected?.value, () => walletStore.phantomWallet?.isConnected?.value], () => enforceeSingleWallet())
+    
+    // Add ESC key listener
+    window.addEventListener('keydown', handleEscKey)
   } catch (e) { console.error('Wallet init failed:', e) }
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleEscKey)
 })
 </script>
