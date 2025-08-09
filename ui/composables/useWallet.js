@@ -4,11 +4,13 @@
  */
 
 import { computed, ref, watch, onUnmounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useWalletStore } from '~/stores/wallet'
 
 export const useWallet = () => {
   // Use the wallet store
   const walletStore = useWalletStore()
+  const { isConnected: isConnectedRef, activeWallet: activeWalletRef } = storeToRefs(walletStore)
   
   // Live balance state
   const liveBalance = ref(null)
@@ -26,9 +28,9 @@ export const useWallet = () => {
   }
   
   // Computed properties from store
-  const isConnected = computed(() => walletStore.isConnected)
-  const account = computed(() => walletStore.activeWallet?.address || null)
-  const connectedWallet = computed(() => walletStore.activeWallet?.type || null)
+  const isConnected = computed(() => isConnectedRef.value)
+  const account = computed(() => activeWalletRef.value?.address || null)
+  const connectedWallet = computed(() => activeWalletRef.value?.type || null)
   const shortAddress = computed(() => {
     if (!account.value) return ''
     return `${account.value.slice(0, 6)}...${account.value.slice(-4)}`

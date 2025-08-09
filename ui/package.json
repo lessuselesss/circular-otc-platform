@@ -14,16 +14,24 @@
     "fresh": "npm run clean:all && npm install"
   },
   "dependencies": {
+    "@iconify/json": "^2.2.367",
     "@pinia/nuxt": "^0.5.5",
     "@playwright/test": "^1.54.2",
+    "@reown/appkit": "^1.7.18",
+    "@reown/appkit-adapter-solana": "^1.7.18",
+    "@reown/appkit-adapter-wagmi": "^1.7.18",
     "@solana/web3.js": "^1.98.4",
-    "@tanstack/vue-query": "^5.61.6",
+    "@tanstack/vue-query": "^5.83.1",
+    "@wagmi/vue": "^0.1.26",
     "lightweight-charts": "^5.0.8",
     "nuxt": "^3.17.7",
+    "nuxt-icon": "^0.6.9",
     "pako": "^2.1.0",
     "pinia": "^2.2.4",
-    "viem": "^2.21.53",
-    "vue": "^3.5.18"
+    "unplugin-icons": "^0.19.0",
+    "viem": "^2.33.3",
+    "vue": "^3.5.18",
+    "wagmi": "^2.16.2"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",

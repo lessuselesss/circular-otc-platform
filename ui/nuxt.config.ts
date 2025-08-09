@@ -1,3 +1,5 @@
+import { defineNuxtConfig } from 'nuxt/config'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -12,10 +14,19 @@ export default defineNuxtConfig({
   ssr: false,
 
   modules: [
-    '@nuxtjs/tailwindcss',
+    '@nuxtjs/tailwindcss', 
     '@pinia/nuxt',
+    '@wagmi/vue/nuxt',
     // '@nuxt/ui' // Temporarily disabled - causing build issues
+    'nuxt-icon',
+    'unplugin-icons/nuxt'
   ],
+
+  // Configure unplugin-icons
+  icons: {
+    // Enable auto-install of icon collections
+    autoInstall: true
+  },
 
   
 
@@ -42,7 +53,8 @@ export default defineNuxtConfig({
     // Private keys (only available on server-side)
     // Public keys (exposed to client-side)
     public: {
-      walletConnectProjectId: process.env.WALLETCONNECT_PROJECT_ID || 'your-project-id-here',
+      walletConnectProjectId: process.env.WALLETCONNECT_PROJECT_ID || '2585d3b6fd8a214ece0e26b344957169',
+      reownProjectId: '2585d3b6fd8a214ece0e26b344957169',
       appName: 'Circular CIRX OTC Platform',
       appDescription: 'Circular CIRX OTC Trading Platform - Buy CIRX tokens with instant delivery or OTC discounts up to 12%',
       appUrl: process.env.APP_URL || 'https://circular.io',

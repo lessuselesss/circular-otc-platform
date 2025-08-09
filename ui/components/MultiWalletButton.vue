@@ -204,11 +204,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useWalletStore } from '~/stores/wallet'
 
 // Use wallet store
 const walletStore = useWalletStore()
-const { useWallet } = await import('../composables/useWallet.js')
-const wallet = useWallet()
 
 // Computed properties from store and composables
 const isConnected = computed(() => walletStore.isConnected)
@@ -241,19 +240,31 @@ const selectedTokenForHeader = computed(() => {
 
 const headerBalance = computed(() => {
   try {
-    return wallet.getTokenBalance(selectedTokenForHeader.value)
+    // Use the balance directly from the active wallet in the store
+    if (connectedWallet.value === 'metamask' && walletStore.metaMaskWallet) {
+      return walletStore.metaMaskWallet.getTokenBalance(selectedTokenForHeader.value)
+    } else if (connectedWallet.value === 'phantom' && walletStore.solanaWallet) {
+      return walletStore.solanaWallet.balance.value // solanaWallet exposes formattedBalance
+    }
+    return '0.0'
   } catch {
     return '0.0'
   }
 })
 
-// Check wallet availability
+// Check wallet availability using store instances
 const isMetaMaskAvailable = computed(() => {
+  // First check if MetaMask wallet instance exists and has the availability check
+  if (walletStore.metaMaskWallet?.isMetaMaskInstalled) {
+    return walletStore.metaMaskWallet.isMetaMaskInstalled.value
+  }
+  // Fallback to direct window check if store instance not ready
   if (typeof window === 'undefined') return false
   return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask
 })
 
 const isPhantomAvailable = computed(() => {
+  // Check direct window property since Phantom doesn't have a complex composable like MetaMask
   if (typeof window === 'undefined') return false
   return typeof window.solana !== 'undefined' && window.solana.isPhantom
 })
@@ -272,19 +283,39 @@ const closeModal = () => walletStore.closeWalletModal()
 
 // Wallet connection handlers
 const handleWalletClick = async (walletType) => {
+  console.log('🔘 UI DEBUG: handleWalletClick called with:', walletType)
+  
   const isAvailable = getWalletAvailability(walletType)
+  console.log('🔘 UI DEBUG: wallet availability:', isAvailable)
+  
   if (!isAvailable.available) {
+    console.log('🔘 UI DEBUG: Wallet not available, opening install URL')
     window.open(isAvailable.installUrl, '_blank')
     return
   }
+  
   try {
+    console.log('🔘 UI DEBUG: Starting connection process')
     connectingWallet.value = walletType
-    if (isConnected.value) await walletStore.disconnectWallet(false)
+    
+    if (isConnected.value) {
+      console.log('🔘 UI DEBUG: Already connected, disconnecting first')
+      await walletStore.disconnectWallet(false)
+    }
+    
+    console.log('🔘 UI DEBUG: Calling connectWallet function')
     await connectWallet(walletType)
+    console.log('🔘 UI DEBUG: Connection successful, closing modal')
     closeModal()
   } catch (error) {
-    console.error(`${walletType} connection failed:`, error)
+    console.error('❌ UI DEBUG: Connection failed:', {
+      walletType,
+      error: error.message,
+      code: error.code,
+      stack: error.stack
+    })
   } finally {
+    console.log('🔘 UI DEBUG: Clearing connectingWallet')
     connectingWallet.value = null
   }
 }
@@ -303,14 +334,23 @@ const getWalletAvailability = (walletType) => {
 
 // Connect to specific wallet
 const connectWallet = async (walletType) => {
+  console.log('🔌 UI DEBUG: connectWallet called with:', walletType)
+  console.log('🔌 UI DEBUG: walletStore exists?', !!walletStore)
+  console.log('🔌 UI DEBUG: walletStore.connectWallet exists?', typeof walletStore.connectWallet)
+  
   switch (walletType) {
     case 'metamask':
+      console.log('🔌 UI DEBUG: Calling walletStore.connectWallet for MetaMask')
       await walletStore.connectWallet('metamask', 'ethereum')
+      console.log('🔌 UI DEBUG: MetaMask connection completed')
       break
     case 'phantom':
+      console.log('🔌 UI DEBUG: Calling walletStore.connectWallet for Phantom')
       await walletStore.connectWallet('phantom', 'solana')
+      console.log('🔌 UI DEBUG: Phantom connection completed')
       break
     default:
+      console.log('🔌 UI DEBUG: Unknown wallet type:', walletType)
       throw new Error(`Unknown wallet type: ${walletType}`)
   }
 }

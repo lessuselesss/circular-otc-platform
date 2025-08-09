@@ -16,7 +16,7 @@
               History
             </NuxtLink>
             
-            <MultiWalletButton />
+            <ReownWalletButton />
           </div>
         </div>
       </div>

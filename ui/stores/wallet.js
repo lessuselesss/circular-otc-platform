@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { useMetaMask } from '../composables/useMetaMask.js'
 
 /**
  * Unified wallet store with MetaMask enabled
@@ -17,8 +18,8 @@ export const useWalletStore = defineStore('wallet', () => {
   // Wallet modal visibility (central control)
   const isWalletModalOpen = ref(false)
 
-  // MetaMask state
-  const metaMaskWallet = ref(null)
+  // MetaMask state - create persistent instance to maintain connection state
+  const metaMaskWallet = ref(useMetaMask())
   const metaMaskConnected = ref(false)
   
   // Phantom state 
@@ -27,10 +28,14 @@ export const useWalletStore = defineStore('wallet', () => {
 
   // Connection states
   const isConnecting = ref(false)
-  const isConnected = computed(() => metaMaskConnected.value || phantomConnected.value)
+  const isConnected = computed(() => {
+    const metamaskConnected = metaMaskWallet.value?.isConnected?.value || metaMaskConnected.value
+    const phantomIsConnected = phantomConnected.value
+    return metamaskConnected || phantomIsConnected
+  })
 
-  // Connection control
-  const connectTimeoutMs = 15000
+  // Connection control - allow enough time for MetaMask's retry logic (3 attempts × 10s + buffer)
+  const connectTimeoutMs = 35000  // 35 seconds - less than MetaMask's total retry time
   let connectCancelled = false
   const cancelConnect = () => {
     connectCancelled = true
@@ -42,7 +47,8 @@ export const useWalletStore = defineStore('wallet', () => {
 
   // Active wallet information
   const activeWallet = computed(() => {
-    if (metaMaskConnected.value && metaMaskWallet.value) {
+    const metamaskActive = metaMaskWallet.value?.isConnected?.value && metaMaskWallet.value
+    if (metamaskActive) {
       return {
         type: 'metamask',
         address: metaMaskWallet.value.account?.value,
@@ -109,9 +115,22 @@ export const useWalletStore = defineStore('wallet', () => {
   }
 
   const withTimeout = (promise, ms, label = 'operation') => {
+    console.log(`⏰ TIMEOUT DEBUG: Starting ${label} with ${ms}ms timeout`)
     return new Promise((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error(`${label} timed out`)), ms)
-      promise.then((v) => { clearTimeout(t); resolve(v) }).catch((e) => { clearTimeout(t); reject(e) })
+      const t = setTimeout(() => {
+        console.log(`⏰ TIMEOUT DEBUG: ${label} TIMED OUT after ${ms}ms`)
+        reject(new Error(`${label} timed out`))
+      }, ms)
+      
+      promise.then((v) => { 
+        console.log(`⏰ TIMEOUT DEBUG: ${label} completed successfully:`, v)
+        clearTimeout(t)
+        resolve(v) 
+      }).catch((e) => { 
+        console.log(`⏰ TIMEOUT DEBUG: ${label} failed with error:`, e.message)
+        clearTimeout(t)
+        reject(e) 
+      })
     })
   }
 
@@ -130,33 +149,46 @@ export const useWalletStore = defineStore('wallet', () => {
 
   // MetaMask connection logic
   const connectMetaMask = async () => {
+    console.log('🔧 STORE DEBUG: connectMetaMask called')
+    console.log('🔧 STORE DEBUG: metaMaskWallet exists?', !!metaMaskWallet.value)
+    console.log('🔧 STORE DEBUG: connect method exists?', typeof metaMaskWallet.value?.connect)
+    
     try {
+      console.log('🔧 STORE DEBUG: Setting isConnecting = true')
       isConnecting.value = true
       connectCancelled = false
       globalError.value = null
 
-      const { useMetaMask } = await import('../composables/useMetaMask.js')
-      const metaMask = useMetaMask()
+      console.log('🔧 STORE DEBUG: Calling MetaMask connect directly (no store-level timeout)')
+      const success = await metaMaskWallet.value.connect()
+      console.log('🔧 STORE DEBUG: MetaMask connect result:', success)
+      console.log('🔧 STORE DEBUG: connectCancelled?', connectCancelled)
       
-      const success = await withTimeout(metaMask.connect(), connectTimeoutMs, 'MetaMask connection')
       if (connectCancelled) throw new Error('Connection cancelled')
       
       if (success) {
-        metaMaskWallet.value = metaMask
+        console.log('🔧 STORE DEBUG: Connection successful, updating state')
         metaMaskConnected.value = true
         activeChain.value = 'ethereum'
         updateActivity()
         saveConnectionPreference('metamask', 'ethereum')
         console.log('✅ MetaMask connected successfully')
-        return { success: true, wallet: metaMask }
+        return { success: true, wallet: metaMaskWallet.value }
       } else {
+        console.log('❌ STORE DEBUG: Connection returned false')
         throw new Error('Failed to connect to MetaMask')
       }
     } catch (error) {
-      console.error('❌ MetaMask connection failed:', error)
+      console.error('❌ STORE DEBUG: MetaMask connection failed:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack,
+        cancelled: connectCancelled
+      })
       globalError.value = error.message || 'Failed to connect to MetaMask'
       throw error
     } finally {
+      console.log('🔧 STORE DEBUG: Setting isConnecting = false')
       isConnecting.value = false
     }
   }
@@ -187,7 +219,7 @@ export const useWalletStore = defineStore('wallet', () => {
         }
       }
       
-      const success = await withTimeout(phantom.connect(), connectTimeoutMs, 'Phantom connection')
+      const success = await phantom.connect()
       if (connectCancelled) throw new Error('Connection cancelled')
       
       if (success) {
@@ -214,7 +246,6 @@ export const useWalletStore = defineStore('wallet', () => {
     try {
       if (metaMaskConnected.value && metaMaskWallet.value) {
         await metaMaskWallet.value.disconnect()
-        metaMaskWallet.value = null
         metaMaskConnected.value = false
         console.log('✅ MetaMask disconnected successfully')
       }
@@ -252,7 +283,6 @@ export const useWalletStore = defineStore('wallet', () => {
     try {
       if (walletType === 'metamask' && metaMaskConnected.value && metaMaskWallet.value) {
         await metaMaskWallet.value.disconnect()
-        metaMaskWallet.value = null
         metaMaskConnected.value = false
         console.log('✅ MetaMask disconnected specifically')
       } else if (walletType === 'phantom' && phantomConnected.value && phantomWallet.value) {
@@ -287,7 +317,7 @@ export const useWalletStore = defineStore('wallet', () => {
         if (typeof metaMaskWallet.value.switchToChain === 'function') {
           await metaMaskWallet.value.switchToChain(chainId)
         } else {
-          await metaMaskWallet.value.switchToMainnet()
+        await metaMaskWallet.value.switchToMainnet()
         }
         console.log('✅ Chain switched successfully')
         return true
@@ -327,18 +357,35 @@ export const useWalletStore = defineStore('wallet', () => {
       const pref = getConnectionPreference()
       if (pref?.walletType === 'metamask' && typeof window !== 'undefined' && window.ethereum) {
         try {
+          console.log('🔧 STORE DEBUG: Attempting MetaMask auto-reconnect...')
           const { useMetaMask } = await import('../composables/useMetaMask.js')
           const metaMask = useMetaMask()
-          await metaMask.checkConnection()
-          if (metaMask.isConnected.value) {
+          
+          // Use silent account check instead of full checkConnection to avoid MetaMask errors
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' })
+          console.log('🔧 STORE DEBUG: Auto-reconnect accounts:', accounts)
+          
+          if (accounts && accounts.length > 0) {
+            // MetaMask is already connected, initialize our state
+            metaMask.account.value = accounts[0]
+            metaMask.isConnected.value = true
+            
+            // Get chain ID
+            const chain = await window.ethereum.request({ method: 'eth_chainId' })
+            metaMask.chainId.value = parseInt(chain, 16)
+            
             metaMaskWallet.value = metaMask
             metaMaskConnected.value = true
             activeChain.value = 'ethereum'
             updateActivity()
             console.log('✅ MetaMask auto-reconnected via preference')
             reconnected = true
+          } else {
+            console.log('🔧 STORE DEBUG: No existing MetaMask connection found')
           }
-        } catch {}
+        } catch (err) {
+          console.log('🔧 STORE DEBUG: Auto-reconnect failed:', err.message)
+        }
       } else if (pref?.walletType === 'phantom' && typeof window !== 'undefined' && window.solana?.isPhantom) {
         try {
           // Only attempt a silent reconnect if the site is already trusted by Phantom
@@ -424,7 +471,8 @@ export const useWalletStore = defineStore('wallet', () => {
   const cleanup = () => {
     if (metaMaskWallet.value) { metaMaskWallet.value.cleanup?.() }
     if (phantomWallet.value) { phantomWallet.value.disconnect?.() }
-    metaMaskWallet.value = null
+    // Keep MetaMask instance but reset its state
+    if (metaMaskWallet.value) { metaMaskWallet.value.disconnect?.() }
     metaMaskConnected.value = false
     phantomWallet.value = null
     phantomConnected.value = false

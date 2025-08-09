@@ -1,6 +1,10 @@
 import { ref, computed, onMounted, readonly } from 'vue'
 
 export function useMetaMask() {
+  console.log('🦊 METAMASK DEBUG: useMetaMask instance created')
+  console.log('🦊 METAMASK DEBUG: window.ethereum exists?', !!window?.ethereum)
+  console.log('🦊 METAMASK DEBUG: window.ethereum.isMetaMask?', window?.ethereum?.isMetaMask)
+  
   // Reactive state
   const isConnected = ref(false)
   const isConnecting = ref(false)
@@ -28,45 +32,105 @@ export function useMetaMask() {
     return supportedChains.includes(parseInt(chainId.value))
   })
 
-  // Connect to MetaMask
+  // Connect to MetaMask with retry logic
   const connect = async () => {
+    console.log('🔧 DEBUG: MetaMask connect() called')
+    console.log('🔧 DEBUG: MetaMask installed?', isMetaMaskInstalled.value)
+    console.log('🔧 DEBUG: window.ethereum:', !!window.ethereum)
+    console.log('🔧 DEBUG: window.ethereum.isMetaMask:', window.ethereum?.isMetaMask)
+    
     if (!isMetaMaskInstalled.value) {
+      console.log('❌ DEBUG: MetaMask not installed')
       error.value = 'MetaMask is not installed. Please install MetaMask to continue.'
       return false
     }
 
-    try {
-      isConnecting.value = true
-      error.value = null
+    // Retry logic for MetaMask connection issues
+    const maxRetries = 3
+    let lastError = null
 
-      // Request account access
-      const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts'
-      })
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔧 DEBUG: Connection attempt ${attempt}/${maxRetries}`)
+        isConnecting.value = true
+        error.value = null
+
+        console.log('🔧 DEBUG: Requesting accounts...')
+        
+        // Add a small delay between retries to let MetaMask recover
+        if (attempt > 1) {
+          console.log('🔧 DEBUG: Waiting 1s before retry...')
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+        
+        // Request account access with timeout per attempt
+        const accounts = await Promise.race([
+          window.ethereum.request({ method: 'eth_requestAccounts' }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Single attempt timeout')), 10000)
+          )
+        ])
+        
+        console.log('🔧 DEBUG: Accounts received:', accounts)
 
       if (accounts.length > 0) {
+        console.log('🔧 DEBUG: Setting account:', accounts[0])
         account.value = accounts[0]
         isConnected.value = true
         
+        console.log('🔧 DEBUG: Getting chain ID...')
         // Get chain ID
         const chain = await window.ethereum.request({
           method: 'eth_chainId'
         })
         chainId.value = parseInt(chain, 16)
+        console.log('🔧 DEBUG: Chain ID set:', chainId.value)
 
+        console.log('🔧 DEBUG: Updating balance...')
         // Get balance
         await updateBalance()
         
-        console.log('✅ MetaMask connected:', account.value)
+        console.log('✅ DEBUG: MetaMask connection SUCCESS:', {
+          account: account.value,
+          chainId: chainId.value,
+          isConnected: isConnected.value
+        })
         return true
+      } else {
+        console.log('❌ DEBUG: No accounts returned on attempt', attempt)
+        lastError = new Error('No accounts returned from MetaMask')
       }
-    } catch (err) {
-      console.error('❌ Failed to connect MetaMask:', err)
-      error.value = err.message || 'Failed to connect to MetaMask'
-      return false
-    } finally {
-      isConnecting.value = false
+      
+      } catch (err) {
+        console.error(`❌ DEBUG: MetaMask connection attempt ${attempt} failed:`, {
+          error: err,
+          message: err.message,
+          code: err.code,
+          isTimeout: err.message?.includes('timeout')
+        })
+        
+        lastError = err
+        
+        // Don't retry for user rejection
+        if (err.code === 4001 || err.message?.includes('User rejected')) {
+          console.log('🔧 DEBUG: User rejected connection, not retrying')
+          break
+        }
+        
+        // If it's the last attempt or a non-retryable error, break
+        if (attempt === maxRetries) {
+          break
+        }
+        
+        console.log(`🔧 DEBUG: Will retry connection (attempt ${attempt + 1}/${maxRetries})`)
+      }
     }
+    
+    // All attempts failed
+    console.error('❌ DEBUG: All MetaMask connection attempts failed')
+    error.value = lastError?.message || 'Failed to connect to MetaMask after multiple attempts'
+    isConnecting.value = false
+    return false
   }
 
   // Disconnect wallet
@@ -314,11 +378,13 @@ export function useMetaMask() {
     window.ethereum.removeAllListeners('disconnect')
   }
 
-  // Initialize on mount
+  // Initialize on mount - only setup listeners, don't auto-check connection
   onMounted(async () => {
     if (typeof window !== 'undefined') {
-      await checkConnection()
+      console.log('🔧 DEBUG: MetaMask onMounted - setting up listeners only')
       setupEventListeners()
+      // Don't auto-check connection to avoid MetaMask internal errors
+      // Connection will be checked when user explicitly clicks connect
     }
   })
 
