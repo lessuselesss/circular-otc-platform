@@ -118,7 +118,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, inject } from 'vue'
+import { ref, computed, watch, inject, onBeforeUnmount } from 'vue'
 
 // Composables and stores with defensive initialization
 let walletStore, contracts, swapLogic, errorHandler
@@ -195,6 +195,10 @@ const selectedTier = ref(null)
 // Track which field was last updated to prevent circular updates
 const lastUpdatedField = ref('input') // 'input' or 'cirx'
 
+// Debounce timers for preventing rapid updates that lose focus
+let debounceTimer = null
+let reverseDebounceTimer = null
+
 // OTC Configuration
 const { otcConfig, discountTiers } = useOtcConfig()
 
@@ -211,25 +215,19 @@ const inputBalance = computed(() => {
   }
 })
 
+// Pure quote calculation without side effects to prevent focus loss
 const quote = computed(() => {
   // Calculate quote based on which field was last updated
   if (lastUpdatedField.value === 'input') {
     // Forward calculation: input amount -> CIRX amount
     if (!inputAmount.value || parseFloat(inputAmount.value) <= 0) return null
     
-    const quote = swapLogic.calculateQuote(
+    return swapLogic.calculateQuote(
       inputAmount.value,
       inputToken.value,
       activeTab.value === 'otc',
       selectedTier.value
     )
-    
-    // Update CIRX amount without triggering reverse calculation
-    if (quote && quote.cirxAmount !== cirxAmount.value) {
-      cirxAmount.value = quote.cirxAmount
-    }
-    
-    return quote
     
   } else if (lastUpdatedField.value === 'cirx') {
     // Reverse calculation: CIRX amount -> input amount
@@ -242,21 +240,63 @@ const quote = computed(() => {
       selectedTier.value
     )
     
-    if (reverseQuote) {
-      // Update input amount without triggering forward calculation
-      if (reverseQuote.inputAmount.toString() !== inputAmount.value) {
-        inputAmount.value = reverseQuote.inputAmount.toFixed(6).replace(/\.?0+$/, '')
-      }
-      
-      // Return the forward quote for consistency
-      return reverseQuote.forwardQuote
-    }
-    
-    return null
+    // Return the forward quote for consistency
+    return reverseQuote?.forwardQuote || null
   }
   
   return null
 })
+
+// Handle field updates with watchers to preserve focus
+watch(quote, (newQuote) => {
+  if (!newQuote) return
+  
+  // CRITICAL: Don't update CIRX field if user is actively typing in it
+  // This prevents focus loss during user input
+  if (lastUpdatedField.value === 'cirx') return
+  
+  // Clear any existing debounce timer
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+  }
+  
+  // Debounce updates to prevent rapid re-renders that lose focus
+  debounceTimer = setTimeout(() => {
+    // Double-check that input field is still the last updated field (user might have switched)
+    if (lastUpdatedField.value === 'input' && newQuote.cirxAmount !== cirxAmount.value) {
+      // Update CIRX amount from input calculation only if input field was last modified
+      cirxAmount.value = newQuote.cirxAmount
+    }
+    // If user switched to CIRX field during debounce, do NOT update to preserve focus
+  }, 100) // 100ms debounce prevents focus loss
+}, { immediate: false })
+
+// Handle reverse calculation updates separately
+watch(() => [cirxAmount.value, lastUpdatedField.value], ([newCirxAmount, field]) => {
+  if (field !== 'cirx' || !newCirxAmount || parseFloat(newCirxAmount) <= 0) return
+  
+  // Don't update input field if user is actively typing in it
+  if (lastUpdatedField.value === 'input') return
+  
+  const reverseQuote = swapLogic.calculateReverseQuote(
+    newCirxAmount,
+    inputToken.value,
+    activeTab.value === 'otc',
+    selectedTier.value
+  )
+  
+  if (reverseQuote && reverseQuote.inputAmount.toString() !== inputAmount.value) {
+    // Clear any existing reverse debounce timer
+    if (reverseDebounceTimer) {
+      clearTimeout(reverseDebounceTimer)
+    }
+    
+    // Debounce reverse calculation updates
+    reverseDebounceTimer = setTimeout(() => {
+      inputAmount.value = reverseQuote.inputAmount.toFixed(6).replace(/\.?0+$/, '')
+    }, 100)
+  }
+}, { immediate: false })
 
 const canPurchase = computed(() => {
   const hasAmount = inputAmount.value && parseFloat(inputAmount.value) > 0
@@ -514,6 +554,18 @@ watch([inputToken, () => walletStore.activeChain], () => {
         inputToken.value = 'ETH'
       }
     }
+  }
+})
+
+// Cleanup debounce timers to prevent memory leaks and focus issues
+onBeforeUnmount(() => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
+  if (reverseDebounceTimer) {
+    clearTimeout(reverseDebounceTimer)
+    reverseDebounceTimer = null
   }
 })
 </script>
