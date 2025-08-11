@@ -1,10 +1,5 @@
 <template>
   <div class="min-h-screen bg-circular-bg-primary relative overflow-hidden">
-    <!-- Jupiter Swap Authentic Background -->
-    <div 
-      class="absolute inset-0 bg-contain bg-center bg-no-repeat"
-      style="background-image: url('/spot-background-v3.webp')"
-    ></div>
     <header class="bg-transparent backdrop-blur-sm border-b border-gray-800/30 sticky top-0 z-50 relative">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
@@ -500,6 +495,8 @@ const {
 } = useWallet()
 
 const walletStore = useWalletStore()
+
+
 onMounted(async () => {
   try { await walletStore.initialize() } catch {}
 })
@@ -1331,14 +1328,14 @@ useHead({
 /* Gradient border effect */
 .gradient-border {
   position: relative;
-  border: 2px solid rgba(55, 65, 81, 0.5);
+  border: 1px solid rgba(55, 65, 81, 0.5);
   border-radius: 1rem;
   transition: all 0.3s ease;
 }
 
 .gradient-border:hover {
-  border: 2px solid #ef4444;
-  animation: border-color-cycle 15s ease infinite;
+  border: 1px solid #ef4444;
+  animation: border-color-cycle 75s ease infinite;
 }
 
 @keyframes border-color-cycle {
