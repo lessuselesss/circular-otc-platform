@@ -1,6 +1,11 @@
 <template>
-  <div class="min-h-screen bg-circular-bg-primary">
-    <header class="bg-transparent backdrop-blur-sm border-b border-gray-800/30 sticky top-0 z-50">
+  <div class="min-h-screen bg-circular-bg-primary relative overflow-hidden">
+    <!-- Jupiter Swap Authentic Background -->
+    <div 
+      class="absolute inset-0 bg-contain bg-center bg-no-repeat"
+      style="background-image: url('/spot-background-v3.webp')"
+    ></div>
+    <header class="bg-transparent backdrop-blur-sm border-b border-gray-800/30 sticky top-0 z-50 relative">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <div class="flex items-center gap-2 sm:gap-4">
@@ -23,7 +28,7 @@
     </header>
 
     
-    <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8">
+    <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8 relative z-10">
       <div :class="[
         'w-full mx-auto transition-all duration-500',
         (showChart || showStaking) ? 'max-w-none px-4' : 'max-w-lg'
@@ -50,7 +55,7 @@
         
         <div class="relative">
           
-          <div class="relative bg-circular-bg-primary/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8 overflow-hidden">
+          <div class="relative p-6 sm:p-8 overflow-hidden transition-all duration-300 gradient-border">
           
           <div class="flex mb-6 bg-gray-800/50 rounded-xl p-1 gap-1 overflow-hidden">
             <button
@@ -458,12 +463,13 @@
           </div>
         </div>
         
-        <!-- Logo moved below the form -->
+        <!-- White Circular Logo centered at bottom -->
         <div class="mt-8 flex justify-center">
           <img 
-            src="https://cdn.prod.website-files.com/65e472c0cd2f1bebcd7fcf73/65e483ab69e2314b250ed7dc_imageedit_1_8961069084.png" 
-            alt="CIRX Token" 
-            class="h-12 w-auto opacity-60 hover:opacity-80 transition-opacity"
+            src="/images/logo/PNG/abstract-icon-white-png.png" 
+            alt="Circular Protocol" 
+            class="h-16 w-16 opacity-60 hover:opacity-80 transition-opacity cursor-pointer"
+            @click="$router.push('/')"
           />
         </div>
       </div>
@@ -1320,6 +1326,27 @@ useHead({
 
 .animate-gradient-rotate {
   animation: gradient-rotate 12s ease infinite;
+}
+
+/* Gradient border effect */
+.gradient-border {
+  position: relative;
+  border: 2px solid rgba(55, 65, 81, 0.5);
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+}
+
+.gradient-border:hover {
+  border: 2px solid #ef4444;
+  animation: border-color-cycle 15s ease infinite;
+}
+
+@keyframes border-color-cycle {
+  0% { border-color: #00ff88; }
+  25% { border-color: #00d9ff; }
+  50% { border-color: #8b5cf6; }
+  75% { border-color: #a855f7; }
+  100% { border-color: #00ff88; }
 }
 
 /* Hide number input spinner arrows */
