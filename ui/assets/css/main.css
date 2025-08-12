@@ -7,7 +7,7 @@
 
 @layer base {
   body {
-    @apply bg-gray-900 text-white font-sans;
+    @apply bg-figma-base text-white font-sans;
   }
 }
 

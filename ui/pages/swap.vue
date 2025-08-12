@@ -1,29 +1,46 @@
 <template>
-  <div class="min-h-screen bg-circular-bg-primary relative overflow-hidden">
-    <header class="bg-transparent backdrop-blur-sm border-b border-gray-800/30 sticky top-0 z-50 relative">
+  <div class="min-h-screen relative overflow-hidden bg-figma-base">
+    <!-- Space Background -->
+    <div key="static-background" class="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed z-0" style="background-image: url('/background.png')"></div>
+    <!-- Gradient overlay: darkest at top, lightest at bottom -->
+    <div key="static-gradient" class="absolute inset-0 z-10" style="background: linear-gradient(to bottom, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.70) 50%, transparent 100%);"></div>
+    <header class="sticky top-0 z-50 relative">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <div class="flex items-center gap-2 sm:gap-4">
-            <span class="text-lg font-semibold text-white">Circular</span>
-            <span class="text-xs sm:text-sm text-gray-400">Swap</span>
+        <div class="flex justify-between items-center h-20">
+          <!-- Logo Section -->
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-gradient-to-br from-circular-primary to-circular-purple rounded-xl flex items-center justify-center shadow-lg">
+                <span class="text-white font-bold text-lg">C</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-xl font-bold text-white tracking-tight drop-shadow-lg">Circular</span>
+                <span class="text-xs text-cyan-300 font-medium drop-shadow-md">OTC Platform</span>
+              </div>
+            </div>
           </div>
-          <div class="flex items-center gap-2 sm:gap-4">
-            
-            <NuxtLink 
-              to="/history" 
-              class="px-3 py-2 text-gray-400 hover:text-white transition-colors text-sm font-medium"
-            >
-              History
-            </NuxtLink>
-            
-            <ReownWalletButton />
+
+          <!-- Navigation & Wallet Section -->
+          <div class="flex items-center gap-4">
+            <!-- Token Balance Display -->
+            <div v-if="isConnected && inputBalance && parseFloat(inputBalance) > 0" class="flex items-center gap-2 px-3 py-1.5 bg-gray-900/40 backdrop-blur-sm border border-cyan-400/40 rounded-lg shadow-lg">
+              <img 
+                :src="getTokenLogo(inputToken)" 
+                :alt="inputToken"
+                class="w-4 h-4 rounded-full"
+              />
+              <span class="text-sm font-medium text-white drop-shadow-md">{{ parseFloat(inputBalance).toFixed(4) }} {{ getTokenSymbol(inputToken) }}</span>
+            </div>
+
+            <!-- Wallet Button -->
+            <WalletButton />
           </div>
         </div>
       </div>
     </header>
 
     
-    <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8 relative z-10">
+    <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8 relative z-20">
       <div :class="[
         'w-full mx-auto transition-all duration-500',
         (showChart || showStaking) ? 'max-w-none px-4' : 'max-w-lg'
@@ -50,9 +67,9 @@
         
         <div class="relative">
           
-          <div class="relative p-6 sm:p-8 overflow-hidden transition-all duration-300 gradient-border">
+          <div class="relative p-6 sm:p-8 bg-transparent rounded-2xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/10 overflow-hidden transition-all duration-300 gradient-border min-h-[600px]">
           
-          <div class="flex mb-6 bg-gray-800/50 rounded-xl p-1 gap-1 overflow-hidden">
+          <div class="flex mb-6 bg-transparent rounded-xl p-1 gap-1 overflow-hidden border border-cyan-500/20">
             <button
               @click="activeTab = 'liquid'"
               :class="[
@@ -85,7 +102,7 @@
               </span>
               <div class="flex flex-col items-center gap-0.5 min-w-0 overflow-hidden max-w-full">
                 <span class="px-1.5 sm:px-2 py-0.5 text-xs bg-circular-purple text-white rounded-full font-semibold whitespace-nowrap">
-                  {{ otcConfig.displayRange }}
+                  {{ otcConfig.value?.displayRange || '5-12%' }}
                 </span>
                 <span class="text-xs text-gray-400 font-normal hidden md:inline">
                   discount
@@ -100,8 +117,9 @@
             <div class="mb-6">
               <div class="flex justify-between items-center mb-3">
                 <label class="text-sm font-medium text-white">Pay with</label>
-                <span v-if="inputBalance" class="text-sm cursor-pointer hover:text-white transition-colors text-gray-400" @click="setMaxAmount">
-                  Balance: {{ inputBalance }} {{ inputToken }}
+                <span v-if="inputBalance" class="text-sm cursor-pointer hover:text-white transition-colors text-gray-400" @click="setMaxAmount" @dblclick="forceRefreshBalance">
+                  Balance: {{ fullPrecisionInputBalance }} {{ inputToken }}
+                  <span v-if="isBalanceLoading" class="ml-1 text-xs">🔄</span>
                 </span>
               </div>
               <div class="relative token-input-container">
@@ -113,10 +131,10 @@
                   pattern="[0-9]*\.?[0-9]*"
                   placeholder="0.0"
                   :class="[
-                    'w-full pl-4 pr-32 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300',
+                    'w-full pl-4 pr-32 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-400 transition-all duration-300',
                     activeTab === 'liquid' 
-                      ? 'border-gray-600/50 hover:border-circular-primary focus:border-circular-primary focus:ring-2 focus:ring-circular-primary/50 focus:outline-none' 
-                      : 'border-gray-600/50 hover:border-circular-purple focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/50 focus:outline-none'
+                      ? 'border-gray-700/70 hover:border-circular-primary focus:border-circular-primary focus:ring-2 focus:ring-circular-primary/50 focus:outline-none' 
+                      : 'border-gray-700/70 hover:border-circular-purple focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/50 focus:outline-none'
                   ]"
                   :disabled="loading"
                   
@@ -243,10 +261,10 @@
                   :disabled="quoteLoading || reverseQuoteLoading"
                   style="-webkit-appearance: none; -moz-appearance: textfield;"
                   :class="[
-                    'w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300',
+                    'w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-400 transition-all duration-300',
                     activeTab === 'liquid' 
-                      ? 'border-circular-primary/40 focus:border-circular-primary' 
-                      : 'border-circular-purple/40 focus:border-circular-purple',
+                      ? 'border-gray-700/70 focus:border-circular-primary focus:ring-2 focus:ring-circular-primary/30' 
+                      : 'border-gray-700/70 focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/30',
                     'focus:outline-none',
                     (quoteLoading || reverseQuoteLoading) && 'opacity-50'
                   ]"
@@ -292,7 +310,7 @@
               </div>
 
               <!-- OTC Discount Tiers (show full range, highlight active) -->
-              <div v-if="activeTab === 'otc'" class="mt-3 space-y-2">
+              <div :class="['mt-3 space-y-2 transition-all duration-300', activeTab === 'otc' ? 'opacity-100 max-h-96' : 'opacity-0 max-h-0 overflow-hidden']">
                 <h4 class="text-xs font-medium text-purple-300">OTC Discount Tiers</h4>
                 <div class="grid grid-cols-1 gap-2">
                   <div
@@ -308,7 +326,7 @@
                     <div class="text-xs text-gray-400">Min: ${{ formatAmount(tier.minAmount) }}</div>
                     <div class="text-right text-xs">
                       <span :class="selectedTier && selectedTier.minAmount === tier.minAmount ? 'text-purple-400 font-medium' : 'text-gray-300 font-medium'">{{ tier.discount }}%</span>
-                      <span class="text-gray-500 ml-1">{{ tier.vestingMonths || otcConfig.vestingPeriod.months }}mo</span>
+                      <span class="text-gray-500 ml-1">{{ tier.vestingMonths || otcConfig.value?.vestingPeriod?.months || 6 }}mo</span>
                     </div>
                   </div>
                 </div>
@@ -319,7 +337,7 @@
             </div>
 
             
-            <div v-if="quote" class="bg-transparent border border-gray-600/50 rounded-xl p-4 mb-6 hover:border-gray-500 transition-all duration-300">
+            <div v-if="quote" class="bg-transparent border border-cyan-500/20 rounded-xl p-4 mb-6 hover:border-cyan-500/40 transition-all duration-300">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm text-gray-400">Exchange Rate</span>
                 <span class="text-sm font-medium text-white" :class="isPriceRefreshing ? 'animate-pulse' : ''">1 {{ inputToken }} = {{ quote.rate }} CIRX</span>
@@ -349,7 +367,7 @@
               </div>
               <div v-if="activeTab === 'otc'" class="flex justify-between items-center">
                 <span class="text-sm text-gray-400">Vesting Period</span>
-                <span class="text-sm font-medium text-white">{{ otcConfig.vestingPeriod.months }} months ({{ otcConfig.vestingPeriod.type }})</span>
+                <span class="text-sm font-medium text-white">{{ otcConfig.value?.vestingPeriod?.months || 6 }} months ({{ otcConfig.value?.vestingPeriod?.type || 'linear' }})</span>
               </div>
             </div>
 
@@ -371,10 +389,10 @@
                   type="text"
                   :placeholder="isConnected ? 'Leave empty to use connected wallet' : 'Enter wallet address to receive CIRX'"
                   :class="[
-                    'w-full pl-4 pr-12 py-3 text-sm bg-transparent border rounded-xl text-white placeholder-gray-500 transition-all duration-300',
+                    'w-full pl-4 pr-12 py-3 text-sm bg-transparent border rounded-xl text-white placeholder-gray-400 transition-all duration-300',
                     activeTab === 'liquid' 
-                      ? 'border-gray-600/50 hover:border-circular-primary focus:border-circular-primary focus:ring-2 focus:ring-circular-primary/50 focus:outline-none' 
-                      : 'border-gray-600/50 hover:border-circular-purple focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/50 focus:outline-none'
+                      ? 'border-gray-700/70 hover:border-circular-primary focus:border-circular-primary focus:ring-2 focus:ring-circular-primary/30 focus:outline-none' 
+                      : 'border-gray-700/70 hover:border-circular-purple focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/30 focus:outline-none'
                   ]"
                   :disabled="loading"
                 />
@@ -409,10 +427,11 @@
               :class="[
                 'w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300',
                 activeTab === 'liquid' 
-                  ? 'bg-circular-primary text-gray-900 hover:bg-circular-primary-hover' 
+                  ? 'text-white' 
                   : 'bg-circular-purple text-white hover:bg-purple-700',
                 (!canPurchase || loading || quoteLoading || reverseQuoteLoading) && 'opacity-50 cursor-not-allowed'
               ]"
+              :style="activeTab === 'liquid' ? 'background-color: #09BE8BCC; color: #00E3A3; opacity: 1;' : ''"
             >
               <span v-if="loading">{{ loadingText || 'Processing...' }}</span>
               <span v-else-if="quoteLoading || reverseQuoteLoading">
@@ -425,12 +444,14 @@
               <span v-else>Buy OTC CIRX</span>
             </button>
           </form>
+          </div>
           
-          
+          <!-- Floating Action Pills -->
           <div v-if="!showChart && !showStaking" class="mt-4 flex justify-start gap-3">
             <button
               @click="showChart = true"
-              class="inline-flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white border border-gray-600/50 hover:border-gray-500 transition-all text-sm font-medium hover:bg-gray-800/30 rounded-lg w-fit"
+              class="inline-flex items-center gap-2 px-3 py-2 text-white border border-gray-600/30 hover:border-gray-400/60 transition-all text-sm font-medium rounded-full shadow-lg hover:scale-105 transform gradient-border"
+              style="background-color: #1B2E33;"
             >
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M3 3v18h18"/>
@@ -444,7 +465,8 @@
             </button>
             <button
               @click="showStaking = true"
-              class="inline-flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white border border-gray-600/50 hover:border-gray-500 transition-all text-sm font-medium hover:bg-gray-800/30 rounded-lg w-fit"
+              class="inline-flex items-center gap-2 px-3 py-2 text-white border border-gray-600/30 hover:border-gray-400/60 transition-all text-sm font-medium rounded-full shadow-lg hover:scale-105 transform gradient-border"
+              style="background-color: #1B2E33;"
             >
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z"/>
@@ -452,7 +474,6 @@
               </svg>
               Staking
             </button>
-          </div>
           </div>
         </div>
           </div>
@@ -469,11 +490,28 @@
         </div>
       </div>
     </div>
+
+    <!-- Connection Toast Notifications -->
+    <ConnectionToast 
+      :show="connectionToast.show"
+      :type="connectionToast.type"
+      :title="connectionToast.title"
+      :message="connectionToast.message"
+      :wallet-icon="connectionToast.walletIcon"
+      @close="connectionToast.show = false"
+    />
   </div>
 </template>
 
 <script setup>
+// Import Vue composables
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+// Import official Wagmi Vue hooks
+import { useAccount, useBalance } from '@wagmi/vue'
+import { useAppKit } from '@reown/appkit/vue'
 // Import components
+import WalletButton from '~/components/WalletButton.vue'
+import ConnectionToast from '~/components/ConnectionToast.vue'
 import OtcDiscountDropdown from '~/components/OtcDiscountDropdown.vue'
 import { getTokenPrices } from '~/services/priceService.js'
 
@@ -483,23 +521,75 @@ definePageMeta({
   layout: 'default'
 })
 
-// Multi-Wallet connection (using same composable as MultiWalletButton)
-const { 
-  isConnected, 
-  account, 
-  balance,
-  connectedWallet,
-  shortAddress,
-  getTokenBalance,
-  executeSwap
-} = useWallet()
-
-const walletStore = useWalletStore()
-
-
-onMounted(async () => {
-  try { await walletStore.initialize() } catch {}
+// Official Wagmi Vue hooks
+const { address, isConnected, connector } = useAccount()
+const { data: balance, isLoading: isBalanceLoading } = useBalance({ 
+  address: address 
 })
+const { open } = useAppKit()
+
+
+// Format ETH balance with full decimal precision using official Wagmi data
+const formattedEthBalance = computed(() => {
+  if (!balance.value) return '0.000000000000000000'
+  
+  // balance.value contains { formatted, value, decimals, symbol }
+  const amount = parseFloat(balance.value.formatted)
+  
+  if (isNaN(amount)) return '0.000000000000000000'
+  
+  // Show all 18 decimal places for Ethereum tokens
+  return amount.toFixed(18)
+})
+
+// Connection state management
+const connectionToast = ref({ show: false, type: 'success', title: '', message: '', walletIcon: null })
+const lastConnectedWalletIcon = ref(null) // Store icon when connected
+
+// Watch for connection state changes with toast notifications
+watch([isConnected, address], ([connected, addr], [prevConnected, prevAddr]) => {
+  console.log('🔍 CONNECTION WATCH: State changed:', { connected, addr, prevConnected, prevAddr })
+  
+  if (connected && !prevConnected) {
+    // Just connected - store the icon for later use
+    lastConnectedWalletIcon.value = walletIcon.value
+    connectionToast.value = {
+      show: true,
+      type: 'success',
+      title: 'Wallet Connected',
+      message: `Connected to ${addr?.slice(0, 6)}...${addr?.slice(-4)}`,
+      walletIcon: walletIcon.value
+    }
+  } else if (!connected && prevConnected) {
+    // Just disconnected - use stored icon
+    console.log('🔍 Wallet disconnected, using stored icon:', lastConnectedWalletIcon.value)
+    connectionToast.value = {
+      show: true,
+      type: 'error',
+      title: 'Wallet Disconnected',
+      message: 'Your wallet has been disconnected',
+      walletIcon: lastConnectedWalletIcon.value
+    }
+    // Clear stored icon after use
+    lastConnectedWalletIcon.value = null
+  }
+}, { immediate: false })
+
+// Watch for balance updates
+watch(() => [isConnected.value, address.value, balance.value], 
+  ([connected, addr, bal]) => {
+    console.log('🔍 BALANCE WATCH: Wagmi state changed:')
+    console.log('  - Connected:', connected)
+    console.log('  - Address:', addr ? addr.slice(0, 6) + '...' + addr.slice(-4) : 'none')
+    console.log('  - Balance object:', bal)
+    console.log('  - Formatted balance:', bal?.formatted)
+    console.log('  - Balance symbol:', bal?.symbol)
+    console.log('  - Is loading:', isBalanceLoading.value)
+    console.log('  - Computed full precision:', formattedEthBalance.value)
+    console.log('  - Timestamp:', new Date().toISOString())
+  }, 
+  { immediate: true }
+)
 
 // Reactive state
 const activeTab = ref('liquid')
@@ -613,44 +703,71 @@ const lastEditedField = ref('input') // 'input' or 'output'
 const reverseQuoteLoading = ref(false)
 const lastReverseQuoteRequestId = ref(0)
 
-// Use wallet balances when connected, otherwise show placeholders
+// Use official Wagmi balance data
 const inputBalance = computed(() => {
   if (!isConnected.value) {
-    return '0.0'
+    return '0.000000000000000000'
   }
   
-  // Adjust token symbol based on connected wallet
-  let tokenSymbol = inputToken.value
-  if (connectedWallet.value === 'phantom' && inputToken.value === 'ETH') {
-    tokenSymbol = 'SOL'
-  } else if (connectedWallet.value === 'phantom' && inputToken.value === 'USDC') {
-    tokenSymbol = 'USDC_SOL'
+  // For ETH, use the properly formatted balance with full precision
+  if (inputToken.value === 'ETH') {
+    return formattedEthBalance.value
   }
   
-  return getTokenBalance(tokenSymbol)
+  // For other tokens, return placeholder until implemented
+  return '0.000000000000000000'
 })
 
 // ETH balance for gas gating (0 when not connected)
 const awaitedEthBalance = computed(() => {
-  try { return getTokenBalance('ETH') } catch { return '0.0' }
+  if (isConnected.value) {
+    return formattedEthBalance.value || '0.000000000000000000'
+  }
+  return '0.000000000000000000'
 })
 
 const displayCirxBalance = computed(() => {
-  return isConnected.value ? getTokenBalance('CIRX') : '0.0'
+  return isConnected.value ? '0.000000000000000000' : '0.000000000000000000'
 })
 
-// Calculate slider amount based on percentage and available balance
-const formatSliderAmount = computed(() => {
-  const balance = parseFloat(inputBalance.value) || 0
-  const amount = (balance * sliderPercentage.value) / 100
-  
-  // Format with appropriate precision based on amount size
-  if (amount >= 1) {
-    return amount.toFixed(4).replace(/\.?0+$/, '') // Remove trailing zeros
-  } else {
-    return amount.toFixed(6).replace(/\.?0+$/, '') // More precision for small amounts
-  }
+// Simply use the inputBalance which now has full precision
+const fullPrecisionInputBalance = computed(() => {
+  return inputBalance.value
 })
+
+// Short address for display using official Wagmi address
+const shortAddress = computed(() => {
+  if (!address.value) return ''
+  return `${address.value.slice(0, 6)}...${address.value.slice(-4)}`
+})
+
+// Connected wallet type (using Wagmi hooks)
+const connectedWallet = computed(() => {
+  if (!connector.value) return null
+  return connector.value.name?.toLowerCase() === 'phantom' ? 'phantom' : 'ethereum'
+})
+
+// Wallet icon logic (same as in WalletButton)
+const walletIcon = computed(() => {
+  // Try to get icon from Wagmi connector
+  if (connector.value?.icon) {
+    return connector.value.icon
+  }
+  
+  // Fallback to common wallet icons from CDN
+  if (!connector.value) return null
+  const name = connector.value.name?.toLowerCase()
+  const iconMap = {
+    'metamask': 'https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg',
+    'coinbase': 'https://avatars.githubusercontent.com/u/18060234?s=280&v=4',
+    'walletconnect': 'https://avatars.githubusercontent.com/u/37784886?s=280&v=4',
+    'phantom': 'https://avatars.githubusercontent.com/u/78782331?s=280&v=4'
+  }
+  
+  return iconMap[name] || null
+})
+
+// Remove unused formatSliderAmount - not referenced in template
 
 // Token prices (live via price service, with sane defaults)
 // const tokenPrices = {
@@ -729,43 +846,49 @@ const lowestTierMin = computed(() => {
 
 // Computed properties  
 const canPurchase = computed(() => {
-  // Basic requirements
-  const hasAmount = inputAmount.value && parseFloat(inputAmount.value) > 0
-  const notLoading = !loading.value && !quoteLoading.value && !reverseQuoteLoading.value
-  
-  // Address validation
-  const addressValid = validateRecipientAddress(recipientAddress.value)
-  
-  // Either connected wallet OR valid recipient address required
-  const hasValidRecipient = isConnected.value || (recipientAddress.value && addressValid)
-  
-  // Balance validation - only check if wallet is connected
-  const hasSufficientBalance = !isConnected.value || (() => {
-    const inputAmountNum = parseFloat(inputAmount.value) || 0
-    const balanceNum = parseFloat(inputBalance.value) || 0
+  try {
+    // Basic requirements
+    const hasAmount = inputAmount.value && parseFloat(inputAmount.value) > 0
+    const notLoading = !loading.value && !quoteLoading.value && !reverseQuoteLoading.value
     
-    // For ETH, reserve gas fees (0.01 ETH)
-    const gasReserve = inputToken.value === 'ETH' ? 0.01 : 0
-    const availableBalance = Math.max(0, balanceNum - gasReserve)
+    // Address validation
+    const addressValid = validateRecipientAddress(recipientAddress.value)
     
-    return inputAmountNum <= availableBalance
-  })()
-  
-  // Network fee gating
-  const ethBal = parseFloat(awaitedEthBalance.value)
-  const feeEth = parseFloat(networkFee.value.eth)
-  const tokenBal = parseFloat(inputBalance.value)
+    // Either connected wallet OR valid recipient address required
+    const connected = isConnected.value || false
+    const hasValidRecipient = connected || (recipientAddress.value && addressValid)
+    
+    // Balance validation - only check if wallet is connected
+    const hasSufficientBalance = !connected || (() => {
+      const inputAmountNum = parseFloat(inputAmount.value) || 0
+      const balanceNum = parseFloat(inputBalance.value) || 0
+      
+      // For ETH, reserve gas fees (0.01 ETH)
+      const gasReserve = inputToken.value === 'ETH' ? 0.01 : 0
+      const availableBalance = Math.max(0, balanceNum - gasReserve)
+      
+      return inputAmountNum <= availableBalance
+    })()
+    
+    // Network fee gating
+    const ethBal = parseFloat(awaitedEthBalance.value) || 0
+    const feeEth = parseFloat(networkFee.value?.eth || '0') || 0
+    const tokenBal = parseFloat(inputBalance.value) || 0
 
-  let hasSufficientForFees = true
-  if (walletStore.isConnected) {
-    if (inputToken.value === 'ETH') {
-      hasSufficientForFees = ethBal >= ((parseFloat(inputAmount.value) || 0) + (feeEth || 0))
-    } else {
-      hasSufficientForFees = tokenBal >= (parseFloat(inputAmount.value) || 0) && ethBal >= (feeEth || 0)
+    let hasSufficientForFees = true
+    if (isConnected.value) {
+      if (inputToken.value === 'ETH') {
+        hasSufficientForFees = ethBal >= ((parseFloat(inputAmount.value) || 0) + (feeEth || 0))
+      } else {
+        hasSufficientForFees = tokenBal >= (parseFloat(inputAmount.value) || 0) && ethBal >= (feeEth || 0)
+      }
     }
-  }
 
-  return hasAmount && notLoading && hasValidRecipient && hasSufficientBalance && hasSufficientForFees
+    return hasAmount && notLoading && hasValidRecipient && hasSufficientBalance && hasSufficientForFees
+  } catch (error) {
+    console.error('❌ Error in canPurchase computed:', error)
+    return false
+  }
 })
 
 // Calculate discount based on USD amount and return both percent and tier
@@ -1046,7 +1169,12 @@ const handleCirxAmountChange = (value) => {
 const setMaxAmount = () => {
   if (isConnected.value) {
     // Set to 95% of balance to account for gas fees
-    const balance = parseFloat(getTokenBalance(inputToken.value))
+    let balance = 0
+    if (inputToken.value === 'ETH') {
+      balance = parseFloat(formattedEthBalance.value || '0')
+    } else {
+      balance = 0 // Other tokens not implemented yet
+    }
     const maxAmount = inputToken.value === 'ETH' ? balance * 0.95 : balance * 0.99
     inputAmount.value = maxAmount.toFixed(6)
   } else {
@@ -1057,9 +1185,15 @@ const setMaxAmount = () => {
   lastEditedField.value = 'input'
 }
 
+const forceRefreshBalance = async () => {
+  console.log('🔄 Force refreshing balance...')
+  // With Wagmi, balance refreshes automatically
+  console.log('✅ Balance refresh not needed with Wagmi - auto-refreshes')
+}
+
 const selectToken = (token) => {
   inputToken.value = token
-  try { useWalletStore().setSelectedToken(token) } catch {}
+  // Token selection handled by Wagmi automatically
   showTokenDropdown.value = false
   // Reset input when token changes
   inputAmount.value = ''
@@ -1116,7 +1250,7 @@ const handleSwap = async () => {
   
   // Check wallet connection or recipient fallback
   if (!isConnected.value && !recipientAddress.value) {
-    try { useWalletStore().openWalletModal() } catch {}
+    open() // Open AppKit modal
     return
   }
   
