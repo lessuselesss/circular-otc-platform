@@ -36,7 +36,10 @@ export default defineNuxtPlugin(() => {
       themeMode: 'dark',
       themeVariables: {
         '--w3m-accent': '#00D4FF'
-      }
+      },
+      // Prevent auto-connection attempts
+      autoConnect: false,
+      defaultChain: 'ethereum'
     })
     
     // Make AppKit instance globally accessible

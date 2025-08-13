@@ -101,7 +101,22 @@ export function useSolanaWallet() {
         }
       }
 
-      // Attempt connection with timeout
+      // Check if already connected silently first
+      if (walletInstance.isConnected) {
+        const response = { publicKey: walletInstance.publicKey }
+        address.value = response.publicKey.toString()
+        isConnected.value = true
+        walletType.value = targetWalletType
+        connectionAttempts.value = 0
+        return {
+          success: true,
+          address: address.value,
+          walletType: targetWalletType,
+          balance: balance.value
+        }
+      }
+
+      // Attempt connection with timeout (but only if user explicitly requested it)
       const connectionPromise = walletInstance.connect()
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Connection timeout')), 30000)

@@ -40,9 +40,11 @@ export const wagmiAdapter = new WagmiAdapter({
   ssr: false
 })
 
-// Initialize Solana Adapter
+// Initialize Solana Adapter with explicit options to prevent auto-connection
 export const solanaAdapter = new SolanaAdapter({
-  networks: solanaNetworks
+  networks: solanaNetworks,
+  autoConnect: false,
+  autoConnectPhantom: false
 })
 
 // Export Wagmi config for use in plugins
