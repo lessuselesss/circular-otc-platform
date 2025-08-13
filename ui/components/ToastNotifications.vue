@@ -24,7 +24,18 @@
           <div class="flex items-start gap-3">
             <!-- Icon -->
             <div class="flex-shrink-0 mt-0.5">
+              <img 
+                v-if="notification.customIcon" 
+                :src="notification.customIcon" 
+                :alt="notification.title || 'Notification'" 
+                :class="[
+                  'w-6 h-6 rounded border-2',
+                  notification.type === 'error' ? 'border-red-500' : 'border-transparent'
+                ]"
+                @error="$event.target.style.display='none'"
+              />
               <component 
+                v-else
                 :is="getIconComponent(notification.type)" 
                 :class="getIconClasses(notification.type)" 
               />

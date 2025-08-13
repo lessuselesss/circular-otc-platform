@@ -19,7 +19,8 @@ export default defineNuxtConfig({
     '@wagmi/vue/nuxt',
     // '@nuxt/ui' // Temporarily disabled - causing build issues
     'nuxt-icon',
-    'unplugin-icons/nuxt'
+    'unplugin-icons/nuxt',
+    'floating-vue/nuxt'
   ],
 
   // Configure unplugin-icons
@@ -45,6 +46,13 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
       ]
+    }
+  },
+
+  // Vue configuration for custom elements (AppKit web components)
+  vue: {
+    compilerOptions: {
+      isCustomElement: (tag) => tag.startsWith('w3m-') || tag.startsWith('wui-') || tag.startsWith('appkit-')
     }
   },
 

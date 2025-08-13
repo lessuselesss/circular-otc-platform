@@ -1,39 +1,48 @@
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 import { SolanaAdapter } from '@reown/appkit-adapter-solana'
-import { mainnet, arbitrum, sepolia, base, solana, solanaTestnet, solanaDevnet } from '@reown/appkit/networks'
+import { mainnet, arbitrum, sepolia, base, optimism, polygon, solana, solanaTestnet, solanaDevnet } from '@reown/appkit/networks'
 
 // Project ID from Reown Cloud
 export const projectId = '2585d3b6fd8a214ece0e26b344957169'
 
-// Supported networks - including both EVM and Solana chains
-export const networks = [
+// EVM networks for Wagmi adapter
+export const evmNetworks = [
   mainnet,
-  base,
+  sepolia, // Testnet
+  polygon,
   arbitrum,
-  sepolia, // For testing
+  optimism,
+  base
+]
+
+// Solana networks
+export const solanaNetworks = [
   solana,
   solanaTestnet,
   solanaDevnet
 ]
 
+// All supported networks (for AppKit)
+export const networks = [...evmNetworks, ...solanaNetworks]
+
 // Application metadata
 export const metadata = {
   name: 'Circular CIRX OTC Platform',
   description: 'Professional OTC trading platform for CIRX tokens with instant delivery and discounted vesting options.',
-  url: 'https://circular.io', // Must match your domain
+  url: 'https://circular.io',
   icons: ['https://circular.io/circular-logo.svg']
 }
 
-// Initialize Wagmi Adapter for EVM chains
+// Initialize Wagmi Adapter for EVM chains only
 export const wagmiAdapter = new WagmiAdapter({
-  networks,
+  networks: evmNetworks,
   projectId,
-  ssr: false // Disabled for client-side only rendering
+  ssr: false
 })
 
 // Initialize Solana Adapter
 export const solanaAdapter = new SolanaAdapter({
-  projectId
+  networks: solanaNetworks
 })
 
 // Export Wagmi config for use in plugins

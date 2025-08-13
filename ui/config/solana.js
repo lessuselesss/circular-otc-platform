@@ -14,10 +14,22 @@ export function useSolanaWallet() {
   })
 
   // Connect to Solana wallet (Phantom)
-  const connect = async () => {
+  const connect = async (options = {}) => {
     try {
       if (!isPhantomAvailable.value) {
         throw new Error('Phantom wallet is not installed')
+      }
+
+      // Check if already connected silently first
+      if (window.solana.isConnected) {
+        publicKey.value = window.solana.publicKey?.toString()
+        isConnected.value = true
+        return { publicKey: window.solana.publicKey }
+      }
+
+      // If silent mode requested and not already connected, don't show modal
+      if (options.silent) {
+        return null
       }
 
       const response = await window.solana.connect()

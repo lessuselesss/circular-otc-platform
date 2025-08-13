@@ -17,20 +17,14 @@
             bcmath
             curl
             dom
-            fileinfo
-            filter
-            hash
             mbstring
             openssl
-            pcre
             pdo
             pdo_mysql
             pdo_sqlite
             session
-            tokenizer
             xml
             zip
-            json
           ]));
         };
 
@@ -76,15 +70,29 @@
             echo "PHP Version: $(php --version | head -n1)"
             echo "Composer Version: $(composer --version)"
             echo ""
-            echo "Available commands:"
+            echo "📦 Setup Commands:"
             echo "  composer install    - Install PHP dependencies"
-            echo "  dev-server          - Start development server"
-            echo "  run-tests           - Run PHPUnit tests"
-            echo "  composer test       - Run tests via composer script"
+            echo "  php artisan migrate - Run database migrations"
             echo ""
-            echo "Database commands:"
+            echo "🛠️ Development Commands:"
+            echo "  dev-server          - Start development server (localhost:8080)"
+            echo "  run-tests           - Run PHPUnit tests"
+            echo "  php artisan migrate:status - Check migration status"
+            echo ""
+            echo "🗄️ Database Migration Commands:"
+            echo "  php artisan migrate         - Run pending migrations"
+            echo "  php artisan migrate:rollback - Rollback last migration batch"
+            echo "  php artisan migrate:fresh   - Reset and re-run all migrations"
+            echo "  php artisan migrate:status  - Show migration status"
+            echo ""
+            echo "⚙️ Background Workers:"
+            echo "  php artisan worker          - Run payment verification + CIRX transfer workers"
+            echo "  php artisan worker:stats    - Show worker statistics"
+            echo "  php worker.php both         - Alternative worker command"
+            echo ""
+            echo "🔍 Database Tools:"
             echo "  mysql               - Connect to MySQL"
-            echo "  sqlite3             - SQLite command line"
+            echo "  sqlite3 storage/database.sqlite - Connect to SQLite"
             echo ""
             
             # Set up environment
@@ -106,7 +114,7 @@
           
           src = ./.;
           
-          buildInputs = [ php php82Packages.composer ];
+          buildInputs = [ php pkgs.php82Packages.composer ];
           
           buildPhase = ''
             composer install --no-dev --optimize-autoloader
@@ -129,7 +137,7 @@
           };
           
           composer = flake-utils.lib.mkApp {
-            drv = php82Packages.composer;
+            drv = pkgs.php82Packages.composer;
           };
         };
       });

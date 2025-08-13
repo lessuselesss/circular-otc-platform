@@ -9,19 +9,36 @@ import { formatUnits } from 'viem'
  * Provides unified access to multi-chain wallet functionality
  */
 export const useReownWalletStore = defineStore('reownWallet', () => {
-  // Reown AppKit composables
-  const { open } = useAppKit()
-  const { address, isConnected, isConnecting, isDisconnected } = useAppKitAccount()
-  const { caipNetwork, chainId } = useAppKitNetwork()
-  const { selectedNetworkId } = useAppKitState()
-
-  // Wagmi composables for EVM chains
-  const { address: wagmiAddress, connector } = useAccount()
-  const { data: balance, isLoading: isBalanceLoading, refetch: refetchBalance } = useBalance({
-    address: wagmiAddress,
-  })
-  const currentChainId = useChainId()
-  const { disconnect } = useDisconnect()
+  // Initialize refs to avoid undefined access during SSR/initial render
+  const isInitialized = ref(false)
+  
+  // Reown AppKit composables with defensive initialization
+  let appKit, appKitAccount, appKitNetwork, appKitState, wagmiAccount, wagmiBalance, wagmiChainId, wagmiDisconnect
+  
+  try {
+    appKit = useAppKit()
+    appKitAccount = useAppKitAccount()
+    appKitNetwork = useAppKitNetwork()
+    appKitState = useAppKitState()
+    wagmiAccount = useAccount()
+    wagmiBalance = useBalance({
+      address: computed(() => appKitAccount?.address?.value || null),
+    })
+    wagmiChainId = useChainId()
+    wagmiDisconnect = useDisconnect()
+  } catch (error) {
+    console.warn('⚠️ Reown hooks not available during SSR, will initialize on client')
+  }
+  
+  // Extracted values with null safety
+  const { open } = appKit || {}
+  const { address, isConnected, isConnecting, isDisconnected } = appKitAccount || {}
+  const { caipNetwork, chainId } = appKitNetwork || {}
+  const { selectedNetworkId } = appKitState || {}
+  const { address: wagmiAddress, connector } = wagmiAccount || {}
+  const { data: balance, isLoading: isBalanceLoading, refetch: refetchBalance } = wagmiBalance || {}
+  const currentChainId = wagmiChainId
+  const { disconnect } = wagmiDisconnect || {}
 
   // Local state
   const isWalletModalOpen = ref(false)
@@ -31,13 +48,13 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
 
   // Computed properties
   const activeWallet = computed(() => {
-    if (!isConnected.value || !address.value) return null
+    if (!isConnected?.value || !address?.value) return null
     
     return {
       type: getWalletType(),
       address: address.value,
       chain: getChainType(),
-      chainId: chainId.value
+      chainId: chainId?.value
     }
   })
 
@@ -77,34 +94,62 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
   })
 
   const formattedBalance = computed(() => {
-    if (!balance.value) return '0.0'
+    console.log('🔍 REOWN STORE: formattedBalance computed called')
+    console.log('🔍 REOWN STORE: balance?.value:', balance?.value)
+    console.log('🔍 REOWN STORE: isConnected:', isConnected?.value)
+    console.log('🔍 REOWN STORE: address:', address?.value)
+    
+    if (!balance?.value) {
+      console.log('🔍 REOWN STORE: No balance data, returning 0.0')
+      return '0.0'
+    }
     
     try {
+      console.log('🔍 REOWN STORE: Raw balance object:', balance.value)
+      console.log('🔍 REOWN STORE: balance.value.value:', balance.value.value)
+      console.log('🔍 REOWN STORE: balance.value.decimals:', balance.value.decimals)
+      
       const formatted = formatUnits(balance.value.value, balance.value.decimals)
       const amount = parseFloat(formatted)
-      return amount.toFixed(4)
-    } catch {
+      
+      console.log('🔍 REOWN STORE: Formatted units result:', formatted)
+      console.log('🔍 REOWN STORE: Parsed amount:', amount)
+      
+      // Show full precision (up to token decimals, typically 18 for ETH)
+      const decimals = balance.value.decimals || 18
+      let fullPrecision = amount.toFixed(decimals)
+      
+      // Remove trailing zeros but keep at least one decimal place
+      fullPrecision = fullPrecision.replace(/\.?0+$/, '')
+      if (!fullPrecision.includes('.')) {
+        fullPrecision += '.0'
+      }
+      
+      console.log('🔍 REOWN STORE: Final formatted balance:', fullPrecision)
+      return fullPrecision
+    } catch (error) {
+      console.error('🔍 REOWN STORE: Error formatting balance:', error)
       return '0.0'
     }
   })
 
   const balanceSymbol = computed(() => {
-    return balance.value?.symbol || selectedToken.value || 'ETH'
+    return balance?.value?.symbol || selectedToken.value || 'ETH'
   })
 
   const networkName = computed(() => {
-    return caipNetwork.value?.name || 'Unknown Network'
+    return caipNetwork?.value?.name || 'Unknown Network'
   })
 
   const isOnSupportedChain = computed(() => {
     // Define supported chain IDs for your app
     const supportedChainIds = [1, 8453, 42161, 11155111] // Mainnet, Base, Arbitrum, Sepolia
-    return supportedChainIds.includes(chainId.value)
+    return supportedChainIds.includes(chainId?.value)
   })
 
   // Helper functions
   function getWalletType() {
-    if (!connector.value) return 'unknown'
+    if (!connector?.value) return 'unknown'
     
     const name = connector.value.name?.toLowerCase() || ''
     if (name.includes('metamask')) return 'metamask'
@@ -115,7 +160,7 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
   }
 
   function getChainType() {
-    if (!caipNetwork.value) return 'unknown'
+    if (!caipNetwork?.value) return 'unknown'
     
     // Check if it's a Solana network
     if (caipNetwork.value.id?.includes('solana')) return 'solana'
@@ -130,12 +175,16 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
       clearError()
       updateActivity()
       
-      if (walletType) {
-        // Open modal with specific view or let user choose
-        open({ view: 'Connect' })
+      if (open) {
+        if (walletType) {
+          // Open modal with specific view or let user choose
+          open({ view: 'Connect' })
+        } else {
+          // Open generic connect modal
+          open()
+        }
       } else {
-        // Open generic connect modal
-        open()
+        throw new Error('AppKit not initialized')
       }
       
       return true
@@ -148,7 +197,7 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
 
   const disconnectWallet = async () => {
     try {
-      if (connector.value) {
+      if (connector?.value && disconnect) {
         await disconnect()
       }
       
@@ -165,7 +214,11 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
   const switchChain = async (targetChainId) => {
     try {
       // Reown handles chain switching through the Networks modal
-      open({ view: 'Networks' })
+      if (open) {
+        open({ view: 'Networks' })
+      } else {
+        throw new Error('AppKit not available')
+      }
       return true
     } catch (error) {
       console.error('❌ Chain switch failed:', error)
@@ -180,6 +233,8 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
         await refetchBalance()
         updateActivity()
         console.log('✅ Balance refreshed successfully')
+      } else {
+        console.warn('⚠️ Balance refetch function not available')
       }
     } catch (error) {
       console.error('❌ Failed to refresh balance:', error)
@@ -189,8 +244,23 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
   }
 
   const initialize = async () => {
+    if (isInitialized.value) return true
+    
     try {
-      // Reown handles initialization automatically
+      // Wait for AppKit to be available
+      if (typeof window !== 'undefined') {
+        // Give AppKit time to initialize
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        // Check if hooks are now available
+        if (address && isConnected) {
+          isInitialized.value = true
+          console.log('✅ Reown wallet store initialized with hooks')
+        } else {
+          console.warn('⚠️ Reown hooks still not available, store partially initialized')
+        }
+      }
+      
       updateActivity()
       console.log('✅ Reown wallet store initialized')
       return true
@@ -211,11 +281,19 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
   }
 
   const openAccountModal = () => {
-    open({ view: 'Account' })
+    if (open) {
+      open({ view: 'Account' })
+    } else {
+      console.warn('⚠️ AppKit open function not available')
+    }
   }
 
   const openNetworksModal = () => {
-    open({ view: 'Networks' })
+    if (open) {
+      open({ view: 'Networks' })
+    } else {
+      console.warn('⚠️ AppKit open function not available')
+    }
   }
 
   // Utility functions
@@ -236,7 +314,7 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
   const validateWalletForToken = (tokenSymbol) => {
     const ethereumTokens = ['ETH', 'USDC', 'USDT', 'CIRX']
     if (ethereumTokens.includes(tokenSymbol)) {
-      if (!isConnected.value || getChainType() !== 'ethereum') {
+      if (!isConnected?.value || getChainType() !== 'ethereum') {
         throw new Error(`${tokenSymbol} requires Ethereum wallet connection`)
       }
       return true
@@ -244,7 +322,7 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
     
     const solanaTokens = ['SOL', 'USDC_SOL']
     if (solanaTokens.includes(tokenSymbol)) {
-      if (!isConnected.value || getChainType() !== 'solana') {
+      if (!isConnected?.value || getChainType() !== 'solana') {
         throw new Error(`${tokenSymbol} requires Solana wallet connection`)
       }
       return true
@@ -265,9 +343,9 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
   // Return store interface
   return {
     // State
-    isConnected,
-    isConnecting,
-    isDisconnected,
+    isConnected: computed(() => isConnected?.value || false),
+    isConnecting: computed(() => isConnecting?.value || false),
+    isDisconnected: computed(() => isDisconnected?.value || true),
     activeWallet,
     availableWallets,
     currentError,
@@ -279,13 +357,13 @@ export const useReownWalletStore = defineStore('reownWallet', () => {
     selectedToken,
     isWalletModalOpen,
     lastActivity,
-    address,
-    chainId,
-    caipNetwork,
+    address: computed(() => address?.value || null),
+    chainId: computed(() => chainId?.value || null),
+    caipNetwork: computed(() => caipNetwork?.value || null),
     
     // Computed
-    balance,
-    isBalanceLoading,
+    balance: computed(() => balance?.value || null),
+    isBalanceLoading: computed(() => isBalanceLoading?.value || false),
     
     // Actions
     connectWallet,

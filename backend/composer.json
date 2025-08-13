@@ -4,14 +4,15 @@
     "type": "project",
     "require": {
         "php": "^8.2",
-        "slim/slim": "^4.0",
-        "slim/psr7": "^1.6",
-        "illuminate/database": "^10.0",
+        "circular-protocol/circular-protocol-api": "^1.0",
+        "firebase/php-jwt": "^6.0",
         "guzzlehttp/guzzle": "^7.0",
-        "ramsey/uuid": "^4.0",
+        "illuminate/database": "^10.0",
         "monolog/monolog": "^3.0",
-        "vlucas/phpdotenv": "^5.0",
-        "firebase/php-jwt": "^6.0"
+        "ramsey/uuid": "^4.0",
+        "slim/psr7": "^1.6",
+        "slim/slim": "^4.0",
+        "vlucas/phpdotenv": "^5.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0",

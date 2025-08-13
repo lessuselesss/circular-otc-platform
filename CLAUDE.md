@@ -143,6 +143,56 @@ wrangler pages deploy .output/public  # Deploy to Cloudflare Pages
 - **Smart Contracts**: `/test/` - Uses Forge testing framework with fuzz testing support
 - **Frontend**: Nuxt.js built-in testing with Vitest support
 
+## Critical Development Principles
+
+### 🔍 Look Before You Leap Protocol
+
+**ALWAYS verify existing state before making changes:**
+
+1. **Process Discovery**:
+   ```bash
+   # Check for running processes before starting new ones
+   ps aux | grep -E "(npm|node|nuxt|forge|anvil)" 
+   netstat -tlnp | grep -E ":(3000|3001|3002|8545)" # Check occupied ports
+   ```
+
+2. **File System Analysis**:
+   ```bash
+   # Check if files/configs already exist before creating
+   ls -la config/ plugins/ components/
+   find . -name "*.config.*" -o -name "*adapter*" -o -name "*wagmi*"
+   ```
+
+3. **Code Duplication Detection**:
+   ```bash
+   # Search for existing logic before implementing
+   rg "createAppKit|WagmiAdapter|useAppKit" --type ts --type js --type vue
+   rg "function connectWallet|const connectWallet" 
+   ```
+
+4. **Dependency Verification**:
+   ```bash
+   # Check existing imports and configs
+   rg "@reown|@wagmi|wagmi" package.json
+   rg "import.*wagmi|import.*reown" --type ts --type js
+   ```
+
+5. **Service Status Check**:
+   ```bash
+   # Verify what's already running
+   curl -s http://localhost:3000 > /dev/null && echo "Port 3000 occupied"
+   curl -s http://localhost:8545 > /dev/null && echo "Anvil running"
+   ```
+
+**Pre-Action Checklist**:
+- [ ] Read existing files in target directory
+- [ ] Search for similar logic/patterns already implemented  
+- [ ] Check if services/processes are already running
+- [ ] Verify imports and dependencies don't conflict
+- [ ] Ensure no duplicate configurations exist
+
+**Implementation Rule**: Only create/modify if verification shows it's needed or different from existing implementation.
+
 ## Development Workflow
 
 ### Jujutsu (jj) Version Control Setup

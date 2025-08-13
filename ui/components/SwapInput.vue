@@ -29,7 +29,7 @@
         @keypress="validateNumberInput"
       />
       
-      <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+      <div class="absolute inset-y-0 right-0 flex items-center pr-4 token-selector-wrapper">
         <TokenSelector
           :selected-token="token"
           :active-tab="activeTab"
