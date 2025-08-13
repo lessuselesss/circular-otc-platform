@@ -135,11 +135,13 @@ export const useWalletStore = defineStore('wallet', () => {
   }
 
   // Connection methods
-  const connectWallet = async (walletType, chain = 'ethereum') => {
+  const connectWallet = async (walletType, chain = 'ethereum', options = {}) => {
     if (walletType === 'metamask' && chain === 'ethereum') {
       return await connectMetaMask()
     } else if (walletType === 'phantom' && chain === 'solana') {
-      return await connectPhantom()
+      // Default to silent mode unless explicitly requested otherwise
+      const silent = options.silent !== false
+      return await connectPhantom(silent)
     } else {
       console.warn(`Wallet connection for ${walletType} on ${chain} is not supported.`)
       globalError.value = `Wallet connection for ${walletType} on ${chain} is not supported.`
@@ -193,8 +195,34 @@ export const useWalletStore = defineStore('wallet', () => {
     }
   }
   
+  // Silent phantom check (no modal)
+  const checkPhantomSilently = async () => {
+    try {
+      if (typeof window === 'undefined' || !window.solana?.isPhantom) {
+        return false
+      }
+      
+      // Only check if already connected, don't trigger modal
+      if (window.solana.isConnected) {
+        const phantom = {
+          account: ref(window.solana.publicKey?.toString()),
+          isConnected: ref(true)
+        }
+        phantomWallet.value = phantom
+        phantomConnected.value = true
+        activeChain.value = 'solana'
+        console.log('✅ Phantom already connected silently')
+        return true
+      }
+      return false
+    } catch (error) {
+      console.log('👻 Phantom silent check failed:', error.message)
+      return false
+    }
+  }
+
   // Phantom connection logic
-  const connectPhantom = async () => {
+  const connectPhantom = async (silent = true) => {
     try {
       isConnecting.value = true
       connectCancelled = false
@@ -203,10 +231,23 @@ export const useWalletStore = defineStore('wallet', () => {
       const phantom = {
         account: ref(null),
         isConnected: ref(false),
-        connect: async () => {
+        connect: async (options = {}) => {
           if (typeof window === 'undefined' || !window.solana?.isPhantom) {
             throw new Error('Phantom wallet not found')
           }
+          
+          // Check if already connected silently first
+          if (window.solana.isConnected) {
+            phantom.account.value = window.solana.publicKey?.toString()
+            phantom.isConnected.value = true
+            return true
+          }
+          
+          // If not connected and silent mode requested, don't show modal
+          if (options.silent) {
+            return false
+          }
+          
           const response = await window.solana.connect()
           phantom.account.value = response.publicKey.toString()
           phantom.isConnected.value = true
@@ -219,7 +260,7 @@ export const useWalletStore = defineStore('wallet', () => {
         }
       }
       
-      const success = await phantom.connect()
+      const success = await phantom.connect({ silent })
       if (connectCancelled) throw new Error('Connection cancelled')
       
       if (success) {
@@ -424,6 +465,14 @@ export const useWalletStore = defineStore('wallet', () => {
     if (isInitialized.value) return
     console.log('✅ Wallet store initialized')
     isInitialized.value = true
+    
+    // Check Phantom silently first (no modal)
+    try { 
+      await checkPhantomSilently()
+    } catch (error) {
+      console.log('👻 Silent Phantom check skipped:', error.message)
+    }
+    
     try { await attemptAutoReconnect() } catch {}
   }
 
@@ -518,6 +567,7 @@ export const useWalletStore = defineStore('wallet', () => {
     validateWalletForToken,
     cleanup,
     cancelConnect,
+    checkPhantomSilently,
     hardReset,
     promptConnectIfNoPreference,
 
