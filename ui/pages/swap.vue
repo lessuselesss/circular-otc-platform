@@ -97,7 +97,7 @@
                 <!-- OTC Contract Icon -->
                 <img src="/buy_otc_purple.svg" alt="OTC" class="w-3 h-3.5 flex-shrink-0" />
                 <span class="text-xs sm:text-sm text-center leading-tight">
-                  <span class="block md:inline">Buy</span>
+                  <span class="block md:inline">Vested</span>
                   <span class="block md:inline"> OTC</span>
                 </span>
               </div>
@@ -115,7 +115,7 @@
                   <div class="input-header">
                     <label class="text-sm font-medium text-white">Sell</label>
                     <span v-if="inputToken" class="balance-display pr-2" @click="setMaxAmount" @dblclick="forceRefreshBalance">
-                      Balance: {{ inputBalance ? formatBalance(fullPrecisionInputBalance) : '-' }} {{ inputToken }}
+                      Balance: {{ inputBalance ? formatBalance(fullPrecisionInputBalance) : '-' }} {{ getTokenSymbol(inputToken) }}
                       <span v-if="isBalanceLoading" class="ml-1 text-xs">🔄</span>
                     </span>
                     <span v-else class="balance-display pr-3.5">
@@ -251,8 +251,14 @@
                 <div class="input-section input-section-bottom">
                   <div class="input-header">
                     <label class="text-sm font-medium text-white">Buy</label>
-                    <span v-if="displayCirxBalance" class="balance-display">
+                    <span v-if="isFetchingRecipientBalance" class="balance-display">
+                      Balance: Loading...
+                    </span>
+                    <span v-else-if="displayCirxBalance" class="balance-display">
                       Balance: {{ formatBalance(displayCirxBalance) }} CIRX
+                    </span>
+                    <span v-else class="balance-display">
+                      Balance: -
                     </span>
                   </div>
                   <div class="input-content">
@@ -461,7 +467,7 @@
               <span v-else-if="!isConnected && !recipientAddress">Connect Wallet or Enter Address</span>
               <span v-else-if="recipientAddress && recipientAddressError">Invalid Address</span>
               <span v-else-if="activeTab === 'liquid'">Buy Liquid CIRX</span>
-              <span v-else>Buy OTC CIRX</span>
+              <span v-else>Buy Vested CIRX</span>
             </button>
           </form>
           </div>
@@ -664,6 +670,8 @@ const showStaking = ref(false)
 const recipientAddress = ref('')
 const recipientAddressError = ref('')
 const recipientAddressType = ref('')
+const recipientCirxBalance = ref(null)
+const isFetchingRecipientBalance = ref(false)
 const showTokenDropdown = ref(false)
 
 // Price refresh state (30s countdown)
@@ -812,7 +820,11 @@ const awaitedEthBalance = computed(() => {
 })
 
 const displayCirxBalance = computed(() => {
-  return isConnected.value ? '0.000000000000000000' : '0.000000000000000000'
+  // Only show balance if we have a valid recipient address and fetched balance
+  if (recipientAddress.value && !recipientAddressError.value && recipientCirxBalance.value !== null) {
+    return recipientCirxBalance.value
+  }
+  return null // No address or no balance fetched, show "Balance: -"
 })
 
 // Simply use the inputBalance which now has full precision
@@ -1509,6 +1521,9 @@ const handleTierChange = (tier) => {
 // Debounced quote calculation for better UX
 let quoteTimeout = null
 
+// Watch for wallet connection changes - removed problematic positioning
+// Token selector now uses CSS-only positioning for consistency
+
 // Watch for amount/token/tab changes (forward path)
 watch([inputAmount, inputToken, activeTab], async () => {
   if (lastEditedField.value !== 'input') return
@@ -1578,8 +1593,12 @@ watch([cirxAmount, inputToken, activeTab], async () => {
   }, 200)
 })
 
-watch(recipientAddress, (newAddress) => {
+watch(recipientAddress, async (newAddress) => {
   validateRecipientAddress(newAddress)
+  // Fetch CIRX balance for the new address if it's valid
+  if (newAddress && !recipientAddressError.value) {
+    await fetchCirxBalanceForAddress(newAddress)
+  }
 })
 
 const alignTokenSelector = () => {
@@ -1598,10 +1617,36 @@ const alignTokenSelector = () => {
   }
 }
 
+// Fetch CIRX balance for a given address
+const fetchCirxBalanceForAddress = async (address) => {
+  if (!address || recipientAddressError.value) {
+    recipientCirxBalance.value = null
+    return
+  }
+
+  try {
+    isFetchingRecipientBalance.value = true
+    // TODO: Implement actual CIRX balance fetching
+    // For now, simulate a balance fetch with a placeholder
+    await new Promise(resolve => setTimeout(resolve, 500)) // Simulate API call
+    
+    // Placeholder balance - in real implementation, this would call the CIRX contract
+    recipientCirxBalance.value = '0.000000000000000000'
+    
+    console.log(`📊 Fetched CIRX balance for ${address}: ${recipientCirxBalance.value}`)
+  } catch (error) {
+    console.error('Failed to fetch CIRX balance:', error)
+    recipientCirxBalance.value = null
+  } finally {
+    isFetchingRecipientBalance.value = false
+  }
+}
+
 const validateRecipientAddress = (address) => {
   if (!address) {
     recipientAddressError.value = ''
     recipientAddressType.value = ''
+    recipientCirxBalance.value = null
     return true
   }
 
@@ -1668,7 +1713,7 @@ onMounted(async () => {
   await Promise.all([refreshPrices(), fetchGasPrice()])
   startPriceCountdown()
 
-  alignTokenSelector()
+  // alignTokenSelector() // Removed - using CSS-only positioning
 
   // Extension detection disabled
   // setTimeout(() => {
