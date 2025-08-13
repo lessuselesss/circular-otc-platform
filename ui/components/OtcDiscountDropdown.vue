@@ -1,24 +1,29 @@
 <template>
-  <div class="relative">
+  <div class="token-display-otc relative z-50">
     <!-- Dropdown Button -->
     <button
       type="button"
       @click="toggleDropdown"
-      class="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-700/50 hover:bg-gray-700/70 transition-colors"
+      class="flex items-center gap-2 rounded-full bg-gray-700/50 hover:bg-gray-700/70 transition-colors"
+      style="width: 110px; min-width: 110px; max-width: 110px; padding: 8px 12px; gap: 6px;"
       :class="{ 'ring-2 ring-circular-primary/50': isOpen }"
     >
       <img 
         src="/cirx-icon.svg" 
         alt="CIRX"
-        class="w-5 h-5 rounded-full"
+        class="rounded-full"
+        style="width: 16px; height: 16px;"
         @error="handleImageError"
       />
-      <span class="font-medium text-white text-sm">CIRX</span>
-      <span v-if="selectedTier" class="text-xs text-green-400 font-medium">
+      <span v-if="selectedTier" class="font-semibold text-green-400" style="font-size: 0.8rem; letter-spacing: -0.01em;">
         -{{ selectedTier.discount }}%
       </span>
+      <span v-else class="font-semibold text-white" style="font-size: 0.8rem; letter-spacing: -0.01em;">
+        CIRX
+      </span>
       <svg 
-        :class="['w-4 h-4 text-gray-400 transition-transform', isOpen && 'rotate-180']" 
+        :class="['text-gray-400 transition-transform ml-2', isOpen && 'rotate-180']" 
+        style="width: 12px; height: 12px;"
         fill="none" 
         stroke="currentColor" 
         viewBox="0 0 24 24"
@@ -26,6 +31,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
       </svg>
     </button>
+
 
     <!-- Dropdown Menu -->
     <div
@@ -78,7 +84,7 @@
     <div
       v-if="isOpen"
       @click="closeDropdown"
-      class="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+      class="fixed inset-0 bg-black/5 z-40"
     ></div>
   </div>
 </template>

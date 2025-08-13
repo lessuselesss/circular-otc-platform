@@ -9,27 +9,23 @@
         <div class="flex justify-between items-center h-20">
           <!-- Logo Section -->
           <div class="flex items-center gap-4">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 bg-gradient-to-br from-circular-primary to-circular-purple rounded-xl flex items-center justify-center shadow-lg">
-                <span class="text-white font-bold text-lg">C</span>
-              </div>
-              <div class="flex flex-col">
-                <span class="text-xl font-bold text-white tracking-tight drop-shadow-lg">Circular</span>
-                <span class="text-xs text-cyan-300 font-medium drop-shadow-md">OTC Platform</span>
-              </div>
-            </div>
+            <img 
+              src="/images/logo/SVG/color-logo-white-svg.svg" 
+              alt="Circular Protocol" 
+              class="h-8 w-auto drop-shadow-lg"
+            />
           </div>
 
           <!-- Navigation & Wallet Section -->
           <div class="flex items-center gap-4">
             <!-- Token Balance Display -->
-            <div v-if="isConnected && inputBalance && parseFloat(inputBalance) > 0" class="flex items-center gap-2 px-3 py-1.5 bg-gray-900/40 backdrop-blur-sm border border-cyan-400/40 rounded-lg shadow-lg">
+            <div v-if="isConnected && inputBalance && inputToken" class="flex items-center gap-2 px-4 py-2 rounded-xl">
               <img 
                 :src="getTokenLogo(inputToken)" 
                 :alt="inputToken"
                 class="w-4 h-4 rounded-full"
               />
-              <span class="text-sm font-medium text-white drop-shadow-md">{{ parseFloat(inputBalance).toFixed(4) }} {{ getTokenSymbol(inputToken) }}</span>
+              <span class="text-sm font-medium text-white drop-shadow-md">{{ formatBalance(inputBalance) }} {{ getTokenSymbol(inputToken) }}</span>
             </div>
 
             <!-- Wallet Button -->
@@ -40,7 +36,7 @@
     </header>
 
     
-    <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8 relative z-20">
+    <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 md:p-8 relative z-10" style="background: none !important; backdrop-filter: none !important;">
       <div :class="[
         'w-full mx-auto transition-all duration-500',
         (showChart || showStaking) ? 'max-w-none px-4' : 'max-w-lg'
@@ -67,9 +63,9 @@
         
         <div class="relative">
           
-          <div class="relative p-6 sm:p-8 bg-transparent rounded-2xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/10 overflow-hidden transition-all duration-300 gradient-border min-h-[600px]">
+          <div class="relative p-6 sm:p-8 rounded-2xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/10 transition-all duration-300 gradient-border min-h-[600px]" style="background-color: rgba(0, 3, 6, 0.9);">
           
-          <div class="flex mb-6 bg-transparent rounded-xl p-1 gap-1 overflow-hidden border border-cyan-500/20">
+          <div class="flex mb-6 rounded-xl p-1 gap-1 overflow-hidden" style="background-color: #11161f;">
             <button
               @click="activeTab = 'liquid'"
               :class="[
@@ -111,200 +107,202 @@
           
           <form @submit.prevent="handleSwap">
             
-            <div class="mb-6">
-              <div class="flex justify-between items-center mb-3">
-                <label class="text-sm font-medium text-white">Pay with</label>
-                <span v-if="inputBalance" class="text-sm cursor-pointer hover:text-white transition-colors text-gray-400" @click="setMaxAmount" @dblclick="forceRefreshBalance">
-                  Balance: {{ fullPrecisionInputBalance }} {{ inputToken }}
-                  <span v-if="isBalanceLoading" class="ml-1 text-xs">🔄</span>
-                </span>
-              </div>
-              <div class="relative token-input-container">
-                <input
-                  :value="inputAmount"
-                  @input="handleInputAmountChange($event.target.value)"
-                  type="text"
-                  inputmode="decimal"
-                  pattern="[0-9]*\.?[0-9]*"
-                  placeholder="0.0"
-                  :class="[
-                    'w-full pl-4 pr-32 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-400 transition-all duration-300',
-                    activeTab === 'liquid' 
-                      ? 'border-gray-700/70 hover:border-circular-primary focus:border-circular-primary focus:ring-2 focus:ring-circular-primary/50 focus:outline-none' 
-                      : 'border-gray-700/70 hover:border-circular-purple focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/50 focus:outline-none'
-                  ]"
-                  :disabled="loading"
+            <!-- Uniswap-style Connected Swap Fields -->
+            <div class="mb-6 relative">
+              <div class="swap-container" :data-tab="activeTab">
+                <!-- Sell Field (Top) -->
+                <div class="input-section input-section-top">
+                  <div class="input-header">
+                    <label class="text-sm font-medium text-white">Sell</label>
+                    <span v-if="inputToken" class="balance-display pr-2" @click="setMaxAmount" @dblclick="forceRefreshBalance">
+                      Balance: {{ inputBalance ? formatBalance(fullPrecisionInputBalance) : '-' }} {{ inputToken }}
+                      <span v-if="isBalanceLoading" class="ml-1 text-xs">🔄</span>
+                    </span>
+                    <span v-else class="balance-display pr-3.5">
+                      Balance: -
+                    </span>
+                  </div>
                   
-                  
-                  @keypress="validateNumberInput"
-                />
-                <div class="absolute inset-y-0 right-0 flex items-center pr-4">
-                  <div class="relative token-dropdown-container">
-                    <button
-                      type="button"
-                      @click="showTokenDropdown = !showTokenDropdown"
-                      :class="[
-                        'flex items-center gap-2 px-3 py-2 rounded-full border transition-all duration-300',
-                        activeTab === 'liquid' 
-                          ? 'border-circular-primary/30 hover:border-circular-primary bg-circular-primary/10' 
-                          : 'border-circular-purple/30 hover:border-circular-purple bg-circular-purple/10'
-                      ]"
+                  <div class="input-content">
+                    <input
+                      :value="inputAmount"
+                      @input="handleInputAmountChange($event.target.value)"
+                      type="text"
+                      inputmode="decimal"
+                      pattern="[0-9]*\.?[0-9]*"
+                      placeholder="0.0"
+                      class="amount-input"
                       :disabled="loading"
-                    >
-                      
-                      <img 
-                        :src="getTokenLogo(inputToken)" 
-                        :alt="inputToken"
-                        class="w-5 h-5 rounded-full"
-                      />
-                      
-                      <span class="font-medium text-white text-sm">{{ getTokenSymbol(inputToken) }}</span>
-                      
-                      <svg 
-                        width="12" 
-                        height="12" 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        :class="[
-                          'transition-transform duration-200',
-                          showTokenDropdown ? 'rotate-180' : '',
-                          activeTab === 'liquid' ? 'text-circular-primary' : 'text-circular-purple'
-                        ]"
+                      @keypress="validateNumberInput"
+                    />
+                    
+                    <div class="token-dropdown-container relative z-[100]" ref="tokenSelectorContainer">
+                      <!-- Token Selector Button -->
+                      <button
+                        type="button"
+                        @click="showTokenDropdown = !showTokenDropdown"
+                        class="token-display-right flex items-center gap-2 rounded-full bg-gray-700/50 hover:bg-gray-700/70 transition-colors"
+                        :disabled="loading"
                       >
-                        <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
-                    
-                    
-                    <div 
-                      v-if="showTokenDropdown"
-                      class="absolute top-full right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-10 min-w-[120px]"
-                    >
+                        <img 
+                          v-if="inputToken"
+                          :src="getTokenLogo(inputToken)" 
+                          :alt="inputToken"
+                          class="rounded-full"
+                          style="width: 16px; height: 16px;"
+                        />
+                        <svg 
+                          v-else
+                          class="text-gray-400"
+                          style="width: 16px; height: 16px;"
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                        </svg>
+                        <span v-if="inputToken" class="font-semibold text-white" style="font-size: 0.8rem; letter-spacing: -0.01em;">
+                          {{ getTokenSymbol(inputToken) }}
+                        </span>
+                        <span v-else class="font-semibold" style="color: #00e3a3; font-size: 0.8rem; letter-spacing: -0.01em;">
+                          Select
+                        </span>
+                        <svg 
+                          :class="['text-gray-400 transition-transform', showTokenDropdown && 'rotate-180']" 
+                          style="width: 12px; height: 12px;"
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
                       
-                      <template v-if="connectedWallet === 'phantom'">
-                        <button
-                          v-for="token in [{ value: 'SOL', label: 'SOL' }, { value: 'USDC_SOL', label: 'USDC' }]"
-                          :key="token.value"
-                          type="button"
-                          @click="selectToken(token.value)"
-                          class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors first:rounded-t-xl last:rounded-b-xl"
-                        >
-                          <img 
-                            :src="getTokenLogo(token.value)" 
-                            :alt="token.label"
-                            class="w-5 h-5 rounded-full"
-                          />
-                          <span class="font-medium text-white text-sm">{{ token.label }}</span>
-                        </button>
-                      </template>
-                      <template v-else>
-                        <button
-                          v-for="token in [{ value: 'ETH', label: 'ETH' }, { value: 'USDC', label: 'USDC' }, { value: 'USDT', label: 'USDT' }]"
-                          :key="token.value"
-                          type="button"
-                          @click="selectToken(token.value)"
-                          class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors first:rounded-t-xl last:rounded-b-xl"
-                        >
-                          <img 
-                            :src="getTokenLogo(token.value)" 
-                            :alt="token.label"
-                            class="w-5 h-5 rounded-full"
-                          />
-                          <span class="font-medium text-white text-sm">{{ token.label }}</span>
-                        </button>
-                      </template>
+                      <!-- Token Dropdown positioned relative to this container -->
+                      <div 
+                        v-if="showTokenDropdown"
+                        class="token-dropdown-simple"
+                      >
+                        <template v-if="connectedWallet === 'phantom'">
+                          <button
+                            v-for="token in [{ value: 'SOL', label: 'SOL' }, { value: 'USDC_SOL', label: 'USDC' }]"
+                            :key="token.value"
+                            type="button"
+                            @click="selectToken(token.value)"
+                            class="token-option"
+                          >
+                            <img 
+                              :src="getTokenLogo(token.value)" 
+                              :alt="token.label"
+                              class="token-icon"
+                            />
+                            <span class="token-symbol">{{ token.label }}</span>
+                          </button>
+                        </template>
+                        <template v-else>
+                          <button
+                            v-for="token in [{ value: 'ETH', label: 'ETH' }, { value: 'USDC', label: 'USDC' }, { value: 'USDT', label: 'USDT' }]"
+                            :key="token.value"
+                            type="button"
+                            @click="selectToken(token.value)"
+                            class="token-option"
+                          >
+                            <img 
+                              :src="getTokenLogo(token.value)" 
+                              :alt="token.label"
+                              class="token-icon"
+                            />
+                            <span class="token-symbol">{{ token.label }}</span>
+                          </button>
+                        </template>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            
-            <div class="flex justify-center mb-6">
-              <button
-                type="button"
-                :class="[
-                  'p-3 bg-transparent border rounded-xl transition-all duration-300',
-                  activeTab === 'liquid' 
-                    ? 'border-gray-600/50 text-circular-primary hover:bg-circular-primary/10 hover:border-circular-primary' 
-                    : 'border-gray-600/50 text-circular-purple hover:bg-circular-purple/10 hover:border-circular-purple'
-                ]"
-                @click="reverseSwap"
-                :disabled="loading"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-            </div>
-
-            
-            <div class="mb-6">
-              <div class="flex justify-between items-center mb-3">
-                <label class="text-sm font-medium text-white">Receive</label>
-                <span v-if="displayCirxBalance" class="text-sm text-gray-400">
-                  Balance: {{ displayCirxBalance }} CIRX
-                </span>
-              </div>
-              <div class="relative">
-                <input
-                  :value="cirxAmount"
-                  @input="handleCirxAmountChange($event.target.value)"
-                  @keypress="validateNumberInput"
-                  type="text"
-                  inputmode="decimal"
-                  pattern="[0-9]*\.?[0-9]*"
-                  placeholder="0.0"
-                  :disabled="quoteLoading || reverseQuoteLoading"
-                  style="-webkit-appearance: none; -moz-appearance: textfield;"
-                  :class="[
-                    'w-full pl-4 pr-20 py-4 text-xl font-semibold bg-transparent border rounded-xl text-white placeholder-gray-400 transition-all duration-300',
-                    activeTab === 'liquid' 
-                      ? 'border-gray-700/70 focus:border-circular-primary focus:ring-2 focus:ring-circular-primary/30' 
-                      : 'border-gray-700/70 focus:border-circular-purple focus:ring-2 focus:ring-circular-purple/30',
-                    'focus:outline-none',
-                    (quoteLoading || reverseQuoteLoading) && 'opacity-50'
-                  ]"
-                />
-                <div class="absolute inset-y-0 right-0 flex items-center pr-4">
-                  
-                  <!-- OTC Mode: Discount Tier Dropdown -->
-                  <OtcDiscountDropdown
-                    v-if="activeTab === 'otc' && discountTiers && discountTiers.length > 0"
-                    :discount-tiers="discountTiers"
-                    :selected-tier="selectedTier"
-                    :current-amount="quote?.usdValue || 0"
-                    @tier-changed="handleTierChange"
-                  />
-                  
-                  <!-- Liquid Mode: Standard CIRX Display -->
-                  <div 
-                    v-else
-                    class="flex items-center gap-2 px-3 py-2 rounded-full border border-circular-primary/30 bg-circular-primary/10"
-                  >
-                    <img 
-                      :src="getTokenLogo('CIRX')" 
-                      alt="CIRX"
-                      class="w-5 h-5 rounded-full"
-                      @error="$event.target.src = 'https://cdn.prod.website-files.com/65e472c0cd2f1bebcd7fcf73/65e483ab69e2314b250ed7dc_imageedit_1_8961069084.png'"
-                    />
-                    <span class="font-medium text-circular-primary text-sm">CIRX</span>
+                  <div class="usd-value">
+                    <span v-if="inputAmount && parseFloat(inputAmount) > 0 && inputToken">
+                      ~${{ ((parseFloat(inputAmount) || 0) * (livePrices[inputToken] || 0)).toFixed(2) }}
+                    </span>
+                    <span v-else-if="inputToken">~$0.00</span>
+                    <span v-else>-</span>
                   </div>
-                  
+                </div>
+
+                <!-- Swap Arrow -->
+                <div class="swap-arrow-container">
+                  <button
+                    type="button"
+                    :class="[
+                      'swap-arrow-button',
+                      activeTab === 'liquid' ? 'swap-arrow-liquid' : 'swap-arrow-otc'
+                    ]"
+                    @click="reverseSwap"
+                    :disabled="loading"
+                  >
+                    <svg v-if="isPriceRefreshing" class="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <div v-else class="text-xl font-bold" style="letter-spacing: -0.1em;">
+                      ⥯
+                    </div>
+                  </button>
+                </div>
+
+                <!-- Buy Field (Bottom) -->
+                <div class="input-section input-section-bottom">
+                  <div class="input-header">
+                    <label class="text-sm font-medium text-white">Buy</label>
+                    <span v-if="displayCirxBalance" class="balance-display">
+                      Balance: {{ formatBalance(displayCirxBalance) }} CIRX
+                    </span>
+                  </div>
+                  <div class="input-content">
+                    <input
+                      :value="cirxAmount"
+                      @input="handleCirxAmountChange($event.target.value)"
+                      @keypress="validateNumberInput"
+                      type="text"
+                      inputmode="decimal"
+                      pattern="[0-9]*\.?[0-9]*"
+                      placeholder="0.0"
+                      :disabled="quoteLoading || reverseQuoteLoading"
+                      style="-webkit-appearance: none; -moz-appearance: textfield; appearance: none;"
+                      :class="['amount-input', (quoteLoading || reverseQuoteLoading) && 'opacity-50']"
+                    />
+                    <!-- OTC Mode: Discount Tier Dropdown -->
+                    <OtcDiscountDropdown
+                      v-if="activeTab === 'otc' && discountTiers && discountTiers.length > 0"
+                      :discount-tiers="discountTiers"
+                      :selected-tier="selectedTier"
+                      :current-amount="quote?.usdValue || 0"
+                      @tier-changed="handleTierChange"
+                    />
+                    
+                    <!-- Liquid Mode: Standard CIRX Display -->
+                    <div 
+                      v-else
+                      class="token-display token-display-right flex items-center gap-2 rounded-full bg-gray-700/50 hover:bg-gray-700/70 transition-colors"
+                      style="width: 110px; min-width: 110px; max-width: 110px; padding: 8px 12px;"
+                      ref="cirxButton"
+                    >
+                      <img 
+                        :src="getTokenLogo('CIRX')" 
+                        alt="CIRX"
+                        class="rounded-full"
+                        style="width: 16px; height: 16px;"
+                        @error="$event.target.src = 'https://cdn.prod.website-files.com/65e472c0cd2f1bebcd7fcf73/65e483ab69e2314b250ed7dc_imageedit_1_8961069084.png'"
+                      />
+                      <span class="font-semibold text-white" style="font-size: 0.8rem; letter-spacing: -0.01em;">CIRX</span>
+                    </div>
+                  </div>
+                  <div class="usd-value">
+                    <span v-if="cirxAmount && parseFloat(cirxAmount) > 0">
+                      {{ getTotalCirxAfterTransaction() }}
+                    </span>
+                    <span v-else>{{ getCurrentCirxBalance() }}</span>
+                  </div>
                 </div>
               </div>
               
-              <!-- Loading indicator for quote calculation -->
-              <div v-if="quoteLoading || reverseQuoteLoading" class="mt-2 flex items-center justify-center">
-                <div class="flex items-center gap-2 text-sm text-gray-400">
-                  <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span v-if="reverseQuoteLoading">Calculating input amount...</span>
-                  <span v-else>Getting best quote...</span>
-                </div>
-              </div>
 
               <!-- OTC Discount Tiers (show full range, highlight active) -->
               <div :class="['mt-3 space-y-2 transition-all duration-300', activeTab === 'otc' ? 'opacity-100 max-h-96' : 'opacity-0 max-h-0 overflow-hidden']">
@@ -334,14 +332,14 @@
             </div>
 
             
-            <div v-if="quote" class="bg-transparent border border-cyan-500/20 rounded-xl p-4 mb-6 hover:border-cyan-500/40 transition-all duration-300">
+            <div v-if="quote" class="bg-transparent border border-cyan-500/20 rounded-xl p-4 mb-6 hover:border-cyan-500/40 transition-all duration-300" :class="isPriceRefreshing ? 'border-cyan-400/40' : ''">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm text-gray-400">Exchange Rate</span>
-                <span class="text-sm font-medium text-white" :class="isPriceRefreshing ? 'animate-pulse' : ''">1 {{ inputToken }} = {{ quote.rate }} CIRX</span>
+                <span class="text-sm font-medium text-white" :class="isPriceRefreshing || quoteLoading || reverseQuoteLoading ? 'opacity-60' : ''">1 {{ inputToken }} = {{ quote.rate }} CIRX</span>
               </div>
               <div class="flex justify-between items-center mb-2">
-                <span class="text-xs text-gray-500" :class="isPriceRefreshing ? 'animate-pulse' : ''">
-                  Next price update in {{ priceCountdown }}s
+                <span class="text-xs text-gray-500" :class="isPriceRefreshing ? 'text-cyan-400' : ''">
+                  {{ isPriceRefreshing ? 'Updating prices...' : `Next price update in ${priceCountdown}s` }}
                 </span>
               </div>
               <div class="flex justify-between items-center mb-2">
@@ -371,19 +369,37 @@
             
             <div class="mb-6">
               <div class="flex justify-between items-center mb-3">
-                <label class="text-sm font-medium text-white">Send to another address (optional)</label>
+                <div class="flex items-center gap-3">
+                  <label class="text-sm font-medium text-white">Custom Circular Address</label>
+                  <!-- Toggle Switch -->
+                  <button
+                    @click="customAddressEnabled = !customAddressEnabled"
+                    :class="[
+                      'relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ease-in-out',
+                      customAddressEnabled ? 'bg-circular-primary' : 'bg-gray-600'
+                    ]"
+                  >
+                    <span
+                      :class="[
+                        'inline-block h-3 w-3 transform rounded-full bg-white transition duration-200 ease-in-out',
+                        customAddressEnabled ? 'translate-x-5' : 'translate-x-1'
+                      ]"
+                    />
+                  </button>
+                </div>
                 <button
                   @click="useConnectedWallet"
-                  v-if="recipientAddress && isConnected"
+                  v-if="customAddressEnabled && recipientAddress && isConnected"
                   class="text-xs text-circular-primary hover:text-circular-primary-hover transition-colors"
                 >
                   Use connected wallet
                 </button>
               </div>
-              <div class="relative">
+              <div v-if="customAddressEnabled" class="relative">
                 <input
                   v-model="recipientAddress"
                   type="text"
+                  :readonly="false"
                   :placeholder="isConnected ? 'Leave empty to use connected wallet' : 'Enter wallet address to receive CIRX'"
                   :class="[
                     'w-full pl-4 pr-12 py-3 text-sm bg-transparent border rounded-xl text-white placeholder-gray-400 transition-all duration-300',
@@ -412,8 +428,15 @@
               <div v-else-if="recipientAddress" class="mt-2 text-sm text-green-400">
                 ✓ Valid {{ recipientAddressType }} address
               </div>
-              <div v-else-if="isConnected" class="mt-2 text-sm text-gray-400">
-                CIRX will be sent to your connected wallet: {{ shortAddress }}
+              <div v-else-if="isConnected" class="mt-2 flex items-center gap-2 text-sm text-yellow-400">
+                <img 
+                  v-if="isSaturnWalletDetected" 
+                  src="https://avatars.githubusercontent.com/u/saturn-wallet?s=20" 
+                  alt="Saturn Wallet" 
+                  class="w-5 h-5 rounded"
+                  @error="$event.target.style.display = 'none'"
+                />
+                <span v-if="!isSaturnWalletDetected">⚠️ Please specify a recipient address above to receive CIRX safely</span>
               </div>
             </div>
 
@@ -425,10 +448,10 @@
                 'w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300',
                 activeTab === 'liquid' 
                   ? 'text-white' 
-                  : 'bg-circular-purple text-white hover:bg-purple-700',
+                  : 'text-white hover:bg-purple-700',
                 (!canPurchase || loading || quoteLoading || reverseQuoteLoading) && 'opacity-50 cursor-not-allowed'
               ]"
-              :style="activeTab === 'liquid' ? 'background-color: #09BE8BCC; color: #00E3A3; opacity: 1;' : ''"
+              :style="activeTab === 'liquid' ? 'background-color: #09BE8BCC; color: #00E3A3; opacity: 1;' : 'background-color: #9333ea; color: #C084FC; opacity: 1;'"
             >
               <span v-if="loading">{{ loadingText || 'Processing...' }}</span>
               <span v-else-if="quoteLoading || reverseQuoteLoading">
@@ -511,6 +534,9 @@ import WalletButton from '~/components/WalletButton.vue'
 import ConnectionToast from '~/components/ConnectionToast.vue'
 import OtcDiscountDropdown from '~/components/OtcDiscountDropdown.vue'
 import { getTokenPrices } from '~/services/priceService.js'
+// Extension detection disabled
+// import { detectAllExtensions } from '~/utils/comprehensiveExtensionDetection.js'
+// Removed useCircularChain import - Saturn wallet detection disabled
 
 // Page metadata
 definePageMeta({
@@ -523,7 +549,42 @@ const { address, isConnected, connector } = useAccount()
 const { data: balance, isLoading: isBalanceLoading } = useBalance({ 
   address: address 
 })
+
+// Token contract addresses for balance fetching
+const tokenAddresses = {
+  'USDC': '0xA0b86a33E6Ba476C4db6B0EbB18B9E7D8e4a8563', // USDC on mainnet
+  'USDT': '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT on mainnet
+}
+
+// Additional balance hooks for ERC20 tokens
+const { data: usdcBalance, isLoading: isUsdcLoading } = useBalance({
+  address: address,
+  token: tokenAddresses.USDC
+})
+
+const { data: usdtBalance, isLoading: isUsdtLoading } = useBalance({
+  address: address,
+  token: tokenAddresses.USDT
+})
+
 const { open } = useAppKit()
+
+// Toast callback for Circular chain notifications
+const handleCircularToast = ({ type, title, message }) => {
+  connectionToast.value = {
+    show: true,
+    type,
+    title,
+    message,
+    walletIcon: null
+  }
+}
+
+// Saturn wallet detection disabled - using static CIRX values
+const cirxBalance = ref('0')
+const formatCirxBalance = computed(() => '0.0000')
+const isCircularChainAvailable = computed(() => false)
+const isCircularChainConnected = computed(() => false)
 
 
 // Format ETH balance with full decimal precision using official Wagmi data
@@ -592,7 +653,9 @@ watch(() => [isConnected.value, address.value, balance.value],
 const activeTab = ref('liquid')
 const inputAmount = ref('')
 const cirxAmount = ref('')
-const inputToken = ref('ETH')
+const inputToken = ref('')
+// Custom address toggle - default off if Saturn wallet detected
+const customAddressEnabled = ref(false)
 const loading = ref(false)
 const loadingText = ref('')
 const quote = ref(null)
@@ -612,6 +675,15 @@ let countdownTimer = null
 // Gas price state
 const gasPriceWeiHex = ref('0x0')
 const isGasRefreshing = ref(false)
+
+// Timer progress for SVG animation
+const timerProgress = computed(() => {
+  const circumference = 2 * Math.PI * 20 // radius = 20
+  const progress = (30 - priceCountdown.value) / 30
+  const offset = circumference * (1 - progress)
+  console.log('🎯 Timer progress:', priceCountdown.value, 'offset:', offset)
+  return offset
+})
 
 const hexToBigInt = (hex) => {
   try {
@@ -647,10 +719,13 @@ const fetchGasPrice = async () => {
 const startPriceCountdown = () => {
   if (countdownTimer) clearInterval(countdownTimer)
   priceCountdown.value = 30
+  console.log('🕐 Starting price countdown from:', priceCountdown.value)
   countdownTimer = setInterval(async () => {
     if (priceCountdown.value > 0) {
       priceCountdown.value -= 1
+      console.log('⏰ Countdown:', priceCountdown.value, 'Progress offset:', 125.6 * ((30 - priceCountdown.value) / 30))
     } else {
+      console.log('🔄 Refreshing prices and resetting countdown')
       await Promise.all([refreshPrices(), fetchGasPrice()])
     }
   }, 1000)
@@ -684,7 +759,8 @@ const refreshPrices = async () => {
     console.warn('Price refresh failed, keeping previous prices', e)
   } finally {
     isPriceRefreshing.value = false
-    priceCountdown.value = 30
+    // Restart the countdown timer
+    startPriceCountdown()
   }
 }
 
@@ -700,19 +776,31 @@ const lastEditedField = ref('input') // 'input' or 'output'
 const reverseQuoteLoading = ref(false)
 const lastReverseQuoteRequestId = ref(0)
 
+// Helper function to format token balance
+const formatTokenBalance = (balanceData) => {
+  if (!balanceData) return '0.000000000000000000'
+  const amount = parseFloat(balanceData.formatted)
+  if (isNaN(amount)) return '0.000000000000000000'
+  return amount.toFixed(18)
+}
+
 // Use official Wagmi balance data
 const inputBalance = computed(() => {
   if (!isConnected.value) {
     return '0.000000000000000000'
   }
   
-  // For ETH, use the properly formatted balance with full precision
-  if (inputToken.value === 'ETH') {
-    return formattedEthBalance.value
+  // Return balance based on selected token
+  switch (inputToken.value) {
+    case 'ETH':
+      return formattedEthBalance.value
+    case 'USDC':
+      return formatTokenBalance(usdcBalance.value)
+    case 'USDT':
+      return formatTokenBalance(usdtBalance.value)
+    default:
+      return '0.000000000000000000'
   }
-  
-  // For other tokens, return placeholder until implemented
-  return '0.000000000000000000'
 })
 
 // ETH balance for gas gating (0 when not connected)
@@ -762,6 +850,14 @@ const walletIcon = computed(() => {
   }
   
   return iconMap[name] || null
+})
+
+// Check if dropdown should be positioned to the left to prevent overflow
+const shouldPositionLeft = computed(() => {
+  // Position dropdowns to prevent overflow outside form boundaries
+  // Since token selectors are on the right side of input fields,
+  // we need to position dropdowns leftward to stay within bounds
+  return false // Let's try right-aligned first, adjust if needed
 })
 
 // Remove unused formatSliderAmount - not referenced in template
@@ -1053,33 +1149,6 @@ const validateSolanaAddress = (address) => {
   return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)
 }
 
-const validateRecipientAddress = (address) => {
-  if (!address) {
-    recipientAddressError.value = ''
-    recipientAddressType.value = ''
-    return true
-  }
-
-  // Check if it's a valid Ethereum address
-  if (validateEthereumAddress(address)) {
-    recipientAddressError.value = ''
-    recipientAddressType.value = 'Ethereum'
-    return true
-  }
-
-  // Check if it's a valid Solana address
-  if (validateSolanaAddress(address)) {
-    recipientAddressError.value = ''
-    recipientAddressType.value = 'Solana'
-    return true
-  }
-
-  // Invalid address
-  recipientAddressError.value = 'Invalid wallet address format'
-  recipientAddressType.value = ''
-  return false
-}
-
 // Token utility functions
 const getTokenLogo = (token) => {
   const logoMap = {
@@ -1106,6 +1175,94 @@ const getTokenSymbol = (token) => {
   
   return symbolMap[token] || token
 }
+
+const formatBalance = (balance) => {
+  const num = parseFloat(balance)
+  if (num === 0 || isNaN(num)) return '0.0'
+  
+  const str = num.toString()
+  const [integer, decimal] = str.split('.')
+  
+  if (!decimal) return integer + '.0'
+  
+  // Find first non-zero digit in decimal
+  let firstNonZeroIndex = -1
+  for (let i = 0; i < decimal.length; i++) {
+    if (decimal[i] !== '0') {
+      firstNonZeroIndex = i
+      break
+    }
+  }
+  
+  if (firstNonZeroIndex === -1) {
+    // All decimal digits are zero
+    return integer + '.0'
+  }
+  
+  // Include up to and including the first non-zero decimal digit
+  const truncatedDecimal = decimal.substring(0, firstNonZeroIndex + 1)
+  return integer + '.' + truncatedDecimal
+}
+
+const getExchangeRateDisplay = () => {
+  const cirxAmountNum = parseFloat(cirxAmount.value) || 0
+  
+  if (cirxAmountNum === 0) {
+    return ''
+  }
+  
+  return `${cirxAmountNum.toFixed(4)} CIRX`
+}
+
+// Get current CIRX balance using Circular chain composable
+const getCurrentCirxBalance = () => {
+  if (isCircularChainConnected.value) {
+    return `Current: ${formatCirxBalance.value} CIRX`
+  }
+  
+  return 'Current: 0.0000 CIRX'
+}
+
+// Calculate total CIRX after this transaction (current balance + purchase amount)
+const getTotalCirxAfterTransaction = () => {
+  const purchaseAmount = parseFloat(cirxAmount.value) || 0
+  
+  if (isCircularChainConnected.value) {
+    const currentBalance = parseFloat(cirxBalance.value) || 0
+    const totalAfter = currentBalance + purchaseAmount
+    return `Total after: ${totalAfter.toFixed(4)} CIRX`
+  }
+  
+  // No Circular chain connection - just show the purchase amount as total
+  return `Total after: ${purchaseAmount.toFixed(4)} CIRX`
+}
+
+// Saturn wallet detection
+const isSaturnWalletPresent = computed(() => {
+  if (typeof window === 'undefined') return false
+  
+  // Check for Saturn wallet provider
+  return !!(window.saturn || 
+           (window.ethereum && window.ethereum.isSaturn) ||
+           (window.ethereum && window.ethereum.providers && 
+            window.ethereum.providers.some(p => p.isSaturn)))
+})
+
+// Enhanced Saturn wallet detection based on our comprehensive detection
+const isSaturnWalletDetected = computed(() => {
+  // Saturn wallet detection disabled
+  return false
+})
+
+// Saturn wallet watch disabled
+// watch([isSaturnWalletDetected, isConnected], () => {
+//   if (isSaturnWalletDetected.value && isConnected.value) {
+//     // Saturn wallet detected and connected - turn toggle off, clear address for safety
+//     customAddressEnabled.value = false
+//     // DON'T auto-fill address - different chain/account model could cause fund loss
+//     recipientAddress.value = ''
+//   }
+// }, { immediate: true })
 
 // Methods
 const useConnectedWallet = () => {
@@ -1151,6 +1308,11 @@ const formatNumberInput = (value) => {
 
 // Handle input amount changes with formatting
 const handleInputAmountChange = (value) => {
+  // Auto-select native token if none selected and user starts typing
+  if (!inputToken.value && value && parseFloat(value) > 0) {
+    autoSelectNativeToken()
+  }
+  
   const formatted = formatNumberInput(value)
   inputAmount.value = formatted
   lastEditedField.value = 'input'
@@ -1158,6 +1320,11 @@ const handleInputAmountChange = (value) => {
 
 // Handle CIRX amount changes with formatting  
 const handleCirxAmountChange = (value) => {
+  // Auto-select native token if none selected and user starts typing in CIRX field
+  if (!inputToken.value && value && parseFloat(value) > 0) {
+    autoSelectNativeToken()
+  }
+  
   const formatted = formatNumberInput(value)
   cirxAmount.value = formatted
   lastEditedField.value = 'output'
@@ -1195,6 +1362,19 @@ const selectToken = (token) => {
   // Reset input when token changes
   inputAmount.value = ''
   lastEditedField.value = 'input'
+}
+
+// Auto-select native token based on connected wallet
+const autoSelectNativeToken = () => {
+  if (connectedWallet.value === 'phantom') {
+    // Phantom wallet - select SOL
+    selectToken('SOL')
+    console.log('🪙 Auto-selected SOL for Phantom wallet')
+  } else {
+    // Ethereum wallets (MetaMask, Coinbase, etc.) - select ETH
+    selectToken('ETH')
+    console.log('🪙 Auto-selected ETH for Ethereum wallet')
+  }
 }
 
 
@@ -1241,6 +1421,8 @@ const formatAmount = (amount) => {
   if (amount >= 1000) return `${(amount / 1000).toFixed(0)}K`
   return amount.toString()
 }
+
+
 
 const handleSwap = async () => {
   if (!canPurchase.value) return
@@ -1311,11 +1493,16 @@ const handleTierChange = (tier) => {
 
   // Recalculate quote with new tier
   if (inputAmount.value && parseFloat(inputAmount.value) > 0) {
-    const newQuote = calculateQuote(inputAmount.value, inputToken.value, true)
-    if (newQuote) {
-      quote.value = newQuote
-      cirxAmount.value = newQuote.cirxAmount
-    }
+    // Use async quote calculation for accurate pricing
+    calculateQuoteAsync(inputAmount.value, inputToken.value, true).then(newQuote => {
+      if (newQuote) {
+        quote.value = newQuote
+        const cirxRaw = parseFloat(newQuote.cirxAmount.replace(/,/g, ''))
+        cirxAmount.value = isFinite(cirxRaw) ? cirxRaw.toString() : newQuote.cirxAmount
+      }
+    }).catch(error => {
+      console.error('Tier change quote calculation failed:', error)
+    })
   }
 }
 
@@ -1391,10 +1578,75 @@ watch([cirxAmount, inputToken, activeTab], async () => {
   }, 200)
 })
 
-// Watch recipient address for validation
 watch(recipientAddress, (newAddress) => {
   validateRecipientAddress(newAddress)
 })
+
+const alignTokenSelector = () => {
+  const cirxButton = document.querySelector('.token-display-right')
+  const tokenSelector = document.querySelector('.token-dropdown-container')
+
+  console.log('cirxButton', cirxButton)
+  console.log('tokenSelector', tokenSelector)
+
+  if (cirxButton && tokenSelector) {
+    const cirxButtonRect = cirxButton.getBoundingClientRect()
+    console.log('cirxButtonRect', cirxButtonRect)
+    tokenSelector.style.position = 'absolute'
+    tokenSelector.style.left = `${cirxButtonRect.left}px`
+    tokenSelector.style.top = `${cirxButtonRect.top}px`
+  }
+}
+
+const validateRecipientAddress = (address) => {
+  if (!address) {
+    recipientAddressError.value = ''
+    recipientAddressType.value = ''
+    return true
+  }
+
+  // Check if it's a valid Ethereum address
+  if (validateEthereumAddress(address)) {
+    recipientAddressError.value = ''
+    recipientAddressType.value = 'Ethereum'
+    return true
+  }
+
+  // Check if it's a valid Solana address
+  if (validateSolanaAddress(address)) {
+    recipientAddressError.value = ''
+    recipientAddressType.value = 'Solana'
+    return true
+  }
+
+  // Invalid address
+  recipientAddressError.value = 'Invalid wallet address format'
+  recipientAddressType.value = ''
+  return false
+}
+
+// Handle Circular chain events
+const handleCircularChainHelp = () => {
+  // Show help information in toast
+  connectionToast.value = {
+    show: true,
+    type: 'info',
+    title: 'Circular Chain Help',
+    message: 'Visit docs.circular.protocol for setup instructions or contact support',
+    walletIcon: null
+  }
+}
+
+const handleChainAdded = () => {
+  // Show success message in toast
+  connectionToast.value = {
+    show: true,
+    type: 'success', 
+    title: 'Chain Added Successfully',
+    message: 'Circular chain has been added to your wallet',
+    walletIcon: null
+  }
+}
 
 // Close dropdown and slider when clicking outside
 onMounted(async () => {
@@ -1412,15 +1664,26 @@ onMounted(async () => {
   onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside)
   })
-})
 
-// Initialize timers
-onMounted(async () => {
   await Promise.all([refreshPrices(), fetchGasPrice()])
   startPriceCountdown()
 
-  // Existing outside click handler setup remains below
-  // ... existing code ...
+  alignTokenSelector()
+
+  // Extension detection disabled
+  // setTimeout(() => {
+  //   console.log('🔍 Running extension detection from swap page...')
+  //   detectAllExtensions()
+  //   
+  //   // Debug Saturn wallet detection for UI
+  //     'window.saturn': !!window.saturn,
+  //     'window.extension': !!window.extension,
+  //     'window.ethereum?.isSaturn': !!(window.ethereum?.isSaturn),
+  //     'providers check': !!(window.ethereum?.providers?.some?.(p => p.isSaturn)),
+  //     'DOM elements': !!document.querySelector('[data-saturn], [class*="saturn"], [id*="saturn"]'),
+  //     'isSaturnWalletDetected': isSaturnWalletDetected.value
+  //   })
+  // }, 3000)
 })
 
 onUnmounted(() => {
@@ -1477,10 +1740,269 @@ useHead({
   100% { border-color: #00ff88; }
 }
 
+/* Uniswap-style Connected Swap Fields */
+.swap-container {
+  position: relative;
+  background: #000306;
+  border-radius: 16px;
+  padding: 4px;
+  transition: all 0.3s ease;
+  overflow: visible;
+}
+
+
+/* Remove container-level focus - we want individual field focus */
+
+/* Individual input sections */
+.input-section {
+  position: relative;
+  background: rgba(21, 30, 40, 0.3);
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+  overflow: visible;
+}
+
+.input-section-top {
+  border-radius: 12px 12px 0px 0px;
+  margin-bottom: 0px;
+  /* Consistent padding for alignment */
+  padding: 20px 16px;
+}
+
+.input-section-bottom {
+  border-radius: 0px 0px 12px 12px;
+  margin-top: 0px;
+  /* Consistent padding for alignment */
+  padding: 20px 16px;
+}
+
+.input-section:hover {
+  background: rgba(55, 65, 81, 0.1);
+}
+
+/* Simple focus states - just background color change */
+.input-section:focus-within {
+  background: #151E28;
+}
+
+.input-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.balance-display {
+  font-size: 0.875rem;
+  color: #9CA3AF;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.balance-display:hover {
+  color: #ffffff;
+}
+
+.input-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  overflow: visible; /* Allow dropdowns to show */
+  position: relative; /* Create positioning context */
+}
+
+.amount-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ffffff;
+  padding: 0;
+}
+
+.amount-input::placeholder {
+  color: #6B7280;
+}
+
+.amount-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Token selector styling now applied via inline classes */
+
+/* Token display styling now applied via inline classes */
+
+.token-display-left {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.token-display-right {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.token-display-otc {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.token-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.token-symbol {
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 0.875rem;
+}
+
+.dropdown-arrow {
+  color: #9CA3AF;
+  transition: transform 0.2s ease;
+}
+
+.token-dropdown {
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  right: 0 !important;
+  left: auto !important;
+  background: #1F2937 !important;
+  border: 1px solid rgba(55, 65, 81, 0.7) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4) !important;
+  z-index: 50 !important;
+  width: 120px !important;
+  overflow: hidden !important;
+  /* Nuclear option: fixed positioning relative to parent */
+  transform: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Token dropdown container - provides positioning context */
+.token-dropdown-container {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  /* Ensure container provides proper bounds for dropdown */
+  min-width: 120px;
+  /* Force this to be the positioning context */
+  z-index: 100;
+  isolation: isolate;
+  /* Additional containment for good measure */
+  contain: layout style;
+}
+
+/* Removed token-selector-container - now using absolute positioning */
+
+.token-dropdown-simple {
+  position: absolute;
+  top: calc(100% + 20px);
+  right: 0;
+  background: #1F2937;
+  border: 1px solid rgba(55, 65, 81, 0.7);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  width: 110px;
+  overflow: hidden;
+}
+
+
+.dropdown-left {
+  right: auto !important;
+  left: auto !important;
+  /* Position dropdown to align with the right edge of the token selector */
+  transform: translateX(-20px) !important;
+}
+
+.token-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.token-option:hover {
+  background: rgba(55, 65, 81, 0.5);
+}
+
+.usd-value {
+  font-size: 0.75rem;
+  color: #6B7280;
+  text-align: left;
+  margin-top: 4px;
+  min-height: 1rem; /* Reserve space to prevent layout shift */
+  display: flex;
+  align-items: center;
+}
+
+/* Swap Arrow */
+.swap-arrow-container {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+.swap-arrow-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 4px solid #000306;
+  background: #000306;
+  cursor: pointer;
+}
+
+.swap-arrow-button:hover {
+  opacity: 0.8;
+}
+
+.swap-arrow-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.swap-arrow-liquid {
+  color: #09BE8B;
+  background: #000306 !important;
+}
+
+.swap-arrow-otc {
+  color: #9333ea;
+  background: #000306 !important;
+}
+
 /* Hide number input spinner arrows */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none !important;
+  appearance: none !important;
   margin: 0 !important;
   display: none !important;
 }
@@ -1488,5 +2010,7 @@ input[type="number"]::-webkit-inner-spin-button {
 /* Firefox */
 input[type="number"] {
   -moz-appearance: textfield !important;
+  appearance: textfield !important;
 }
+
 </style>
