@@ -161,6 +161,12 @@ $app->group('/api/v1', function ($group) {
         $controller = new TransactionController();
         return $controller->getTransactionStatus($request, $response, $args);
     });
+
+    // CIRX balance endpoint
+    $group->get('/cirx/balance/{address}', function (Request $request, Response $response, array $args) {
+        $controller = new TransactionController();
+        return $controller->getCirxBalance($request, $response);
+    });
 });
 
 // Handle preflight OPTIONS requests

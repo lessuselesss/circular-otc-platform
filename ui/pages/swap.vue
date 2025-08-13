@@ -302,9 +302,9 @@
                   </div>
                   <div class="usd-value">
                     <span v-if="cirxAmount && parseFloat(cirxAmount) > 0">
-                      {{ getTotalCirxAfterTransaction() }}
+                      {{ getNewCirxBalance() }}
                     </span>
-                    <span v-else>{{ getCurrentCirxBalance() }}</span>
+                    <span v-else>{{ getNewCirxBalance() }}</span>
                   </div>
                 </div>
               </div>
@@ -1226,28 +1226,32 @@ const getExchangeRateDisplay = () => {
   return `${cirxAmountNum.toFixed(4)} CIRX`
 }
 
-// Get current CIRX balance using Circular chain composable
-const getCurrentCirxBalance = () => {
-  if (isCircularChainConnected.value) {
-    return `Current: ${formatCirxBalance.value} CIRX`
-  }
-  
-  return 'Current: 0.0000 CIRX'
-}
-
-// Calculate total CIRX after this transaction (current balance + purchase amount)
-const getTotalCirxAfterTransaction = () => {
+// Get new CIRX balance after transaction (current + purchase amount)
+const getNewCirxBalance = () => {
   const purchaseAmount = parseFloat(cirxAmount.value) || 0
   
-  if (isCircularChainConnected.value) {
-    const currentBalance = parseFloat(cirxBalance.value) || 0
-    const totalAfter = currentBalance + purchaseAmount
-    return `Total after: ${totalAfter.toFixed(4)} CIRX`
+  // If we have fetched the recipient's current balance, calculate the new total
+  if (recipientCirxBalance.value !== null) {
+    const currentBalance = parseFloat(recipientCirxBalance.value) || 0
+    const newBalance = currentBalance + purchaseAmount
+    return `New Balance: ${newBalance.toFixed(4)} CIRX`
   }
   
-  // No Circular chain connection - just show the purchase amount as total
-  return `Total after: ${purchaseAmount.toFixed(4)} CIRX`
+  // If we have connected wallet balance, use that
+  if (isCircularChainConnected.value) {
+    const currentBalance = parseFloat(cirxBalance.value) || 0
+    const newBalance = currentBalance + purchaseAmount
+    return `New Balance: ${newBalance.toFixed(4)} CIRX`
+  }
+  
+  // Default case - just show the purchase amount as new balance
+  if (purchaseAmount > 0) {
+    return `New Balance: ${purchaseAmount.toFixed(4)} CIRX`
+  }
+  
+  return 'New Balance: 0.0000 CIRX'
 }
+
 
 // Saturn wallet detection
 const isSaturnWalletPresent = computed(() => {
@@ -1626,12 +1630,29 @@ const fetchCirxBalanceForAddress = async (address) => {
 
   try {
     isFetchingRecipientBalance.value = true
-    // TODO: Implement actual CIRX balance fetching
-    // For now, simulate a balance fetch with a placeholder
-    await new Promise(resolve => setTimeout(resolve, 500)) // Simulate API call
     
-    // Placeholder balance - in real implementation, this would call the CIRX contract
-    recipientCirxBalance.value = '0.000000000000000000'
+    // Call our backend API to get CIRX balance
+    const response = await fetch(`/api/v1/cirx/balance/${address}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // Add API key if required
+        ...(process.env.API_KEY && { 'X-API-Key': process.env.API_KEY })
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to fetch balance')
+    }
+    
+    // Set the balance from the API response
+    recipientCirxBalance.value = data.balance
     
     console.log(`📊 Fetched CIRX balance for ${address}: ${recipientCirxBalance.value}`)
   } catch (error) {

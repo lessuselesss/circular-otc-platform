@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\Transaction;
 use App\Validators\SwapRequestValidator;
 use App\Services\CirxTransferService;
+use App\Blockchain\BlockchainClientFactory;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Ramsey\Uuid\Uuid;
@@ -141,5 +142,45 @@ class TransactionController
             Transaction::STATUS_FAILED_CIRX_TRANSFER => 'CIRX transfer failed.',
             default => 'Transaction status unknown.',
         };
+    }
+
+    /**
+     * Get CIRX balance for a given address
+     */
+    public function getCirxBalance(Request $request, Response $response): Response
+    {
+        try {
+            // Get address from URL path
+            $address = $request->getAttribute('address');
+            
+            if (!$address) {
+                return $this->errorResponse($response, 400, 'Address parameter is required.');
+            }
+
+            // Validate address format (basic validation)
+            if (!preg_match('/^[a-zA-Z0-9]{20,}$/', $address)) {
+                return $this->errorResponse($response, 400, 'Invalid address format.');
+            }
+
+            // Get CIRX blockchain client
+            $clientFactory = new BlockchainClientFactory();
+            $cirxClient = $clientFactory->createCirxClient();
+            
+            // Fetch balance using Circular Protocol API
+            $balance = $cirxClient->getCirxBalance($address);
+            
+            // Return the balance
+            $response->getBody()->write(json_encode([
+                'success' => true,
+                'address' => $address,
+                'balance' => $balance,
+                'timestamp' => time()
+            ]));
+            
+            return $response->withHeader('Content-Type', 'application/json');
+            
+        } catch (\Exception $e) {
+            return $this->errorResponse($response, 500, 'Failed to fetch CIRX balance: ' . $e->getMessage());
+        }
     }
 }
