@@ -5,9 +5,16 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   
-  // Configure for static generation
+  // Configure for static generation with Cloudflare optimizations
   nitro: {
-    preset: 'static'
+    preset: 'static',
+    // Add Cloudflare Pages compatibility
+    experimental: {
+      wasm: false
+    },
+    storage: {
+      redis: false
+    }
   },
   
   // Disable SSR for Web3 compatibility
@@ -66,6 +73,34 @@ export default defineNuxtConfig({
       appName: 'Circular CIRX OTC Platform',
       appDescription: 'Circular CIRX OTC Trading Platform - Buy CIRX tokens with instant delivery or OTC discounts up to 12%',
       appUrl: process.env.APP_URL || 'https://circular.io',
+    }
+  },
+
+  // Build configuration for Cloudflare Pages
+  build: {
+    transpile: ['@reown/appkit']
+  },
+
+  // Vite configuration for better Cloudflare compatibility
+  vite: {
+    define: {
+      global: 'globalThis'
+    },
+    optimizeDeps: {
+      include: ['@reown/appkit', '@reown/appkit-adapter-wagmi', '@reown/appkit-adapter-solana']
+    },
+    build: {
+      target: 'es2020',
+      rollupOptions: {
+        external: [],
+        output: {
+          manualChunks: {
+            'appkit': ['@reown/appkit'],
+            'wagmi': ['@wagmi/vue', '@wagmi/core'],
+            'vue': ['vue', '@vue/runtime-core']
+          }
+        }
+      }
     }
   },
 

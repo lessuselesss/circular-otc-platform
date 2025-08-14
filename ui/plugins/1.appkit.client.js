@@ -15,23 +15,38 @@ if (typeof window !== 'undefined') {
 }
 
 export default defineNuxtPlugin(() => {
+  // Only run on client-side
+  if (typeof window === 'undefined') {
+    console.log('⚠️ AppKit plugin skipped - running on server')
+    return
+  }
+
   try {
     console.log('⚙️ Initializing Reown AppKit plugin...')
     console.log('Project ID:', projectId)
     console.log('Networks configured:', networks.length)
+    console.log('Environment:', process.env.NODE_ENV)
     
-    // Create the AppKit instance with corrected configuration
+    // Create the AppKit instance with Cloudflare-friendly configuration
     const appKit = createAppKit({
       adapters: [wagmiAdapter, solanaAdapter],
       networks,
       projectId,
-      metadata,
+      metadata: {
+        ...metadata,
+        // Ensure absolute URLs for Cloudflare
+        url: typeof window !== 'undefined' ? window.location.origin : metadata.url,
+        icons: metadata.icons.map(icon => 
+          icon.startsWith('http') ? icon : `${typeof window !== 'undefined' ? window.location.origin : ''}${icon}`
+        )
+      },
       features: {
         analytics: false,
         email: false,
         socials: [],
         onramp: false,
-        swaps: false
+        swaps: false,
+        allWallets: true // Explicitly enable all wallets to fix missing icon
       },
       themeMode: 'dark',
       themeVariables: {
@@ -39,7 +54,14 @@ export default defineNuxtPlugin(() => {
       },
       // Prevent auto-connection attempts
       autoConnect: false,
-      defaultChain: 'ethereum'
+      defaultChain: 'ethereum',
+      // Add error boundary configuration
+      enableAnalytics: false,
+      enableOnramp: false,
+      // Cloudflare-specific settings
+      includeWalletIds: undefined, // Let it auto-detect
+      excludeWalletIds: undefined,
+      enableWalletFeatures: true
     })
     
     // Make AppKit instance globally accessible
@@ -68,44 +90,68 @@ export default defineNuxtPlugin(() => {
         }
       }
       
-      // Debug AppKit state changes and force balance refresh
-      appKit.subscribeAccount((account) => {
-        console.log('🔍 AppKit Account State:', {
-          ...account,
-          balanceSymbol: account.balanceSymbol,
-          balance: account.balance,
-          profileName: account.profileName
+      // Debug AppKit state changes with error handling
+      try {
+        appKit.subscribeAccount((account) => {
+          try {
+            console.log('🔍 AppKit Account State:', {
+              ...account,
+              balanceSymbol: account.balanceSymbol,
+              balance: account.balance,
+              profileName: account.profileName
+            })
+            
+            // Store AppKit account state for debugging
+            window.__appKitAccountState = account
+            
+            // Force balance refresh when account changes
+            if (account.isConnected && account.address) {
+              console.log('🔄 Account connected, forcing balance refresh...')
+              // Give it a moment then force balance refresh
+              setTimeout(() => {
+                try {
+                  // Trigger a balance refresh by emitting a custom event
+                  window.dispatchEvent(new CustomEvent('forceBalanceRefresh', {
+                    detail: { address: account.address, chainId: account.chainId }
+                  }))
+                } catch (error) {
+                  console.warn('⚠️ Error triggering balance refresh:', error)
+                }
+              }, 1000)
+            }
+            
+            // If AppKit thinks we're disconnected but Wagmi shows connected, log warning
+            try {
+              const wagmiStore = localStorage.getItem('wagmi.store')
+              if (wagmiStore && !account.isConnected && window.ethereum?.selectedAddress) {
+                console.warn('⚠️ State mismatch detected: Wagmi connected but AppKit disconnected')
+                console.warn('Wagmi storage:', wagmiStore)
+                console.warn('Selected address:', window.ethereum?.selectedAddress)
+              }
+            } catch (error) {
+              console.warn('⚠️ Error checking state mismatch:', error)
+            }
+          } catch (error) {
+            console.error('❌ Error in AppKit account subscription:', error)
+          }
         })
-        
-        // Store AppKit account state for debugging
-        window.__appKitAccountState = account
-        
-        // Force balance refresh when account changes
-        if (account.isConnected && account.address) {
-          console.log('🔄 Account connected, forcing balance refresh...')
-          // Give it a moment then force balance refresh
-          setTimeout(() => {
-            // Trigger a balance refresh by emitting a custom event
-            window.dispatchEvent(new CustomEvent('forceBalanceRefresh', {
-              detail: { address: account.address, chainId: account.chainId }
-            }))
-          }, 1000)
-        }
-        
-        // If AppKit thinks we're disconnected but Wagmi shows connected, log warning
-        const wagmiStore = localStorage.getItem('wagmi.store')
-        if (wagmiStore && !account.isConnected && window.ethereum?.selectedAddress) {
-          console.warn('⚠️ State mismatch detected: Wagmi connected but AppKit disconnected')
-          console.warn('Wagmi storage:', wagmiStore)
-          console.warn('Selected address:', window.ethereum?.selectedAddress)
-        }
-      })
+      } catch (error) {
+        console.error('❌ Error setting up AppKit account subscription:', error)
+      }
       
-      appKit.subscribeNetwork((network) => {
-        console.log('🔍 AppKit Network State:', network)
-      })
+      try {
+        appKit.subscribeNetwork((network) => {
+          try {
+            console.log('🔍 AppKit Network State:', network)
+          } catch (error) {
+            console.error('❌ Error in AppKit network subscription:', error)
+          }
+        })
+      } catch (error) {
+        console.error('❌ Error setting up AppKit network subscription:', error)
+      }
       
-      // Force sync AppKit with any existing Wagmi connection
+      // Force sync AppKit with any existing Wagmi connection (with error handling)
       setTimeout(() => {
         try {
           const account = wagmiAdapter.wagmiConfig.getAccount()
@@ -114,30 +160,38 @@ export default defineNuxtPlugin(() => {
           if (account.isConnected && account.address) {
             console.log('🔧 Wagmi is connected, forcing AppKit to recognize this connection')
             
-            // Force trigger AppKit's internal state update by simulating adapter events
-            const connectEvent = new CustomEvent('wagmi:accountChanged', {
-              detail: {
-                account: account.address,
-                chainId: account.chainId,
-                isConnected: true
-              }
-            })
-            
-            // Dispatch to both window and appKit if it has event handling
-            window.dispatchEvent(connectEvent)
-            
-            // Also try to trigger AppKit's account subscription manually
-            setTimeout(() => {
-              console.log('🔄 Second sync attempt - checking AppKit state...')
-              if (window.__appKitAccountState) {
-                console.log('Current AppKit state:', window.__appKitAccountState)
-                if (!window.__appKitAccountState.isConnected) {
-                  console.warn('❌ AppKit still not synced after manual trigger')
-                } else {
-                  console.log('✅ AppKit is now synced!')
+            try {
+              // Force trigger AppKit's internal state update by simulating adapter events
+              const connectEvent = new CustomEvent('wagmi:accountChanged', {
+                detail: {
+                  account: account.address,
+                  chainId: account.chainId,
+                  isConnected: true
                 }
-              }
-            }, 2000)
+              })
+              
+              // Dispatch to both window and appKit if it has event handling
+              window.dispatchEvent(connectEvent)
+              
+              // Also try to trigger AppKit's account subscription manually
+              setTimeout(() => {
+                try {
+                  console.log('🔄 Second sync attempt - checking AppKit state...')
+                  if (window.__appKitAccountState) {
+                    console.log('Current AppKit state:', window.__appKitAccountState)
+                    if (!window.__appKitAccountState.isConnected) {
+                      console.warn('❌ AppKit still not synced after manual trigger')
+                    } else {
+                      console.log('✅ AppKit is now synced!')
+                    }
+                  }
+                } catch (error) {
+                  console.error('❌ Error in second sync attempt:', error)
+                }
+              }, 2000)
+            } catch (error) {
+              console.error('❌ Error triggering AppKit sync events:', error)
+            }
           } else {
             console.log('ℹ️ No existing Wagmi connection to sync')
           }
