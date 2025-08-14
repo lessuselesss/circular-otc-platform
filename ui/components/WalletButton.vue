@@ -9,7 +9,7 @@
         : 'border-transparent shadow-lg hover:shadow-xl backdrop-blur-sm',
       isConnecting ? 'cursor-wait opacity-75' : 'cursor-pointer'
     ]"
-    :style="!isConnected ? 'background-color: transparent; color: #0B5443;' : 'background-color: #1B2E33;'"
+    :style="!isConnected ? 'background-color: transparent; color: #01DA9D;' : 'background-color: #1B2E33;'"
     :disabled="isConnecting"
   >
     <!-- Connection Status Indicator -->

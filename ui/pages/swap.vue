@@ -457,7 +457,7 @@
                   : 'text-white hover:bg-purple-700',
                 (!canPurchase || loading || quoteLoading || reverseQuoteLoading) && 'opacity-50 cursor-not-allowed'
               ]"
-              :style="activeTab === 'liquid' ? 'background-color: #0B5443; color: #ffffff; opacity: 1;' : 'background-color: #9333ea; color: #C084FC; opacity: 1;'"
+              :style="activeTab === 'liquid' ? 'background-color: #0B5443; color: #01DA9D; opacity: 1;' : 'background-color: #9333ea; color: #C084FC; opacity: 1;'"
             >
               <span v-if="loading">{{ loadingText || 'Processing...' }}</span>
               <span v-else-if="quoteLoading || reverseQuoteLoading">
@@ -2055,7 +2055,7 @@ useHead({
 }
 
 .swap-arrow-liquid {
-  color: #0B5443;
+  color: #01DA9D;
   background: #000306 !important;
 }
 
